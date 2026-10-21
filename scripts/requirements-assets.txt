@@ -1,5 +1,0 @@
-# Optional asset preparation and PDF evidence tools; not needed by npm builds.
-fonttools==4.63.0
-brotli==1.2.0
-Pillow==12.2.0
-PyMuPDF==1.27.2.3

@@ -1,0 +1,35 @@
+services:
+  web:
+    build:
+      context: .
+      args:
+        ALABUGA_NPM_REGISTRY: ${ALABUGA_NPM_REGISTRY:?Set HTTPS registry URL}
+        ALABUGA_ALLOW_DOCKER_REGISTRY: ${ALABUGA_ALLOW_DOCKER_REGISTRY:-0}
+        APP_VERSION: ${AF_APP_VERSION:-0.7.0}
+        VCS_REF: ${AF_REVISION:-local}
+        VITE_FRAMEWORK_DOCS_URL: ${VITE_FRAMEWORK_DOCS_URL:-http://127.0.0.1:4391/}
+      secrets: [npmrc]
+      target: web
+  api:
+    build:
+      context: .
+      args:
+        ALABUGA_NPM_REGISTRY: ${ALABUGA_NPM_REGISTRY:?Set HTTPS registry URL}
+        ALABUGA_ALLOW_DOCKER_REGISTRY: ${ALABUGA_ALLOW_DOCKER_REGISTRY:-0}
+        APP_VERSION: ${AF_APP_VERSION:-0.7.0}
+        VCS_REF: ${AF_REVISION:-local}
+      secrets: [npmrc]
+      target: api
+  model-init:
+    build:
+      context: .
+      args:
+        ALABUGA_NPM_REGISTRY: ${ALABUGA_NPM_REGISTRY:?Set HTTPS registry URL}
+        ALABUGA_ALLOW_DOCKER_REGISTRY: ${ALABUGA_ALLOW_DOCKER_REGISTRY:-0}
+        APP_VERSION: ${AF_APP_VERSION:-0.7.0}
+        VCS_REF: ${AF_REVISION:-local}
+      secrets: [npmrc]
+      target: api
+secrets:
+  npmrc:
+    file: ${ALABUGA_NPMRC_FILE:?Set path to read-only user npm config}

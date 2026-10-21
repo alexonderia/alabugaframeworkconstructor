@@ -1,5 +1,6 @@
 import {el,button} from '@alabuga/framework/dom';
-import {renderDocument,type DocumentController} from '@alabuga/framework/runtime';
+import {renderDocument} from './framework-adapter';
+import {type DocumentController} from '@alabuga/framework/runtime';
 import type {AFDocument} from '@alabuga/framework/schema';
 import {compositionCatalog} from '@alabuga/framework/compositions';
 export function createOutline(root:HTMLElement,select:(index:number)=>void,action:(action:'copy'|'up'|'down'|'delete',index:number)=>void,reorder:(from:number,to:number)=>void,add?:()=>void){

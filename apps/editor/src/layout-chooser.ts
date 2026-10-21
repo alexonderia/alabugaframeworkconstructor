@@ -1,6 +1,7 @@
 import {el,button} from '@alabuga/framework/dom';
 import {layoutVariants,applyLayoutVariant} from '@alabuga/framework/layout-variants';
-import {renderDocument} from '@alabuga/framework/runtime';
+import {renderDocument} from './framework-adapter';
+
 import type {AFDocument,Section} from '@alabuga/framework/schema';
 export function layoutChooser(host:HTMLElement,page:Section,kind:AFDocument['kind'],apply:(page:Section)=>void){
  host.append(button('Изменить компоновку',()=>{

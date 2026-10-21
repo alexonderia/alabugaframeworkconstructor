@@ -1,3 +1,4 @@
+import {frameworkDom as dom} from './framework-adapter';
 import {EditorSaveQueue} from './editor-save';
 import {createZoomControls,bindEditorShortcuts} from './editor-controls';
 import {downloadEditorHTML} from './editor-export';
@@ -8,7 +9,8 @@ const openAI:typeof import('./ai/panel').openAI=(...args)=>import('./ai/panel').
 import {insertDraft} from '@alabuga/ai/commands';
 import {draftDocument} from '@alabuga/ai/contracts';
 import {qualityDialog} from './quality';
-import {renderDocument,type DocumentController,type AFDocument,type Widget,widgetRegistry} from '@alabuga/framework';
+import {renderDocument} from './framework-adapter';
+import {type DocumentController,type AFDocument,type Widget,widgetRegistry} from '@alabuga/framework';
 import {el,button} from '@alabuga/framework/dom';
 import {EditorModel,emptyDocument,createWidget,findSpace,uid,checked} from './model';
 import {properties} from './properties';
@@ -40,7 +42,7 @@ const get=<T extends HTMLElement=HTMLElement>(id:string)=>document.getElementByI
 const canvas=get('canvas'),inspector=get('properties'),drawer=get('inspector'),catalog=get<HTMLDialogElement>('catalog');
 const fitHint=button('Текст не помещается — подобрать оформление',()=>fitCurrent(false));fitHint.hidden=true;root.querySelector('.canvas-toolbar')!.append(fitHint);
 let fitHintTimer:ReturnType<typeof setTimeout>|undefined;
-function suggestFit(){clearTimeout(fitHintTimer);fitHintTimer=setTimeout(()=>{const slide=canvas.querySelector<HTMLElement>('.af-slide--active'),panel=slide?.querySelector<HTMLElement>('.af-panel');fitHint.hidden=preview||!slide||!((panel&&panel.offsetTop+panel.offsetHeight>slide.clientHeight-48)||[...slide.querySelectorAll<HTMLElement>('.af-widget__content,.af-table-scroll')].some(n=>n.scrollWidth>n.clientWidth+2||n.scrollHeight>n.clientHeight+2))},350)}
+function suggestFit(){clearTimeout(fitHintTimer);fitHintTimer=setTimeout(()=>{const slide=canvas.querySelector<HTMLElement>(dom.activeSlide),panel=slide?.querySelector<HTMLElement>(dom.panel);fitHint.hidden=preview||!slide||!((panel&&panel.offsetTop+panel.offsetHeight>slide.clientHeight-48)||[...slide.querySelectorAll<HTMLElement>(dom.overflow)].some(n=>n.scrollWidth>n.clientWidth+2||n.scrollHeight>n.clientHeight+2))},350)}
 const message=(text:string,error=false)=>{if(lifecycle.signal.aborted)return;get('status').textContent=text;get('status').classList.toggle('status-error',error)};
 let lastSaveStatus='Сохранено в браузере';get('save-state').textContent=lastSaveStatus;
 let draftState:'valid'|'pending'|'invalid'='valid';
@@ -53,12 +55,12 @@ const saveLocal=()=>autosave.save(projectId,model.document);
 function historyButtons(){get<HTMLButtonElement>('undo').disabled=!model.canUndo;get<HTMLButtonElement>('redo').disabled=!model.canRedo}
 function commit(edit:(d:AFDocument)=>void,success='Изменения применены.',keepProperties=false){if(lifecycle.signal.aborted)return false;const restoreFocus=captureFocus(drawer);try{model.change(edit);saveLocal();draw(keepProperties);if(!keepProperties)restoreFocus();message(success.replace('Сохранено.','Изменения применены.').replace('сохранены.','применены.'));return true}catch(e){message((e as Error).message,true);return false}}
 const inlineCommit:InlineCommit=(edit,group)=>{try{model.change(edit,group);controller?.synchronize(model.document);saveLocal();historyButtons();suggestFit();return true}catch(e){message((e as Error).message,true);return false}};
-function focusWidget(id:string,index:number){const changed=selected!==id||pageIndex!==index||documentMode;selected=id;pageIndex=index;documentMode=false;get<HTMLSelectElement>('pages').value=String(index);canvas.querySelectorAll<HTMLElement>('[data-widget-id]').forEach(b=>b.classList.toggle('is-selected',b.dataset.widgetId===id));if(changed&&!drawer.hidden){const doc=model.document;renderProperties(doc,doc.pages[index]);get('inspector-title').textContent='Настройки блока'}}
+function focusWidget(id:string,index:number){const changed=selected!==id||pageIndex!==index||documentMode;selected=id;pageIndex=index;documentMode=false;get<HTMLSelectElement>('pages').value=String(index);canvas.querySelectorAll<HTMLElement>(dom.widgets).forEach(b=>b.classList.toggle('is-selected',b.dataset.widgetId===id));if(changed&&!drawer.hidden){const doc=model.document;renderProperties(doc,doc.pages[index]);get('inspector-title').textContent='Настройки блока'}}
 function selectWidget(id:string){if(!flush())return;documentMode=false;const index=model.document.pages.findIndex(p=>p.widgets.some(w=>w.id===id));if(index<0)return;selected=id;pageIndex=index;draw()}
 function openInspector(id='',index=pageIndex){if(!flush())return;documentMode=false;selected=id;pageIndex=index;drawer.hidden=false;draw();(id?Array.from(drawer.querySelectorAll<HTMLElement>('input,textarea')).find(n=>n.getClientRects().length):drawer.querySelector<HTMLElement>('[role=tab][aria-selected=true]')??Array.from(drawer.querySelectorAll<HTMLElement>('input,textarea')).find(n=>n.getClientRects().length))?.focus({preventScroll:true})}
 function closeInspector(){if(!flush())return;drawer.hidden=true;root.classList.remove('has-inspector');canvas.inert=false;get('page-settings-open').focus({preventScroll:true})}
 function openCatalog(mode:'section'|'widget',index:number){if(!flush())return;catalogMode=mode;insertAt=index;get('catalog-theme-field').hidden=mode!=='section';if(mode==='section')drawCatalog();if(mode==='widget')pageIndex=index;get('templates').hidden=mode!=='section';get('palette').hidden=mode!=='widget';get('catalog-title').textContent=mode==='section'?'Добавить секцию':'Добавить блок';get('catalog-description').textContent=mode==='section'?'Выберите композицию. Всё содержимое можно изменить прямо на странице.':'Блок займёт свободное место в сетке выбранной секции.';catalog.showModal()}
-function scrollSection(index=pageIndex){const id=model.document.pages[index]?.id;if(id)canvas.querySelector<HTMLElement>('[data-section-id="'+id+'"]')?.scrollIntoView({block:'start',behavior:'instant'})}
+function scrollSection(index=pageIndex){const id=model.document.pages[index]?.id;if(id)canvas.querySelector<HTMLElement>(dom.sectionById(id))?.scrollIntoView({block:'start',behavior:'instant'})}
 function duplicateWidget(id=selected,index=pageIndex){if(!flush())return;try{const d=model.document,copy=structuredClone(d.pages[index].widgets.find(w=>w.id===id)!);copy.id=uid();copy.position=findSpace(d,index,copy.position.width,copy.position.height);selected=copy.id;pageIndex=index;commit(doc=>doc.pages[index].widgets.push(copy),'Блок скопирован.')}catch(e){message((e as Error).message,true)}}
 function removeWidget(id=selected,index=pageIndex){selected='';flush=()=>true;commit(d=>{d.pages[index].widgets=d.pages[index].widgets.filter(w=>w.id!==id)},'Блок удалён. Можно отменить действие.')}
 function sectionAction(action:'copy'|'delete'|'up'|'down',index:number){if(!flush())return;const d=model.document;if(action==='delete'&&d.pages.length===1)return;let next=index;if(action==='copy'){const p=structuredClone(d.pages[index]);p.id=uid('page');p.widgets.forEach(w=>w.id=uid());d.pages.splice(index+1,0,p);next=index+1}else if(action==='delete'){d.pages.splice(index,1);next=Math.min(index,d.pages.length-1)}else{next=index+(action==='up'?-1:1);if(next<0||next>=d.pages.length)return;[d.pages[index],d.pages[next]]=[d.pages[next],d.pages[index]]}try{model.replace(d);pageIndex=next;selected='';saveLocal();draw();scrollSection();message('Структура обновлена.')}catch(e){message((e as Error).message,true)}}
@@ -86,18 +88,18 @@ function draw(keepProperties=false){
   if(controller&&renderedMode===preview)controller.update(doc);else{controller?.destroy();controller=renderDocument(canvas,doc,{editing:!preview});renderedMode=preview}if(doc.kind==='presentation')controller.goToSlide(pageIndex);
   get('end-add').replaceChildren();if(!preview&&doc.kind==='page')get('end-add').append(insertion(doc.pages.length));
   if(!preview){
-    canvas.querySelectorAll('.section-insert,.section-tools,.canvas-empty').forEach(n=>n.remove());const shells=canvas.querySelectorAll<HTMLElement>('[data-section-id]');
+    canvas.querySelectorAll('.section-insert,.section-tools,.canvas-empty').forEach(n=>n.remove());const shells=canvas.querySelectorAll<HTMLElement>(dom.sections);
     shells.forEach(shell=>{
-      const index=doc.pages.findIndex(p=>p.id===shell.dataset.sectionId),page=doc.pages[index],panel=shell.querySelector<HTMLElement>('.af-panel')!;
+      const index=doc.pages.findIndex(p=>p.id===shell.dataset.sectionId),page=doc.pages[index],panel=shell.querySelector<HTMLElement>(dom.panel)!;
       if(doc.kind==='page')shell.before(insertion(index));
       const tools=el('div','section-tools');tools.setAttribute('aria-label','Действия секции '+(index+1));
       tools.append(el('span','section-number',String(index+1).padStart(2,'0')),small('+ Блок',()=>openCatalog('widget',index)),small('Настройки секции',()=>openInspector('',index)),small('Копия секции',()=>sectionAction('copy',index)));
       for(const [action,label]of [['up','↑'],['down','↓'],['delete','Удалить секцию']] as const){const b=small(label,()=>sectionAction(action,index));b.setAttribute('aria-label',action==='up'?'Поднять секцию':action==='down'?'Опустить секцию':label);b.disabled=action==='up'?index===0:action==='down'?index===doc.pages.length-1:doc.pages.length===1;tools.append(b)}shell.prepend(tools);
-      const heading=shell.querySelector<HTMLElement>(':scope > .af-heading,:scope > .af-slide__title');if(heading&&!boundHeadings.has(heading)){boundHeadings.add(heading);editable(heading,'Заголовок секции на странице',(d,t)=>d.pages[index].title=t,inlineCommit,()=>{pageIndex=index;get<HTMLSelectElement>('pages').value=String(index)},false);}
-      for(const box of panel.querySelectorAll<HTMLElement>('[data-widget-id]')){
+      const heading=shell.querySelector<HTMLElement>(dom.heading);if(heading&&!boundHeadings.has(heading)){boundHeadings.add(heading);editable(heading,'Заголовок секции на странице',(d,t)=>d.pages[index].title=t,inlineCommit,()=>{pageIndex=index;get<HTMLSelectElement>('pages').value=String(index)},false);}
+      for(const box of panel.querySelectorAll<HTMLElement>(dom.widgets)){
         const w=page.widgets.find(w=>w.id===box.dataset.widgetId)!;box.tabIndex=0;box.setAttribute('aria-label','Блок: '+(w.title||widgetRegistry[w.type].title));box.classList.toggle('is-selected',w.id===selected);if(boundBoxes.has(box))continue;boundBoxes.add(box);
         if(page.appearance?.layout!=='flow'){box.style.setProperty('grid-column',w.position.col+' / span '+w.position.width,'important');box.style.setProperty('grid-row',w.position.row+' / span '+w.position.height,'important');box.style.setProperty('height','auto','important');}
-        const content=box.querySelector<HTMLElement>('.af-widget__content')!;content.removeAttribute('tabindex');content.querySelectorAll<HTMLButtonElement>('button').forEach(b=>{if(w.type!=='button')b.disabled=true;b.tabIndex=-1});
+        const content=box.querySelector<HTMLElement>(dom.content)!;content.removeAttribute('tabindex');content.querySelectorAll<HTMLButtonElement>('button').forEach(b=>{if(w.type!=='button')b.disabled=true;b.tabIndex=-1});
         bindInline(box,w,index,inlineCommit,()=>focusWidget(w.id,index));
         const bar=el('div','widget-tools');bar.style.left=w.position.col>page.grid.columns/2?'auto':'0';bar.style.right=w.position.col>page.grid.columns/2?'0':'auto';bar.append(small('Настройки блока',()=>openInspector(w.id,index)),small('Копия',()=>duplicateWidget(w.id,index)),small('Удалить',()=>removeWidget(w.id,index)));box.append(bar);
         if(w.type==='image'){const change=small('Заменить изображение',()=>openInspector(w.id,index));change.classList.add('image-change');box.append(change)}
@@ -122,7 +124,7 @@ function renderProperties(doc:AFDocument,active:AFDocument['pages'][number],keep
 
 function attachHandle(handle:HTMLButtonElement,widget:Widget,resizing:boolean,panel:HTMLElement,index:number){
   const update=(position:Widget['position'])=>commit(d=>{d.pages[index].widgets.find(w=>w.id===widget.id)!.position=position},resizing?'Размер блока изменён.':'Блок перемещён.');
-  const focus=()=>canvas.querySelector<HTMLElement>('[data-widget-id="'+widget.id+'"]')?.querySelector<HTMLButtonElement>(resizing?'.resize-handle':'.move-handle')?.focus({preventScroll:true});
+  const focus=()=>canvas.querySelector<HTMLElement>(dom.widgetById(widget.id))?.querySelector<HTMLButtonElement>(resizing?'.resize-handle':'.move-handle')?.focus({preventScroll:true});
   handle.addEventListener('keydown',e=>{const delta=({ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]} as Record<string,number[]>)[e.key];if(!delta)return;e.preventDefault();if(!flush())return;selected=widget.id;pageIndex=index;const p={...model.document.pages[index].widgets.find(w=>w.id===widget.id)!.position};if(resizing){p.width+=delta[0];p.height+=delta[1]}else{p.col+=delta[0];p.row+=delta[1]}update(p);focus()});
   handle.addEventListener('pointerdown',e=>{
     if(e.button!==0)return;e.preventDefault();e.stopPropagation();
@@ -133,7 +135,7 @@ function attachHandle(handle:HTMLButtonElement,widget:Widget,resizing:boolean,pa
     const flow=model.document.pages[index].appearance?.layout==='flow';
     const tracks=getComputedStyle(panel).gridTemplateRows.split(' ').map(parseFloat).filter(Number.isFinite),starts=[0];tracks.forEach(h=>starts.push(starts.at(-1)!+h+g.gap));
     const lineAt=(px:number)=>{if(!flow)return Math.max(1,Math.round(px/(g.rowHeight+g.gap))+1);if(px>=starts.at(-1)!)return starts.length+Math.round((px-starts.at(-1)!)/(24+g.gap));let best=0;starts.forEach((v,i)=>{if(Math.abs(v-px)<Math.abs(starts[best]-px))best=i});return best+1};
-    const box=handle.closest<HTMLElement>('[data-widget-id]')!;let position={...widget.position},moved=false;
+    const box=handle.closest<HTMLElement>(dom.widgets)!;let position={...widget.position},moved=false;
     handle.setPointerCapture(e.pointerId);
     const abort=new AbortController();lifecycle.signal.addEventListener('abort',()=>abort.abort(),{once:true});
     const cancel=()=>{abort.abort();draw();focus()};
@@ -220,7 +222,7 @@ const showLearning=tutorial(root.querySelector('.editor-workspace')!,projectId,l
  const desired=step===2?'image':'text';const index=current.widgets.some(w=>w.type===desired)?pageIndex:doc.pages.findIndex(p=>p.widgets.some(w=>w.type===desired));
  if(index<0){get('add-widget').click();return}
  const w=doc.pages[index].widgets.find(w=>w.type===desired)!;openInspector(w.id,index);scrollSection(index);
- if(step===0)canvas.querySelector<HTMLElement>('[data-widget-id="'+w.id+'"] [contenteditable]')?.focus();
+ if(step===0)canvas.querySelector<HTMLElement>(dom.editableWidget(w.id))?.focus();
 });
 menu.append(button('Пять действий для знакомства',showLearning));
 if(learning?.enabled){scrollSection(pageIndex);if(learning.section)openInspector(model.document.pages[pageIndex].widgets[0]?.id??'',pageIndex)}
@@ -232,4 +234,3 @@ return {
 
 }
 // void boot().catch(e=>{document.querySelector('#builder')!.textContent='Не удалось запустить редактор: '+String(e)});
-

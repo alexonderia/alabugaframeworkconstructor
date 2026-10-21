@@ -23,3 +23,5 @@ public/demo
 /*browser*.json
 validation-*.json
 **/__pycache__
+
+.npmrc

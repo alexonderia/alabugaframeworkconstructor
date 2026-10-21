@@ -1,6 +1,6 @@
 {
   "name": "@alabuga/ai",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "type": "module",
   "exports": {
@@ -24,6 +24,6 @@
   },
   "dependencies": {
     "zod": "4.5.4",
-    "@alabuga/framework": "0.6.0"
+    "@alabuga/framework": "1.0.2"
   }
 }

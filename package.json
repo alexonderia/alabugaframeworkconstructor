@@ -1,6 +1,6 @@
 {
-  "name": "@alabuga/workspace",
-  "version": "0.6.0",
+  "name": "@alabuga/constructor",
+  "version": "0.7.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -17,27 +17,28 @@
     "ai:acceptance": "node scripts/ai-live.mjs",
     "ai:examples": "node scripts/ai-live.mjs --examples",
     "ai:report": "python scripts/ai-report.py",
-    "predev": "npm run build:framework && tsx scripts/build-docs.ts",
+    "predev": "tsx scripts/build-docs.ts",
     "dev": "vite --host 127.0.0.1",
     "build": "npm run typecheck && npm run check:boundaries && tsx scripts/build.ts",
-    "test": "tsx --test tests/schema.test.ts tests/editor.test.ts tests/public-api.test.ts tests/editor-save.test.ts",
+    "test": "tsx --test tests/editor.test.ts tests/editor-save.test.ts tests/project-import.test.ts",
     "test:browser": "playwright test",
     "preview": "vite preview --outDir dist/site --host 127.0.0.1",
-    "fonts": "python scripts/fonts.py",
     "typecheck": "tsc --noEmit",
-    "check:boundaries": "tsx scripts/check-boundaries.ts",
-    "build:framework": "npm run build -w @alabuga/framework",
+    "check:boundaries": "node scripts/check-boundaries.mjs",
     "build:editor": "npm run build -w @alabuga/editor",
-    "build:docs": "npm run build -w @alabuga/docs",
+    "build:docs": "tsx scripts/build-docs.ts",
     "build:ai": "npm run build -w @alabuga/ai",
     "build:server": "npm run build -w @alabuga/ai-server",
     "test:bootstrap": "tsx --test tests/bootstrap.test.ts tests/pinned-model.test.ts",
     "test:model": "tsx scripts/run-model-check.ts",
     "check:docs": "tsx scripts/check-docs.ts",
-    "test:release": "node scripts/release-smoke.mjs"
+    "test:release": "node scripts/release-smoke.mjs",
+    "registry:configure": "node scripts/configure-registry.mjs",
+    "test:compatibility": "node scripts/check-framework-version.mjs"
   },
   "dependencies": {
-    "zod": "^4.5.4"
+    "zod": "^4.5.4",
+    "@alabuga/framework": "1.0.2"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
@@ -53,5 +54,10 @@
     "packages/*",
     "apps/*"
   ],
-  "packageManager": "npm@11.17.0"
+  "packageManager": "npm@11.17.0",
+  "license": "UNLICENSED",
+  "alabugaFramework": {
+    "minimum": "1.0.2",
+    "major": 1
+  }
 }

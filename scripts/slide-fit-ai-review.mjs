@@ -26,7 +26,7 @@ const notes=[
 const acceptance=JSON.parse(await readFile(out+'/acceptance.json','utf8'));if(acceptance.cases.length!==20)throw new Error('Дождитесь завершения всех 20 запросов');
 const browser=await chromium.launch(),page=await browser.newPage();await page.goto('http://127.0.0.1:4175/builder/');const reviews=[];
 try{for(const entry of acceptance.cases){const data=JSON.parse(await readFile(`${out}/case-${String(entry.index).padStart(2,'0')}.json`,'utf8'));
- const formatting=data.draft.request.kind==='presentation'?await page.evaluate(async draft=>{const {measureSlide}=await import('/packages/framework/src/slide-fit.ts');const result=[];for(const [i,p]of draft.sections.entries())result.push({slide:i+1,available:!!p,fitted:!!p?.appearance?.fitted,issues:p?await measureSlide(p,{documentTitle:draft.title}):['Слайд не создан']});return result},data.draft):null;
+ const formatting=data.draft.request.kind==='presentation'?await page.evaluate(async draft=>{const {measureSlide}=await import('/tests/framework/slide-fit.ts');const result=[];for(const [i,p]of draft.sections.entries())result.push({slide:i+1,available:!!p,fitted:!!p?.appearance?.fitted,issues:p?await measureSlide(p,{documentTitle:draft.title}):['Слайд не создан']});return result},data.draft):null;
  reviews.push({...entry,content:{pass:notes[entry.index-1][0],note:notes[entry.index-1][1]},formatting});
 }}finally{await browser.close()}
 const report={model:acceptance.model,environment:acceptance.environment,technicalPassed:acceptance.passed,contentPassed:reviews.filter(r=>r.content.pass).length,total:20,peakMiB:acceptance.peakMiB,reviews};await writeFile(out+'/review.json',JSON.stringify(report,null,2));

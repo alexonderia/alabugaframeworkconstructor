@@ -1,0 +1,19 @@
+version: 2
+registries:
+  alabuga:
+    type: npm-registry
+    url: https://npm.example.org/
+    token: ${{ secrets.FRAMEWORK_READ_TOKEN }}
+updates:
+  - package-ecosystem: npm
+    directory: /
+    registries: [alabuga]
+    schedule:
+      interval: daily
+      time: '09:00'
+      timezone: Europe/Moscow
+    versioning-strategy: increase
+    groups:
+      framework:
+        patterns: ['@alabuga/framework']
+    open-pull-requests-limit: 5

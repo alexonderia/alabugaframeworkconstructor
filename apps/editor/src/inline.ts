@@ -1,3 +1,4 @@
+import {frameworkDom as dom} from './framework-adapter';
 import type {AFDocument,Widget} from '@alabuga/framework/schema';
 import {uid} from './model';
 export type InlineCommit=(edit:(d:AFDocument)=>void,group:string)=>boolean;
@@ -21,19 +22,19 @@ export function editable(node:HTMLElement,label:string,write:(d:AFDocument,text:
 export function bindInline(box:HTMLElement,w:Widget,pageIndex:number,commit:InlineCommit,onFocus:()=>void){
   const widget=(d:AFDocument)=>d.pages[pageIndex].widgets.find(x=>x.id===w.id)!;
   const bind=(node:HTMLElement|null,label:string,write:(w:Widget,text:string)=>void,multiline=true)=>{if(node)editable(node,label,(d,text)=>write(widget(d),text),commit,onFocus,multiline)};
-  bind(box.querySelector('.af-widget__title'),'Название блока на странице',(w,t)=>w.title=t,false);
+  bind(box.querySelector(dom.title),'Название блока на странице',(w,t)=>w.title=t,false);
   if(w.type==='text'){
-    const nodes=box.querySelector('.af-prose')!.children;
+    const nodes=box.querySelector(dom.prose)!.children;
     w.content.forEach((block,i)=>{
       if('text'in block)bind(nodes[i] as HTMLElement,block.type==='heading'?'Заголовок на странице':'Текст на странице',(w,t)=>{if(w.type==='text'){const b=w.content[i];if('text'in b)b.text=t}});
       if(block.type==='list')nodes[i].querySelectorAll<HTMLElement>('li').forEach((li,j)=>bind(li,'Пункт списка на странице',(w,t)=>{if(w.type==='text'&&w.content[i].type==='list')w.content[i].items[j]=t},false));
     });
   }
-  if(w.type==='metric'){bind(box.querySelector('.af-metric__value'),'Значение на странице',(w,t)=>{if(w.type==='metric')w.value=t},false);bind(box.querySelector('.af-caption'),'Подпись на странице',(w,t)=>{if(w.type==='metric')w.note=t},false)}
-  if(w.type==='button')bind(box.querySelector('[data-action-id]'),'Кнопка на странице',(w,t)=>{if(w.type==='button')w.label=t},false);
-  if(w.type==='quote'){bind(box.querySelector('.af-quote__text'),'Цитата на странице',(w,t)=>{if(w.type==='quote')w.text=t});bind(box.querySelector('.af-quote__author'),'Автор на странице',(w,t)=>{if(w.type==='quote')w.author=t},false)}
-  if(w.type==='cards')box.querySelectorAll<HTMLElement>('.af-feature').forEach((card,i)=>{bind(card.querySelector('.af-feature__title'),'Заголовок карточки на странице',(w,t)=>{if(w.type==='cards')w.items[i].title=t});bind(card.querySelector('.af-feature__text'),'Текст карточки на странице',(w,t)=>{if(w.type==='cards')w.items[i].text=t})});
-  if(w.type==='gallery')box.querySelectorAll<HTMLElement>('figcaption').forEach((caption,i)=>bind(caption,'Подпись галереи на странице',(w,t)=>{if(w.type==='gallery')w.items[i].caption=t}));
-  if(w.type==='image')bind(box.querySelector('.af-caption'),'Подпись изображения на странице',(w,t)=>{if(w.type==='image')w.caption=t});
-  if(w.type==='table')box.querySelectorAll<HTMLElement>('tbody tr').forEach((row,i)=>row.querySelectorAll<HTMLElement>('td').forEach((cell,j)=>{if(w.rows[i])bind(cell,`Ячейка ${i+1}, ${j+1}`,(w,t)=>{if(w.type==='table')w.rows[i][w.columns[j].key]=t},false)}));
+  if(w.type==='metric'){bind(box.querySelector(dom.metric),'Значение на странице',(w,t)=>{if(w.type==='metric')w.value=t},false);bind(box.querySelector(dom.caption),'Подпись на странице',(w,t)=>{if(w.type==='metric')w.note=t},false)}
+  if(w.type==='button')bind(box.querySelector(dom.action),'Кнопка на странице',(w,t)=>{if(w.type==='button')w.label=t},false);
+  if(w.type==='quote'){bind(box.querySelector(dom.quote),'Цитата на странице',(w,t)=>{if(w.type==='quote')w.text=t});bind(box.querySelector(dom.author),'Автор на странице',(w,t)=>{if(w.type==='quote')w.author=t},false)}
+  if(w.type==='cards')box.querySelectorAll<HTMLElement>(dom.card).forEach((card,i)=>{bind(card.querySelector(dom.cardTitle),'Заголовок карточки на странице',(w,t)=>{if(w.type==='cards')w.items[i].title=t});bind(card.querySelector(dom.cardText),'Текст карточки на странице',(w,t)=>{if(w.type==='cards')w.items[i].text=t})});
+  if(w.type==='gallery')box.querySelectorAll<HTMLElement>(dom.galleryCaption).forEach((caption,i)=>bind(caption,'Подпись галереи на странице',(w,t)=>{if(w.type==='gallery')w.items[i].caption=t}));
+  if(w.type==='image')bind(box.querySelector(dom.caption),'Подпись изображения на странице',(w,t)=>{if(w.type==='image')w.caption=t});
+  if(w.type==='table')box.querySelectorAll<HTMLElement>(dom.tableRows).forEach((row,i)=>row.querySelectorAll<HTMLElement>('td').forEach((cell,j)=>{if(w.rows[i])bind(cell,`Ячейка ${i+1}, ${j+1}`,(w,t)=>{if(w.type==='table')w.rows[i][w.columns[j].key]=t},false)}));
 }

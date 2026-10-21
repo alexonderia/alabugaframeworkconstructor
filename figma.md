@@ -1,1 +1,0 @@
-https://www.figma.com/design/ObAoKiDwraibmQrxUNvGWI/Design-System?node-id=0-1&t=F6oXmUzfymjDzj6u-1

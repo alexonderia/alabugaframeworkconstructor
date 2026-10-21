@@ -1,5 +1,6 @@
 import {el,button} from '@alabuga/framework/dom';
-import {renderDocument,type DocumentController} from '@alabuga/framework/runtime';
+import {renderDocument} from '../framework-adapter';
+import {type DocumentController} from '@alabuga/framework/runtime';
 import {validateDocument,type AFDocument} from '@alabuga/framework/schema';
 import {loadBrandManifest} from '../brand-manifest';
 import {brandAssets} from '@alabuga/framework/brand';
@@ -104,7 +105,7 @@ export async function openAI(context:Context,apply:(draft:DraftResult)=>Promise<
   if(!d||busy||d.request.kind!=='presentation'||!d.sections[selectedIndex]||!flush())return;
   busy=true;abort=new AbortController();controls();progress.textContent='Подбираем оформление слайда…';$<HTMLInputElement>('[data-ack]').checked=false;
   try{
-   const {fitSlide}=await import('@alabuga/framework/slide-fit'),i=selectedIndex,result=await fitSlide(d.sections[i]!,{documentTitle:d.title,index:i,signal:abort.signal});abort.signal.throwIfAborted();
+   const {fitSlide}=await import('../framework-adapter'),i=selectedIndex,result=await fitSlide(d.sections[i]!,{documentTitle:d.title,index:i,signal:abort.signal});abort.signal.throwIfAborted();
    if(result.success){d.sections[i]=result.slide;const problems=[...reviewDraftContent(result.slide,d.request,d.outline[i],materials.filter(m=>chosen.has(m.id)).map(m=>m.name)),...await checkSection(result.slide,'presentation')];if(problems.length)d.errors[i]=problems.join('; ');else delete d.errors[i]}else d.errors[i]=result.issues.join('; ');
    d.updated=Date.now();d.status.message=Object.keys(d.errors).length?'Проверьте замечания к черновику.':'Оформление подобрано. Текст сохранён — проверьте результат перед применением.';
    await persist(d);if(dialog.isConnected)draw();

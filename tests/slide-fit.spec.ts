@@ -4,7 +4,7 @@ import {savedDocument} from './project-helper';
 test('fit preserves content, measures 24 cases and rejects overflow',async({page},info)=>{
  test.setTimeout(180000);await openEditor(page);
  const report=await page.evaluate(async()=>{
-  const {makeComposition}=await import('/packages/framework/src/compositions.ts' as string),{fitSlide,measureSlide}=await import('/packages/framework/src/slide-fit.ts' as string);
+  const {makeComposition}=await import('/tests/framework/compositions.ts' as string),{fitSlide,measureSlide}=await import('/tests/framework/slide-fit.ts' as string);
   const {slideFitFixtures}=await import('/tests/slide-fit-fixtures.ts' as string);const results=[];
   for(const [i,slide]of slideFitFixtures().entries()){
    const before=JSON.stringify(slide),fit=await fitSlide(slide,{index:i}),copy=structuredClone(fit.slide);
@@ -21,7 +21,7 @@ test('fit preserves content, measures 24 cases and rejects overflow',async({page
 test('fitting is deterministic, respects locks, custom grids and cancellation',async({page})=>{
  test.setTimeout(60000);await openEditor(page);
  const r=await page.evaluate(async()=>{
-  const {slideFitFixtures}=await import('/tests/slide-fit-fixtures.ts' as string),{fitSlide,slideBackgrounds}=await import('/packages/framework/src/slide-fit.ts' as string);
+  const {slideFitFixtures}=await import('/tests/slide-fit-fixtures.ts' as string),{fitSlide,slideBackgrounds}=await import('/tests/framework/slide-fit.ts' as string);
   const p=slideFitFixtures()[0],a=await fitSlide(p),b=await fitSlide(p);if(!a.success)return {error:a.issues};
   const locked=await fitSlide(a.slide,{keepLayout:true,keepBackground:true,keepTypography:true});
   const custom=structuredClone(a.slide);custom.composition='user-grid';const fittedCustom=await fitSlide(custom);
@@ -70,4 +70,3 @@ test('whole deck previews and applies atomically, while cancel keeps original',a
  await page.getByRole('button',{name:'Рассчитать оформление',exact:true}).click();await expect(page.getByRole('button',{name:'Применить оформление',exact:true})).toBeEnabled({timeout:30000});await page.getByRole('button',{name:'Применить оформление',exact:true}).click();
  expect(await page.evaluate(()=>{const model=(window as any).fitModel,all=model.document.pages.every((p:any)=>p.appearance.fitted);model.undo();return all&&JSON.stringify(model.document)===JSON.stringify((window as any).fitOriginal)})).toBe(true);
 });
-

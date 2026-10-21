@@ -4,12 +4,12 @@ const out='artifacts/slide-fit';await mkdir(out,{recursive:true});const browser=
 try{
  await page.goto('http://127.0.0.1:4175/builder/');
  const data=await page.evaluate(async()=>{
-  const {slideFitFixtures}=await import('/tests/slide-fit-fixtures.ts'),{fitSlide}=await import('/packages/framework/src/slide-fit.ts');const before=slideFitFixtures(),after=[],report=[];
+  const {slideFitFixtures}=await import('/tests/slide-fit-fixtures.ts'),{fitSlide}=await import('/tests/framework/slide-fit.ts');const before=slideFitFixtures(),after=[],report=[];
   for(const [index,p]of before.entries()){const r=await fitSlide(p,{index,previousBackgrounds:after.map(s=>s.appearance?.backgroundId??'')});after.push(r.slide);report.push({index,composition:p.composition,success:r.success,issues:r.issues,changes:r.changes,background:r.slide.appearance,typography:r.slide.widgets.map(w=>w.typography)})}return {before,after,report};
  });
  await writeFile(out+'/fixtures.json',JSON.stringify(data,null,2));
  for(let i=0;i<24;i++)for(const state of ['before','after']){
-  await page.evaluate(async slide=>{window.fitCapture?.destroy();const {renderDocument}=await import('/packages/framework/src/runtime.ts');const host=document.createElement('main');document.body.replaceChildren(host);window.fitCapture=renderDocument(host,{schemaVersion:3,kind:'presentation',title:'Проверка',pages:[slide]},{editing:true});await document.fonts.ready;await Promise.all([...host.querySelectorAll('img')].map(i=>i.decode()));await new Promise(r=>requestAnimationFrame(r))},data[state][i]);
+  await page.evaluate(async slide=>{window.fitCapture?.destroy();const {renderDocument}=await import('/tests/framework/runtime.ts');const host=document.createElement('main');document.body.replaceChildren(host);window.fitCapture=renderDocument(host,{schemaVersion:3,kind:'presentation',title:'Проверка',pages:[slide]},{editing:true});await document.fonts.ready;await Promise.all([...host.querySelectorAll('img')].map(i=>i.decode()));await new Promise(r=>requestAnimationFrame(r))},data[state][i]);
   await page.locator('.af-slide').screenshot({path:`${out}/${i+1}-${state}.png`});
  }
  const html=await page.evaluate(async pages=>{const {exportHTML}=await import('/apps/editor/src/export.ts');return exportHTML({schemaVersion:3,kind:'presentation',title:'24 примера автоматического оформления',pages})},data.after);

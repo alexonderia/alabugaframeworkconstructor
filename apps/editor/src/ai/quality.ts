@@ -1,5 +1,6 @@
 import {reviewContent} from '@alabuga/ai/content-review';
-import {renderDocument} from '@alabuga/framework/runtime';
+import {renderDocument} from '../framework-adapter';
+
 import {validateDocument,type AFDocument,type Section} from '@alabuga/framework/schema';
 import {inspectQuality} from '../quality';
 export async function checkSection(section:Section,kind:AFDocument['kind']):Promise<string[]>{

@@ -18,7 +18,7 @@ test('v1 legacy is retained, v3 assets deduplicate and revisions are bounded',as
   // @ts-ignore browser module
   const s=await import('/apps/editor/src/storage.ts' as string);
   // @ts-ignore browser module
-  const {makeComposition}=await import('/packages/framework/src/compositions.ts' as string);
+  const {makeComposition}=await import('/tests/framework/compositions.ts' as string);
   const section=makeComposition('split','page'),source=section.widgets.find((w:any)=>w.type==='image').src;
   const second=structuredClone(section);second.id='second';second.widgets.forEach((w:any,i:number)=>w.id='second-'+i);
   const doc={schemaVersion:1,kind:'page',title:'Migration',pages:[section,second]};localStorage.setItem('alabuga.builder.document.v1',JSON.stringify(doc));
@@ -42,18 +42,4 @@ test('asset chooser cropping, visual compatibility and motion grouping persist',
  await openEditor(page);await page.locator('.project-menu summary').click();await page.locator('#demo-deck').click();await page.locator('#page-settings-open').click();await page.getByRole('button',{name:'Выбрать композицию визуально',exact:true}).click();await expect(page.locator('.variant-card button:disabled').first()).toBeVisible();await page.locator('.asset-library').getByRole('button',{name:'Закрыть',exact:true}).click();await page.getByRole('tab',{name:'Оформление',exact:true}).click();await page.getByRole('button',{name:'Выбрать из библиотеки',exact:true}).click();await page.locator('.asset-card').first().click();await expect.poll(async()=>(await savedDocument(page)).pages[0].appearance.theme).toBe('image');
  const crop=page.getByRole('slider',{name:'Кадр фона',exact:true});await crop.focus();await page.keyboard.press('ArrowRight');await expect.poll(async()=>(await savedDocument(page)).pages[0].appearance.focalPoint.x).toBe(55);
  await page.getByRole('tab',{name:'Поведение',exact:true}).click();await page.getByRole('button',{name:'Последовательное раскрытие',exact:true}).click();await page.getByRole('button',{name:'Вместе',exact:true}).first().click();const doc=await savedDocument(page);expect(doc.pages[0].widgets[0].motion.step).toBe(doc.pages[0].widgets[1].motion.step);await page.reload();await expect(page.locator('#canvas .af-slide')).toHaveCount(11);
-});
-
-test('50 slides and 500 widgets update without replacing unrelated nodes or losing focus',async({page},info)=>{
- await page.goto('/demos/showcase.html');
- const result=await page.evaluate(async()=>{
-  // @ts-ignore browser module
-  const {renderDocument}=await import('/packages/framework/src/runtime.ts' as string);
-  const pages=Array.from({length:50},(_,i)=>({id:'p'+i,title:'Slide '+i,grid:{columns:12,rowHeight:64,gap:16},widgets:Array.from({length:10},(_,j)=>({id:`w${i}-${j}`,title:'',type:'text',position:{col:1+(j%5)*2,row:1+Math.floor(j/5)*3,width:2,height:2},content:[{type:'paragraph',text:'Editable content',dropCap:false}]}))}));
-  const doc={schemaVersion:3,kind:'presentation',title:'Large document',pages};const host=document.createElement('div');document.body.replaceChildren(host);const start=performance.now();const c=renderDocument(host,doc,{editing:true});const renderMs=performance.now()-start;
-  const untouched=host.querySelector('[data-widget-id="w0-1"]') as HTMLElement;untouched.contentEditable='true';untouched.focus();const selection=window.getSelection()!,range=document.createRange();range.selectNodeContents(untouched);range.collapse(false);selection.removeAllRanges();selection.addRange(range);const node=selection.anchorNode,offset=selection.anchorOffset;
-  doc.pages[25].widgets[2].content[0].text='Updated';const updateStart=performance.now();c.update(doc);const updateMs=performance.now()-updateStart;
-  return {renderMs,updateMs,identity:untouched===host.querySelector('[data-widget-id="w0-1"]'),focus:document.activeElement===untouched,selection:selection.anchorNode===node&&selection.anchorOffset===offset,count:host.querySelectorAll('[data-widget-id]').length};
- });
- await info.attach('performance.json',{body:JSON.stringify(result,null,2),contentType:'application/json'});expect(result.count).toBe(500);expect(result.identity&&result.focus&&result.selection).toBe(true);expect(result.updateMs).toBeLessThan(1500);expect(result.renderMs).toBeLessThan(5000);
 });

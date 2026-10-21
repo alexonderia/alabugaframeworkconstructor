@@ -1,0 +1,3 @@
+registry=https://registry.npmjs.org/
+@alabuga:registry=https://npm.example.org/
+# Put //npm.example.org/:_authToken in your user npm config, not Git.

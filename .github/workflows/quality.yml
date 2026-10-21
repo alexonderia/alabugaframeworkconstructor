@@ -1,32 +1,32 @@
-name: Quality
+name: Constructor quality
 on:
   pull_request:
   push:
     branches: [main]
-permissions:
-  contents: read
+permissions: {contents: read}
+env:
+  ALABUGA_NPM_REGISTRY: ${{ vars.ALABUGA_NPM_REGISTRY }}
+  NODE_AUTH_TOKEN: ${{ secrets.FRAMEWORK_READ_TOKEN }}
 jobs:
   checks:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          lfs: false
+        with: {lfs: false}
       - uses: actions/setup-node@v4
-        with:
-          node-version-file: .node-version
-          cache: npm
+        with: {node-version-file: .node-version, cache: npm, registry-url: '${{ vars.ALABUGA_NPM_REGISTRY }}'}
+      - run: test -n "$ALABUGA_NPM_REGISTRY" && node scripts/configure-registry.mjs "$ALABUGA_NPM_REGISTRY"
       - run: npm install --global npm@11.17.0
       - run: npm ci
-      - run: npm test && npm run test:ai && npm run test:bootstrap
+      - run: npm test && npm run test:ai && npm run test:bootstrap && npm run test:compatibility
       - run: npm run build && npm run check:docs
       - run: npx playwright install --with-deps
       - run: npm run test:browser -- --workers=1
-      - run: node scripts/release-smoke.mjs
+      - run: npm run test:release
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: browser-evidence
+          name: constructor-evidence
           path: |
             test-results
             artifacts
@@ -35,9 +35,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version-file: .node-version}
+      - run: node scripts/write-ci-npmrc.mjs
       - run: docker compose config --quiet
-      - run: docker compose build web api
+      - run: docker compose -f compose.yaml -f compose.build.yaml build web api
       - run: docker compose up -d --wait
       - run: curl --fail http://127.0.0.1:4176/demo/ && curl --fail http://127.0.0.1:4176/api/ai/health
       - if: always()
         run: docker compose down
+
+  minimum-framework:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version-file: .node-version, registry-url: '${{ vars.ALABUGA_NPM_REGISTRY }}'}
+      - run: node scripts/configure-registry.mjs "$ALABUGA_NPM_REGISTRY"
+      - run: node scripts/select-framework-version.mjs --minimum
+      - run: npm install --global npm@11.17.0 && npm install
+      - run: npm test && npm run test:ai && npm run test:compatibility && npm run build

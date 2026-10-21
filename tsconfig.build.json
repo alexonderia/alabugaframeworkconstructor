@@ -1,1 +1,0 @@
-{"extends":"./tsconfig.json","compilerOptions":{"noEmit":false,"declaration":true,"emitDeclarationOnly":true,"outDir":"packages/framework/dist/types","rootDir":"packages/framework/src"},"include":["packages/framework/src/**/*.ts"],"exclude":[]}

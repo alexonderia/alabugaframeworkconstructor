@@ -1,0 +1,50 @@
+name: Constructor release
+on:
+  push:
+    tags: ['v*']
+permissions: {contents: write, packages: write}
+concurrency: {group: constructor-release, cancel-in-progress: false}
+env:
+  ALABUGA_NPM_REGISTRY: ${{ vars.ALABUGA_NPM_REGISTRY }}
+  NODE_AUTH_TOKEN: ${{ secrets.FRAMEWORK_READ_TOKEN }}
+  VITE_FRAMEWORK_DOCS_URL: ${{ vars.FRAMEWORK_DOCS_URL }}
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    environment: constructor-release
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version-file: .node-version, registry-url: '${{ vars.ALABUGA_NPM_REGISTRY }}'}
+      - run: node -e "if(process.env.GITHUB_REF_NAME!=='v'+require('./package.json').version)process.exit(1)"
+      - run: node scripts/configure-registry.mjs "$ALABUGA_NPM_REGISTRY"
+      - run: npm install --global npm@11.17.0 && npm ci
+      - run: npm test && npm run test:ai && npm run test:bootstrap && npm run test:compatibility && npm run build && npm run check:docs
+      - run: npx playwright install --with-deps && npm run test:browser -- --workers=1 && npm run test:release
+      - run: node scripts/write-ci-npmrc.mjs
+      - uses: docker/login-action@v3
+        with: {registry: ghcr.io, username: '${{ github.actor }}', password: '${{ secrets.GITHUB_TOKEN }}'}
+      - name: Build and push a matching image pair
+        shell: bash
+        run: |
+          repo="${GITHUB_REPOSITORY,,}"
+          export AF_WEB_IMAGE="ghcr.io/$repo/web:$GITHUB_REF_NAME"
+          export AF_API_IMAGE="ghcr.io/$repo/api:$GITHUB_REF_NAME"
+          export AF_APP_VERSION="${GITHUB_REF_NAME#v}" AF_REVISION="$GITHUB_SHA"
+          docker compose -f compose.yaml -f compose.build.yaml build web api
+          docker compose push web api
+          docker tag "$AF_WEB_IMAGE" "ghcr.io/$repo/web:$GITHUB_SHA"
+          docker tag "$AF_API_IMAGE" "ghcr.io/$repo/api:$GITHUB_SHA"
+          docker push "ghcr.io/$repo/web:$GITHUB_SHA"
+          docker push "ghcr.io/$repo/api:$GITHUB_SHA"
+          web_digest=$(docker inspect --format '{{index .RepoDigests 0}}' "$AF_WEB_IMAGE")
+          api_digest=$(docker inspect --format '{{index .RepoDigests 0}}' "$AF_API_IMAGE")
+          [[ "$web_digest" == *@sha256:* && "$api_digest" == *@sha256:* ]]
+          printf 'AF_WEB_IMAGE=%s\nAF_API_IMAGE=%s\n' "$web_digest" "$api_digest" > release-images.env
+      - uses: actions/upload-artifact@v4
+        with: {name: constructor-images, path: release-images.env}
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const release=await github.rest.repos.createRelease({owner:context.repo.owner,repo:context.repo.repo,tag_name:context.ref.replace('refs/tags/',''),generate_release_notes:true});
+            const fs=require('fs');await github.rest.repos.uploadReleaseAsset({owner:context.repo.owner,repo:context.repo.repo,release_id:release.data.id,name:'release-images.env',data:fs.readFileSync('release-images.env')});

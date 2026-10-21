@@ -3,15 +3,27 @@ services:
   editor:
     build:
       context: .
+      args:
+        ALABUGA_NPM_REGISTRY: ${ALABUGA_NPM_REGISTRY:?Set registry URL}
+        ALABUGA_ALLOW_DOCKER_REGISTRY: ${ALABUGA_ALLOW_DOCKER_REGISTRY:-0}
+      secrets: [npmrc]
       target: development
     ports: ["127.0.0.1:5173:5173"]
-    environment:
-      AF_AI_PROXY: ${AF_AI_PROXY:-http://host.docker.internal:4176}
-      AF_POLLING: "1"
     extra_hosts: ["host.docker.internal:host-gateway"]
     volumes:
       - .:/app
       - dependencies:/app/node_modules
-    command: ["sh", "-c", "npm ci && npm run dev -- --host 0.0.0.0 --port 5173 --strictPort"]
+    secrets: [npmrc]
+    environment:
+      NPM_CONFIG_USERCONFIG: /run/secrets/npmrc
+      ALABUGA_NPM_REGISTRY: ${ALABUGA_NPM_REGISTRY}
+      AF_AI_PROXY: ${AF_AI_PROXY:-http://host.docker.internal:4176}
+      AF_POLLING: "1"
+      VITE_FRAMEWORK_DOCS_URL: ${VITE_FRAMEWORK_DOCS_URL:-http://127.0.0.1:4391/}
+    command: ["sh", "-c", "node scripts/configure-registry.mjs && npm ci && npm run dev -- --host 0.0.0.0 --port 5173 --strictPort"]
 volumes:
   dependencies:
+
+secrets:
+  npmrc:
+    file: ${ALABUGA_NPMRC_FILE:?Set path to read-only user npm config}

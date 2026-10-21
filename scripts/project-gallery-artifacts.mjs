@@ -5,7 +5,7 @@ const browser=await chromium.launch(),page=await browser.newPage({viewport:{widt
 await page.goto('http://127.0.0.1:4175/builder/');await page.locator('.library-tools').waitFor();
 await page.screenshot({path:dir+'/empty.png',fullPage:true});
 await page.getByRole('button',{name:'Создать сайт',exact:false}).click();await page.screenshot({path:dir+'/create.png'});await page.locator('.product-dialog').getByRole('button',{name:'Закрыть'}).click();
-await page.evaluate(async()=>{const s=await import('/apps/editor/src/storage.ts'),c=await import('/packages/framework/src/compositions.ts');await s.saveProject('landing',c.showcase('page'));await s.saveProject('slides',c.showcase('presentation'))});await page.reload();await page.locator('.project-card').first().waitFor();
+await page.evaluate(async()=>{const s=await import('/apps/editor/src/storage.ts'),c=await import('/tests/framework/compositions.ts');await s.saveProject('landing',c.showcase('page'));await s.saveProject('slides',c.showcase('presentation'))});await page.reload();await page.locator('.project-card').first().waitFor();
 await page.getByRole('searchbox').fill('Не найдено');await page.screenshot({path:dir+'/search-empty.png',fullPage:true});await page.getByRole('searchbox').fill('');
 await page.goto('http://127.0.0.1:4175/builder/#/edit/slides');await page.locator('#page-settings-open').click();
 for(const width of [390,768,1440,1920]){await page.setViewportSize({width,height:1000});await page.screenshot({path:dir+`/editor-${width}.png`,fullPage:true})}

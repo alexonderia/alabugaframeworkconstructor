@@ -13,7 +13,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version-file: .node-version
+          registry-url: ${{ vars.ALABUGA_NPM_REGISTRY }}
+      - run: node scripts/configure-registry.mjs
+        env:
+          ALABUGA_NPM_REGISTRY: ${{ vars.ALABUGA_NPM_REGISTRY }}
       - run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.FRAMEWORK_READ_TOKEN }}
+      - run: npx playwright install chromium
       - run: npm run build
       - run: npm run test:model
       - uses: actions/upload-artifact@v4

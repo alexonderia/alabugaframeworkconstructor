@@ -42,7 +42,7 @@ try{
   const result=await page.evaluate(async({target,prompt,sources,demoFacts})=>{
    if(demoFacts)sources=(await import('/packages/ai/src/demo-facts.ts')).productFacts;
    const {newDraft,generateDraft}=await import('/apps/editor/src/ai/generation.ts');const {OllamaProvider}=await import('/packages/ai/src/provider.ts');const {checkSection}=await import('/apps/editor/src/ai/quality.ts');const {draftDocument}=await import('/packages/ai/src/contracts.ts');
-   const {brandAssets}=await import('/packages/framework/src/brand.ts');const manifest=await (await fetch('/assets/brand/manifest.json')).json();
+   const {brandAssets}=await import('/tests/framework/brand.ts');const manifest=await (await fetch('/assets/brand/manifest.json')).json();
    const request={kind:target==='presentation'||target==='slide'?'presentation':'page',scope:target==='page'||target==='presentation'?'document':'section',count:target==='page'?5:target==='presentation'?6:1,prompt,audience:'Авторы контента',sources};
    const wanted=[brandAssets.logo,brandAssets.blue,brandAssets.glass];const materials=manifest.assets.filter(a=>wanted.includes(a.url)).map(a=>({id:a.id,name:a.name,description:a.usage,src:a.url,category:a.category}));
    const provider=new OllamaProvider();
@@ -53,7 +53,7 @@ try{
   await writeFile(`${out}/case-${String(i+1).padStart(2,'0')}.json`,JSON.stringify(result,null,2));
   if(examples&&success)await writeFile(`${out}/${i===18?'landing':'presentation'}-source.json`,JSON.stringify(result,null,2));
   if(result.document){
-   await page.evaluate(async doc=>{const {renderDocument}=await import('/packages/framework/src/runtime.ts');const host=document.createElement('div');host.id='ai-acceptance';document.body.replaceChildren(host);window.aiAcceptance=renderDocument(host,doc,{editing:true});await document.fonts.ready},result.document);
+   await page.evaluate(async doc=>{const {renderDocument}=await import('/tests/framework/runtime.ts');const host=document.createElement('div');host.id='ai-acceptance';document.body.replaceChildren(host);window.aiAcceptance=renderDocument(host,doc,{editing:true});await document.fonts.ready},result.document);
    await page.screenshot({path:`${out}/case-${String(i+1).padStart(2,'0')}.png`,fullPage:target==='page'});
    if(target==='presentation')for(let s=0;s<6;s++){await page.evaluate(i=>window.aiAcceptance.goToSlide(i),s);await page.screenshot({path:`${out}/slide-${s+1}.png`})}
    if(target==='page'){await page.setViewportSize({width:390,height:844});await page.screenshot({path:`${out}/landing-mobile.png`,fullPage:true});await page.setViewportSize({width:1440,height:1000})}

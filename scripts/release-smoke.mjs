@@ -6,8 +6,9 @@ import {pathToFileURL} from 'node:url';
 const port=process.env.AF_SMOKE_PORT||'4388',base=process.env.AF_SMOKE_URL||`http://127.0.0.1:${port}`,out=resolve('artifacts/release-smoke');
 await mkdir(out,{recursive:true});
 const service=process.env.AF_SMOKE_URL?null:spawn(process.execPath,['apps/ai-server/dist/ai-server.js'],{windowsHide:true,stdio:'inherit',env:{...process.env,AF_AI_PORT:port,AF_OLLAMA_PORT:'1'}});
-const report={base,withoutModel:!process.env.AF_SMOKE_URL,documents:[],screens:[]},browser=await chromium.launch();
+const report={base,modelAcceptanceRun:false,externalService:Boolean(process.env.AF_SMOKE_URL),documents:[],screens:[]};let browser;
 try{
+ browser=await chromium.launch({channel:process.env.AF_BROWSER_CHANNEL||undefined});
  for(let i=0;i<60;i++){try{if((await fetch(base+'/api/ai/health')).ok)break}catch{}await new Promise(r=>setTimeout(r,250))}
  const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(String(e)));
  for(const lang of ['ru','en']){
@@ -27,4 +28,4 @@ try{
   await offline.close();report.documents.push({kind,count,exportedOffline:true});
  }
  expect(errors).toEqual([]);report.passed=true;
-}catch(e){report.passed=false;report.error=String(e);throw e}finally{await writeFile(resolve(out,'report.json'),JSON.stringify(report,null,2));await browser.close();service?.kill()}
+}catch(e){report.passed=false;report.error=String(e);throw e}finally{await writeFile(resolve(out,'report.json'),JSON.stringify(report,null,2));await browser?.close();service?.kill()}

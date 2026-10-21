@@ -1,4 +1,5 @@
-import {renderDocument,type DocumentController,type AFDocument} from '@alabuga/framework';
+import {renderDocument} from './framework-adapter';
+import {type DocumentController,type AFDocument} from '@alabuga/framework';
 import {el} from '@alabuga/framework/dom';
 import {exportHTML,download} from './export';
 export async function downloadEditorHTML(doc:AFDocument){

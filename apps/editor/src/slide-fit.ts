@@ -1,6 +1,8 @@
 import {el,button} from '@alabuga/framework/dom';
-import {fitSlide,slideBackgrounds,type FitSlideOptions} from '@alabuga/framework/slide-fit';
-import {renderDocument} from '@alabuga/framework/runtime';
+import {fitSlide} from './framework-adapter';
+import {slideBackgrounds,type FitSlideOptions} from '@alabuga/framework/slide-fit';
+import {renderDocument} from './framework-adapter';
+
 import type {AFDocument} from '@alabuga/framework/schema';
 
 /** A detached preview; applying never overwrites edits made during calculation. */

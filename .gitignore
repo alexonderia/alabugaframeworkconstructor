@@ -20,3 +20,8 @@ public/demo/
 validation-*.json
 design/pptx-originals/
 **/__pycache__/
+
+.npmrc
+.env.registry
+infra/registry/secrets/
+infra/registry/backups/

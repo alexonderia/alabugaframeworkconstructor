@@ -1,8 +1,10 @@
+import '@alabuga/framework/standalone.css';
 import '@alabuga/framework';
 import '../src/product.css';
 import './style.css';
 import {el,button} from '@alabuga/framework/dom';
-import {renderDocument} from '@alabuga/framework/runtime';
+import {renderDocument} from '../src/framework-adapter';
+
 import {demoDocument} from '@alabuga/framework/demo-documents';
 import {brandAssets} from '@alabuga/framework/brand';
 import {saveProject,writeSetting} from '../src/storage';
@@ -10,8 +12,9 @@ const openAI:typeof import('../src/ai/panel').openAI=(...args)=>import('../src/a
 import {draftDocument} from '@alabuga/ai/contracts';
 import {openDiagnostics} from './diagnostics';
 const root=document.querySelector<HTMLElement>('#demo')!;let busy=false;
+const frameworkDocsUrl=import.meta.env.VITE_FRAMEWORK_DOCS_URL||'http://127.0.0.1:4391/';
 const header=el('header','demo-header'),brand=el('a','demo-brand'),logo=el('img');logo.src=brandAssets.logo;logo.alt='Алабуга';brand.href='./';brand.append(logo,el('strong','','Framework'));const nav=el('nav');
-for(const [label,href]of [['Мои проекты','../builder/'],['Помощь','./guide.html'],['Документация','../index.html']]){const a=el('a','',label);a.href=href;nav.append(a)}
+for(const [label,href]of [['Мои проекты','../builder/'],['Помощь','./guide.html'],['Документация',frameworkDocsUrl]]){const a=el('a','',label);a.href=href;nav.append(a)}
 nav.append(button('Готовность к показу',()=>void openDiagnostics(),'af-btn af-btn--secondary'));header.append(brand,nav);root.append(header);
 const hero=el('section','demo-hero');hero.append(el('p','demo-kicker','САЙТЫ И ПРЕЗЕНТАЦИИ · ЛОКАЛЬНО'),el('h1','','От идеи —\nк своей истории.'),el('p','demo-lead','Начните с готовой композиции. Настройте каждый элемент. Доверьте первый черновик локальному ИИ.'));
 const select=el('select','af-select');select.setAttribute('aria-label','Формат проекта');for(const [v,t]of [['page','Сайт'],['presentation','Презентация']]){const o=el('option','',t);o.value=v;select.append(o)}

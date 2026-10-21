@@ -2,9 +2,6 @@ name: alabuga
 services:
   web:
     image: ${AF_WEB_IMAGE:-alabuga-web:local}
-    build:
-      context: .
-      target: web
     ports: ["127.0.0.1:${AF_WEB_PORT:-4176}:8080"]
     depends_on:
       api:
@@ -12,9 +9,6 @@ services:
     restart: unless-stopped
   api:
     image: ${AF_API_IMAGE:-alabuga-api:local}
-    build:
-      context: .
-      target: api
     environment:
       AF_OLLAMA_URL: ${AF_OLLAMA_URL:-http://ollama:11434}
       AF_AI_CONTEXT: ${AF_AI_CONTEXT:-4096}
@@ -37,9 +31,6 @@ services:
   model-init:
     profiles: ["ai"]
     image: ${AF_API_IMAGE:-alabuga-api:local}
-    build:
-      context: .
-      target: api
     command: ["node", "bootstrap.js"]
     user: "0:0"
     mem_limit: 512m
