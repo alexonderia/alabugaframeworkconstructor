@@ -1,10 +1,11 @@
 import {frameworkDom as dom} from './framework-adapter';
 import {el,button} from '@alabuga/framework/dom';
 import type {AFDocument} from '@alabuga/framework/schema';
-export type QualityIssue={section:number;widget?:string;message:string;fix:string};
+import {documentSurface} from './document-surface';
+export type QualityIssue={section:number;widget?:string;message:string;fix:string;blocking?:boolean;screens?:string[]};
 export function inspectQuality(doc:AFDocument,canvas:HTMLElement):QualityIssue[]{
  const issues:QualityIssue[]=[];const targets=new Set(doc.pages.map(p=>p.id));
- const add=(section:number,widget:string|undefined,message:string,fix:string)=>issues.push({section,widget,message,fix});
+ const add=(section:number,widget:string|undefined,message:string,fix:string)=>issues.push({section,widget,message,fix,blocking:message==='Содержимое выходит за рамку'||message.startsWith('Не удалось загрузить')});
  doc.pages.forEach((p,index)=>{
   const background=canvas.querySelector<HTMLImageElement>(dom.sectionBackground(p.id));if(background?.complete&&!background.naturalWidth)add(index,undefined,'Не удалось загрузить фон','Выберите фоновое изображение из библиотеки.');
   if(p.appearance?.background&&/^https?:/i.test(p.appearance.background))add(index,undefined,'Внешний фон требует сети: '+p.appearance.background,'Загрузите файл в библиотеку для автономного экспорта.');
@@ -20,4 +21,22 @@ export function inspectQuality(doc:AFDocument,canvas:HTMLElement):QualityIssue[]
  });return issues;
 }
 function contrast(a:string,b:string){const lum=(s:string)=>{const rgb=s.match(/[\d.]+/g)?.slice(0,3).map(Number);if(!rgb||rgb.length!==3)return null;return rgb.map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4}).reduce((sum,v,i)=>sum+v*[.2126,.7152,.0722][i],0)};const x=lum(a),y=lum(b);return x===null||y===null?null:(Math.max(x,y)+.05)/(Math.min(x,y)+.05)}
-export function qualityDialog(doc:AFDocument,canvas:HTMLElement,go:(issue:QualityIssue)=>void){const dialog=el('dialog','project-library');dialog.append(el('h2','','Проверка качества'),button('Закрыть',()=>dialog.close()));const issues=inspectQuality(doc,canvas);if(!issues.length)dialog.append(el('p','','Автоматических замечаний нет. Проверьте композицию и читаемость фотографий в предпросмотре.'));for(const issue of issues){const row=el('div','quality-issue');row.append(el('h3','',`Секция ${issue.section+1}: ${issue.message}`),el('p','',issue.fix),button('Перейти к настройкам',()=>{dialog.close();go(issue)}));dialog.append(row)}document.body.append(dialog);dialog.addEventListener('close',()=>dialog.remove());dialog.showModal()}
+export async function preflightDocument(doc:AFDocument):Promise<QualityIssue[]>{
+ const host=el('div');host.style.cssText='position:fixed;left:-30000px;top:0;width:1600px;height:1100px;opacity:0;pointer-events:none';host.setAttribute('aria-hidden','true');document.body.append(host);
+ const surface=documentSurface(host,doc,{autoHeight:false}),found=new Map<string,QualityIssue>();
+ try{
+  await surface.ready;
+  const screens:readonly [string,number][]=doc.kind==='presentation'?[['Слайд',1600]]:[['Компьютер',1440],['Планшет',768],['Телефон',390]];
+  for(const [screen,width]of screens){await surface.setWidth(width);const issues=inspectQuality(doc,surface.root!);
+   if(doc.kind==='presentation')for(const problem of surface.controller!.checkOverflow()){const match=problem.match(/\d+/),section=Math.max(0,Number(match?.[0]??1)-1);issues.push({section,message:problem,fix:'Подберите оформление или увеличьте область содержимого.',blocking:true})}
+   for(const issue of issues){const key=JSON.stringify([issue.section,issue.widget,issue.message]);const previous=found.get(key);if(previous)previous.screens!.push(screen);else found.set(key,{...issue,screens:[screen]})}
+  }
+  return [...found.values()];
+ }finally{surface.destroy();host.remove()}
+}
+export function qualityDialog(doc:AFDocument,_canvas:HTMLElement,go:(issue:QualityIssue)=>void){
+ const dialog=el('dialog','project-library'),status=el('p','','Проверяем документ на компьютере, планшете и телефоне…');status.setAttribute('role','status');dialog.setAttribute('aria-label','Проверка качества');dialog.append(el('h2','','Проверка качества'),button('Закрыть',()=>dialog.close()),status);document.body.append(dialog);dialog.addEventListener('close',()=>dialog.remove());dialog.showModal();
+ void preflightDocument(doc).then(issues=>{if(!dialog.isConnected)return;status.textContent=issues.length?'Найдены замечания. Перейдите к настройкам нужного блока.':'Автоматических замечаний нет. Проверьте композицию и читаемость фотографий в предпросмотре.';
+  for(const issue of issues){const row=el('div','quality-issue');row.append(el('h3','',`Секция ${issue.section+1} · ${issue.screens?.join(', ')}: ${issue.message}`),el('p','',issue.fix),button('Перейти к настройкам',()=>{dialog.close();go(issue)}));dialog.append(row)}
+ }).catch(error=>{if(dialog.isConnected)status.textContent='Проверка не завершена: '+(error as Error).message});
+}

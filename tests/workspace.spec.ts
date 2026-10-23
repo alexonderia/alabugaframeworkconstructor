@@ -4,7 +4,7 @@ import {savedDocument} from './project-helper';
 
 test('zoom changes physical slide size and Fit restores the canvas',async({page,browserName})=>{
  await openEditor(page);await page.locator('.project-menu summary').click();await page.locator('#demo-deck').click();const slide=page.locator('#canvas .af-slide--active'),before=await slide.boundingBox();await page.locator('.canvas-zoom').getByRole('button',{name:'+',exact:true}).click();await expect.poll(async()=>(await slide.boundingBox())!.width).toBeGreaterThan(before!.width*1.08);await page.locator('.canvas-zoom').getByRole('button',{name:'Вписать',exact:true}).click();await expect.poll(async()=>Math.abs((await slide.boundingBox())!.width-before!.width)).toBeLessThan(2);
- if(browserName==='chromium'){await page.locator('#preview').click();await page.getByRole('button',{name:'На весь экран',exact:true}).click();await expect.poll(()=>page.evaluate(()=>!!document.fullscreenElement)).toBe(true);const bounds=await page.locator('.project-preview .af-slide--active').boundingBox();expect(bounds!.width/bounds!.height).toBeCloseTo(16/9,2);await page.evaluate(()=>document.exitFullscreen())}
+ if(browserName==='chromium'){await page.locator('#preview').click();await page.frameLocator('.project-preview iframe').getByRole('button',{name:'На весь экран',exact:true}).click();await expect.poll(()=>page.evaluate(()=>!!document.fullscreenElement)).toBe(true);const bounds=await page.frameLocator('.project-preview iframe').locator('.af-slide--active').boundingBox();expect(bounds!.width/bounds!.height).toBeCloseTo(16/9,2);await page.evaluate(()=>document.exitFullscreen())}
 });
 
 test('document properties edit the title and switch to section and element context',async({page})=>{

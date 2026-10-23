@@ -13,7 +13,9 @@ test('material probes time out, support cancellation and release temporary URLs'
   const original=AbortSignal.timeout.bind(AbortSignal);AbortSignal.timeout=ms=>original(ms===8000?100:ms);
   const urls=new Set<string>(),create=URL.createObjectURL.bind(URL),revoke=URL.revokeObjectURL.bind(URL);
   URL.createObjectURL=blob=>{const url=create(blob);urls.add(url);return url};URL.revokeObjectURL=url=>{urls.delete(url);revoke(url)};
-  const controller=new AbortController(),timeout=await checkMaterial('/probe-hang.webp',controller.signal),missing=await checkMaterial('/probe-missing.webp',controller.signal),broken=await checkMaterial('/probe-broken.webp',controller.signal);
+  const controller=new AbortController(),timeout=await checkMaterial('/probe-hang.webp',controller.signal);
+  AbortSignal.timeout=original; // Only the intentional hang uses a short deadline.
+  const missing=await checkMaterial('/probe-missing.webp',controller.signal),broken=await checkMaterial('/probe-broken.webp',controller.signal);
   const cancel=new AbortController(),timer=setTimeout(()=>cancel.abort(),20);let cancelled=false;
   try{await checkMaterial('/probe-hang.webp',cancel.signal)}catch(e){cancelled=(e as Error).name==='AbortError'}finally{clearTimeout(timer)}
   return {timeout,missing,broken,cancelled,temporaryURLs:urls.size};
@@ -22,7 +24,7 @@ test('material probes time out, support cancellation and release temporary URLs'
 });
 
 test('a stalled status request times out and the user can retry',async({page})=>{
- await page.addInitScript(()=>{const original=AbortSignal.timeout.bind(AbortSignal);AbortSignal.timeout=ms=>original(ms===8000?150:ms)});
+ await page.addInitScript(()=>{const original=AbortSignal.timeout.bind(AbortSignal);let shortened=false;AbortSignal.timeout=ms=>{if(ms===8000&&!shortened){shortened=true;return original(150)}return original(ms)}});
  let calls=0;
  await page.route('**/api/ai/status',r=>{if(++calls===1)return;return r.fulfill({json:{model:'qwen3.5:2b',version:'test',digest:'test',loaded:[]}})});
  await page.route('**/api/ai/diagnostics',r=>r.fulfill({json:{gpu:[]}}));

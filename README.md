@@ -22,7 +22,7 @@ Docker: задайте ALABUGA_NPM_REGISTRY и ALABUGA_NPMRC_FILE по `.env.exa
 
 Проверки: `npm test`, `npm run test:ai`, `npm run test:bootstrap`, `npm run build`, `npm run check:docs`, `npm run test:compatibility`, `npm run test:browser`, `npm run test:release`. Установите браузеры через `npx playwright install`; для локального Chrome доступна переменная AF_BROWSER_CHANNEL=chrome. GPU-приёмка выполняется отдельно.
 
-IndexedDB alabuga-workspace остаётся версии 2. Документы схем 1–3 поддерживаются; файлы проекта версий 1–3 и прежние файлы без версии читаются. Неизвестные будущие версии отклоняются до сохранения. Сохраняйте origin: изменение протокола, домена или порта не переносит браузерные проекты. Резервная копия проекта — переносимый JSON с материалами; Docker volumes проекты не содержат.
+IndexedDB alabuga-workspace обновляется до версии 3 с сохранением данных баз 1–2. Документы схем 1–3 поддерживаются; файлы проекта версий 1–3 и прежние файлы без версии читаются. Неизвестные будущие версии отклоняются до сохранения. Сохраняйте origin: изменение протокола, домена или порта не переносит браузерные проекты. Резервная копия проекта — переносимый JSON с материалами; Docker volumes проекты не содержат.
 
 Framework обновляется отдельным PR с точной версией и lock-файлом. Публикация библиотеки не выпускает Constructor. Откат приложения — предыдущая согласованная пара AF_WEB_IMAGE/AF_API_IMAGE, `docker compose up -d --no-build web api`; volumes сохраняются.
 

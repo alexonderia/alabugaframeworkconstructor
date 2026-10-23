@@ -1,5 +1,7 @@
 # Local AI assistant
 
+Before generation, the interface shows checking, preparation, ready or unavailable state. Generation requires confirmed readiness; failed checks can be retried. Result commands appear when a draft exists. On phones, «К результату и замечаниям» jumps to progress and issues. Current errors are brought into view; installation commands belong to administrator help.
+
 ## Drafts and historical acceptance
 
 Qwen3.5-2B creates editable sections and slides from corporate compositions. It first creates an isolated draft; the project changes only after «Применить черновик». Generation, editing, restoration, application and undo work, but content acceptance is a separate requirement.

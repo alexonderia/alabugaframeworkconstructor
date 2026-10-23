@@ -1,8 +1,11 @@
+import {openTools} from './property-helper';
+import {} from './property-helper';
 import {openEditor} from './open-editor';
 import {test,expect,type Page} from '@playwright/test';
 import {fixtureCommands} from './ai-fixtures';
 import {savedDocument} from './project-helper';
 async function mockAI(page:Page,delay=0){
+ await page.route('**/api/ai/readiness',route=>route.fulfill({json:{ready:true}}));
  await page.route('**/api/ai/status',route=>route.fulfill({json:{model:'qwen3.5:2b',version:'test-double',digest:'fixture-only',context:4096}}));
  await page.route('**/api/ai/generate',async route=>{
   if(delay)await new Promise(r=>setTimeout(r,delay));
@@ -14,7 +17,7 @@ async function mockAI(page:Page,delay=0){
   await route.fulfill({json:{data}});
  });
 }
-async function open(page:Page){await openEditor(page);await page.getByRole('button',{name:'Создать с ИИ',exact:true}).click();await expect(page.locator('.ai-dialog')).toBeVisible()}
+async function open(page:Page){await openEditor(page);await openTools(page);await page.getByRole('button',{name:'Создать с ИИ',exact:true}).click();await expect(page.locator('.ai-dialog')).toBeVisible()}
 test('source-backed outline retains long facts in an editable multiline field',async({page})=>{
  await mockAI(page);await open(page);await page.getByLabel('Результат',{exact:true}).selectOption('page');await page.getByLabel('Количество',{exact:true}).fill('1');await page.getByLabel('Запрос',{exact:true}).fill('Создай страницу об инструментах');
  const source='Автор выбирает композицию и редактирует содержание на холсте, меняет расположение элементов в сетке, загружает изображения, проверяет результат в предпросмотре, сохраняет проект и экспортирует готовый документ в HTML';
@@ -36,7 +39,7 @@ test('full page creates a separate project and keeps prior project',async({page}
 });
 test('six slide draft, repeat and standalone HTML export',async({page})=>{
  await mockAI(page);await open(page);await generate(page,'presentation',6);await page.getByLabel('Секция черновика',{exact:true}).selectOption('2');await page.getByRole('button',{name:'Повторить секцию',exact:true}).click();await expect(page.locator('.ai-progress')).toContainText('Черновик готов',{timeout:30000});await page.getByLabel('Содержание и замечания проверены').check();await page.getByRole('button',{name:'Применить черновик',exact:true}).click();await expect(page.locator('.ai-dialog')).toHaveCount(0);await expect(page.locator('#canvas .af-slide')).toHaveCount(6);
- const download=page.waitForEvent('download');await page.locator('#export').click();expect((await download).suggestedFilename()).toBe('alabuga-document.html');
+ const download=page.waitForEvent('download');await page.locator('#export').click();expect((await download).suggestedFilename()).toBe('История конструктора.html');
 });
 test('unavailable model and invalid commands leave project untouched',async({page})=>{
  await mockAI(page);await page.route('**/api/ai/status',r=>r.fulfill({status:503,json:{error:'Модель отсутствует. Выполните npm run ai:setup.'}}));await open(page);const before=await savedDocument(page);await page.getByLabel('Запрос',{exact:true}).fill('Создай слайд');await page.getByRole('button',{name:'Создать черновик',exact:true}).click();await expect(page.locator('.ai-progress')).toContainText('Модель отсутствует');expect(await savedDocument(page)).toEqual(before);await expect(page.locator('[data-apply]')).toBeDisabled();

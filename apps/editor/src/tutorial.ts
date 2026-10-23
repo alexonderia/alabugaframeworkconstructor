@@ -3,7 +3,7 @@ import {readSetting,writeSetting} from './storage';
 export type TutorialState={enabled:boolean;section:number;done:number[]};
 export async function tutorialState(id:string){return (await readSetting<{value:TutorialState}>('tutorial:'+id))?.value}
 export function tutorial(host:HTMLElement,id:string,state:TutorialState|undefined,go:(step:number)=>void){
- const panel=el('details','author-tutorial');panel.open=!!state?.enabled;panel.hidden=!state;panel.append(el('summary','','Попробуйте пять действий'));
+ const panel=el('details','author-tutorial');panel.open=!!state?.enabled;panel.hidden=state?.enabled===false;panel.append(el('summary','','Попробуйте пять действий'));
  const data=state??{enabled:true,section:0,done:[]};const list=el('ol');
  const names=['Изменить заголовок','Сменить компоновку','Заменить изображение','Настроить оформление элемента','Предпросмотр и экспорт'];
  const save=()=>void writeSetting('tutorial:'+id,data).catch(()=>{feedback.textContent='Не удалось сохранить отметки обучения.'});

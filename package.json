@@ -38,7 +38,7 @@
   },
   "dependencies": {
     "zod": "^4.5.4",
-    "@alabuga/framework": "1.0.2"
+    "@alabuga/framework": "1.1.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
@@ -57,7 +57,7 @@
   "packageManager": "npm@11.17.0",
   "license": "UNLICENSED",
   "alabugaFramework": {
-    "minimum": "1.0.2",
+    "minimum": "1.1.0",
     "major": 1
   }
 }

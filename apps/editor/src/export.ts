@@ -1,6 +1,8 @@
 import type {AFDocument} from '@alabuga/framework/schema';
 import {hydrate} from './storage';
 import {checked} from './model';
+import {standaloneRuntime} from './document-surface';
+export function projectFilename(title:string,extension:'html'|'json'){return (title.trim().replace(/[<>:"/\\|?*\u0000-\u001f]/g,'-').replace(/[. ]+$/g,'').slice(0,120)||'alabuga-project')+'.'+extension}
 export function download(name:string,body:string,type:string){
   const url=URL.createObjectURL(new Blob([body],{type}));const a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
 }
@@ -11,6 +13,6 @@ export function readImage(file:File):Promise<string>{
 }
 export {embedLocalImage} from './framework-adapter';
 export async function exportHTML(input:AFDocument){
- const [{default:css},{default:script},{exportHTML:renderExport}]=await Promise.all([import('@alabuga/framework/standalone.css?raw'),import('@alabuga/framework/standalone.js?raw'),import('@alabuga/framework/export')]);
- return renderExport(await hydrate(input),{runtime:{css,script},assetsBaseUrl:new URL('../assets/',location.href).href});
+ const [runtime,{exportHTML:renderExport}]=await Promise.all([standaloneRuntime(),import('@alabuga/framework/export')]);
+ return renderExport(await hydrate(input),{runtime,assetsBaseUrl:new URL('../assets/',location.href).href});
 }

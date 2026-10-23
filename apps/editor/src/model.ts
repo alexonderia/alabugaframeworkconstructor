@@ -5,22 +5,29 @@ export function checked(input:unknown):AFDocument {
   return result.data;
 }
 export function emptyDocument(kind:AFDocument['kind']='page'):AFDocument {
-  return {schemaVersion:3,kind,title:kind==='page'?'Новая страница':'Новая презентация',pages:[{id:uid('page'),title:'Начните с главного',grid:{columns:12,rowHeight:64,gap:16},widgets:[]}]};
+  return {schemaVersion:3,kind,title:kind==='page'?'Новый сайт':'Новая презентация',pages:[{id:uid('page'),title:'Начните с главного',grid:{columns:12,rowHeight:64,gap:16},widgets:[]}]};
 }
 export function uid(prefix='widget'){return prefix+'-'+crypto.randomUUID()}
+export function copySection(source:AFDocument['pages'][number]){
+ const copy=structuredClone(source),original=copy.id;copy.id=uid('page');
+ for(const w of copy.widgets){w.id=uid();if(w.type==='button'&&'target'in w.action&&w.action.type!=='modal'&&w.action.target===original)w.action.target=copy.id;if(w.type==='text')for(const block of w.content)if(block.type==='link'&&block.href==='#'+original)block.href='#'+copy.id}
+ return copy;
+}
 export class EditorModel {
   private value:AFDocument;
   private past:string[]=[];
   private future:string[]=[];
   private group:string|undefined;
-  constructor(input:unknown){this.value=checked(input)}
+  private serialized:string;
+  private pastBytes=0;
+  constructor(input:unknown){this.value=checked(input);this.serialized=JSON.stringify(this.value)}
   get document(){return structuredClone(this.value)}
   get canUndo(){return !!this.past.length}
   get canRedo(){return !!this.future.length}
-  replace(input:unknown,group?:string){const next=checked(input),before=JSON.stringify(this.value);if(JSON.stringify(next)===before)return false;if(!group||group!==this.group)this.past.push(before);this.group=group;while(this.past.length>30||this.past.length>1&&this.past.reduce((n,s)=>n+s.length,0)>10000000)this.past.shift();this.future=[];this.value=next;return true}
+  replace(input:unknown,group?:string){const next=checked(input),serialized=JSON.stringify(next);if(serialized===this.serialized)return false;if(!group||group!==this.group){this.past.push(this.serialized);this.pastBytes+=this.serialized.length}this.group=group;while(this.past.length>30||this.past.length>1&&this.pastBytes>10000000)this.pastBytes-=this.past.shift()!.length;this.future=[];this.value=next;this.serialized=serialized;return true}
   change(edit:(draft:AFDocument)=>void,group?:string){const next=this.document;edit(next);return this.replace(next,group)}
-  undo(){this.group=undefined;const prev=this.past.pop();if(!prev)return false;this.future.push(JSON.stringify(this.value));this.value=JSON.parse(prev);return true}
-  redo(){this.group=undefined;const next=this.future.pop();if(!next)return false;this.past.push(JSON.stringify(this.value));this.value=JSON.parse(next);return true}
+  undo(){this.group=undefined;const prev=this.past.pop();if(!prev)return false;this.pastBytes-=prev.length;this.future.push(this.serialized);this.serialized=prev;this.value=JSON.parse(prev);return true}
+  redo(){this.group=undefined;const next=this.future.pop();if(!next)return false;this.past.push(this.serialized);this.pastBytes+=this.serialized.length;this.serialized=next;this.value=JSON.parse(next);return true}
 }
 export function findSpace(doc:AFDocument,pageIndex:number,width:number,height:number):Widget['position']{
   const page=doc.pages[pageIndex],g=page.grid;

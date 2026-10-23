@@ -7,5 +7,5 @@ export function createZoomControls(canvas:HTMLElement){
  return {bar,reset};
 }
 export function bindEditorShortcuts(signal:AbortSignal,actions:{close:()=>boolean;undo:()=>void;redo:()=>void;save:()=>void}){
- window.addEventListener('keydown',e=>{if(e.key==='Escape'&&actions.close())return;if((e.target as HTMLElement).closest('input,textarea,select,[contenteditable]'))return;if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();(e.shiftKey?actions.redo:actions.undo)()}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();actions.save()}},{signal});
+ window.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();actions.save();return}if(e.key==='Escape'&&document.querySelector('dialog[open]'))return;if(e.key==='Escape'&&actions.close())return;if((e.target as HTMLElement).closest('input,textarea,select,[contenteditable]'))return;if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();(e.shiftKey?actions.redo:actions.undo)()}},{signal,capture:true});
 }

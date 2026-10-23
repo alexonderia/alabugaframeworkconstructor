@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 3,
+  "kind": "page",
+  "title": "Аудит связей и данных",
+  "pages": [
+    {
+      "id": "audit-a",
+      "title": "Раздел А",
+      "grid": {
+        "columns": 12,
+        "rowHeight": 64,
+        "gap": 16
+      },
+      "widgets": [
+        {
+          "id": "audit-text-a",
+          "type": "text",
+          "title": "Текст А",
+          "position": {
+            "col": 1,
+            "row": 1,
+            "width": 4,
+            "height": 3
+          },
+          "content": [
+            {
+              "type": "paragraph",
+              "text": "Контрольный текст для проверки мобильного режима и сохранения в двух вкладках.",
+              "dropCap": false
+            },
+            {
+              "type": "link",
+              "text": "К этому разделу",
+              "href": "#audit-a"
+            }
+          ]
+        },
+        {
+          "id": "audit-button",
+          "type": "button",
+          "title": "",
+          "position": {
+            "col": 6,
+            "row": 1,
+            "width": 4,
+            "height": 1
+          },
+          "label": "К этому разделу",
+          "variant": "primary",
+          "action": {
+            "type": "section",
+            "target": "audit-a"
+          }
+        }
+      ]
+    },
+    {
+      "id": "audit-b",
+      "title": "Раздел Б",
+      "grid": {
+        "columns": 12,
+        "rowHeight": 64,
+        "gap": 16
+      },
+      "composition": "blank",
+      "appearance": {
+        "theme": "contrast",
+        "spacing": "normal",
+        "width": "wide",
+        "decoration": "none",
+        "focal": "center",
+        "shade": "strong",
+        "layout": "fixed"
+      },
+      "widgets": [
+        {
+          "id": "audit-text-b",
+          "type": "text",
+          "title": "Текст Б",
+          "surface": "plain",
+          "position": {
+            "col": 1,
+            "row": 1,
+            "width": 8,
+            "height": 3
+          },
+          "content": [
+            {
+              "type": "paragraph",
+              "text": "Светлый текст на тёмном фоне должен оставаться читаемым при редактировании.",
+              "dropCap": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

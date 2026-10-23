@@ -1,3 +1,4 @@
+import {mountControls,disposeControls} from './component-lifecycle';
 import {frameworkDom as dom} from './framework-adapter';
 import {el,button} from '@alabuga/framework/dom';
 import {widgetRegistry,type Widget,type TextBlock} from '@alabuga/framework/schema';
@@ -7,18 +8,18 @@ import type {AFDocument} from '@alabuga/framework/schema';
 type Callbacks={apply:(widget:Widget)=>boolean;remove:()=>void;duplicate:()=>void;error:(message:string)=>void;errorMessage?:()=>string;pending:()=>void;settled:(valid:boolean)=>void;columns:number;document:AFDocument};
 export function properties(host:HTMLElement,original:Widget,actions:Callbacks):()=>boolean {
   const draft=structuredClone(original);let saved=JSON.stringify(draft),tablePage=0;
-  const form=el('form','property-form');host.replaceChildren(form);
+  const form=el('form','property-form');disposeControls(host);host.replaceChildren(form);const opened=new Map<string,boolean>();
   const feedback=el('p','property-feedback');feedback.setAttribute('role','status');feedback.setAttribute('aria-live','polite');
   const result=(text:string,error=false)=>{feedback.textContent=text;feedback.classList.toggle('af-error',error)};
   let timer:ReturnType<typeof setTimeout>;
   form.noValidate=true;
-  const apply=(report=true)=>{clearTimeout(timer);if(!form.checkValidity()){const invalid=form.querySelector<HTMLInputElement>('input:invalid,textarea:invalid,select:invalid'),text=(invalid?.closest('label')?.querySelector(dom.label)?.textContent??'Поле')+': '+(invalid?.validationMessage??'Проверьте значение.');result(text,true);actions.error(text);actions.settled(false);if(report)form.reportValidity();return false;}if(JSON.stringify(draft)===saved){result('Все изменения уже применены.');actions.settled(true);return true;}try{if(!actions.apply(draft)){result(actions.errorMessage?.()||'Изменения не применены. Проверьте положение и размеры блока.',true);actions.settled(false);return false;}saved=JSON.stringify(draft);result('Изменения применены. Состояние записи — в верхней панели.');actions.settled(true);return true;}catch(e){result((e as Error).message,true);actions.error((e as Error).message);actions.settled(false);return false;}};
-  const schedule=()=>{clearTimeout(timer);if(JSON.stringify(draft)===saved&&form.checkValidity()){actions.settled(true);return;}actions.pending();timer=setTimeout(()=>{if(form.isConnected)apply(false)},220)};
+  const apply=(report=true)=>{clearTimeout(timer);if(!form.checkValidity()){const invalid=form.querySelector<HTMLInputElement>('input:invalid,textarea:invalid,select:invalid'),text=(invalid?.closest('label')?.querySelector(dom.label)?.textContent??'Поле')+': '+(invalid?.validationMessage??'Проверьте значение.');result(text,true);if(invalid){invalid.setAttribute('aria-invalid','true');let hint=invalid.parentElement?.querySelector<HTMLElement>('.field-error');if(!hint){hint=el('small','field-error af-error');hint.id='error-'+crypto.randomUUID();invalid.after(hint)}hint.textContent=invalid.validationMessage;invalid.setAttribute('aria-describedby',hint.id)}actions.error(text);actions.settled(false);if(report)form.reportValidity();return false;}if(JSON.stringify(draft)===saved){result('Все изменения уже применены.');actions.settled(true);return true;}try{if(!actions.apply(draft)){result(actions.errorMessage?.()||'Изменения не применены. Проверьте положение и размеры блока.',true);actions.settled(false);return false;}saved=JSON.stringify(draft);result('Изменения применены. Состояние записи — в верхней панели.');actions.settled(true);return true;}catch(e){result((e as Error).message,true);actions.error((e as Error).message);actions.settled(false);return false;}};
+  const schedule=()=>{for(const n of form.querySelectorAll<HTMLInputElement>('[aria-invalid=true]'))if(n.validity.valid){n.removeAttribute('aria-invalid');n.parentElement?.querySelector('.field-error')?.remove();n.removeAttribute('aria-describedby')}clearTimeout(timer);if(JSON.stringify(draft)===saved&&form.checkValidity()){if(feedback.classList.contains('af-error'))result('Все изменения уже применены.');actions.settled(true);return;}actions.pending();timer=setTimeout(()=>{if(form.isConnected)apply(false)},220)};
   form.addEventListener('submit',e=>{e.preventDefault();apply()});
   form.addEventListener('input',()=>{const slider=form.querySelector<HTMLInputElement>('input[type=range]');if(slider){slider.max=String(Math.max(1,actions.columns-draft.position.width+1));slider.value=String(draft.position.col)}schedule()});
   form.addEventListener('change',schedule);
   const field=(parent:HTMLElement,title:string,value:string|number,change:(value:string)=>void,type='text')=>{
-    const label=el('label','af-field'),input=el('input','af-input af-input--sm');input.type=type;input.value=String(value);input.addEventListener('input',()=>change(input.value));label.append(el('span','af-label',title),input);parent.append(label);return input;
+    const label=el('label','af-field'),input=el('input','af-input af-input--sm');input.type=type;input.setAttribute('aria-label',title);input.value=String(value);input.addEventListener('input',()=>change(input.value));label.append(el('span','af-label',title),input);parent.append(label);return input;
   };
   const area=(parent:HTMLElement,title:string,value:string,change:(value:string)=>void)=>{const label=el('label','af-field'),input=el('textarea','af-textarea');input.value=value;input.rows=3;input.addEventListener('input',()=>change(input.value));label.append(el('span','af-label',title),input);parent.append(label);return input};
   const select=(parent:HTMLElement,title:string,value:string,options:Record<string,string>,change:(value:string)=>void)=>{const label=el('label','af-field'),input=el('select','af-select');for(const [key,name]of Object.entries(options)){const option=el('option','',name);option.value=key;input.append(option)}input.setAttribute('aria-label',title);input.value=value;input.addEventListener('change',()=>change(input.value));label.append(el('span','af-label',title),input);parent.append(label);return input};
@@ -26,7 +27,7 @@ export function properties(host:HTMLElement,original:Widget,actions:Callbacks):(
   const small=(title:string,action:()=>void)=>button(title,action,'af-btn af-btn--ghost af-btn--sm');
   const draw=()=>{
     if(JSON.stringify(draft)!==saved)schedule();
-    form.replaceChildren();form.append(el('h2','inspector-heading',widgetRegistry[draft.type].title),el('p','af-help','Изменения сразу отображаются на странице.'));
+    disposeControls(form);form.replaceChildren();form.append(el('h2','inspector-heading',widgetRegistry[draft.type].title),el('p','af-help','Изменения сразу отображаются на странице.'));
     field(form,'Название блока',draft.title,v=>draft.title=v).maxLength=200;
     const geometry=el('fieldset','geometry');geometry.append(el('legend','','Положение и размер'));
     for(const [key,name]of [['col','Колонка'],['row','Строка'],['width','Ширина'],['height','Высота']] as const){const input=field(geometry,name,draft.position[key],v=>draft.position[key]=Number(v),'number');input.min=String(key==='width'?widgetRegistry[draft.type].minWidth:key==='height'?widgetRegistry[draft.type].minHeight:1);input.step='1';input.required=true}
@@ -51,7 +52,7 @@ export function properties(host:HTMLElement,original:Widget,actions:Callbacks):(
       form.append(small('Добавить фрагмент',()=>{const blocks:Record<string,TextBlock>={paragraph:{type:'paragraph',text:'Новый абзац',dropCap:false},heading:{type:'heading',text:'Заголовок'},list:{type:'list',items:['Первый пункт'],ordered:false},divider:{type:'divider',decorative:false},callout:{type:'callout',text:'Важная мысль',tone:'info'},link:{type:'link',text:'Подробнее',href:'https://example.com'}};draft.content.push(blocks[kind]);draw()}));
     }
     if(draft.type==='metric'){field(form,'Значение',draft.value,v=>draft.value=v).maxLength=30;field(form,'Подпись',draft.note,v=>draft.note=v).maxLength=100}
-    if(draft.type==='calendar')field(form,'Выбранная дата',draft.date,v=>draft.date=v,'date').required=true;
+    if(draft.type==='calendar'){const date=field(form,'Выбранная дата',draft.date,v=>draft.date=v,'date');date.required=true;date.classList.add('af-datepicker')}
     if(draft.type==='image'){
       if(draft.src.startsWith('data:')){form.append(el('p','af-help','Изображение встроено в проект.'),small('Использовать ссылку',()=>{draft.src='';draw()}))}else field(form,'Адрес изображения',draft.src,v=>draft.src=v);
       const upload=field(form,'Загрузить изображение','',()=>{},'file');upload.accept='image/png,image/jpeg,image/webp,image/gif';upload.addEventListener('change',async()=>{try{const file=upload.files?.[0];if(file){const result=await readImage(file);if(!form.isConnected)return;draft.src=result;if(!draft.alt)draft.alt=file.name;draw()}}catch(e){actions.error((e as Error).message)}});
@@ -76,11 +77,11 @@ export function properties(host:HTMLElement,original:Widget,actions:Callbacks):(
     for(const node of Array.from(form.children))if(!beforeDesign.has(node)&&!node.hasAttribute('data-property-group'))(node as HTMLElement).dataset.propertyGroup='style';
     const groups=new Map<string,HTMLDetailsElement>();
     const labels={content:'Содержание',style:'Оформление',behavior:'Поведение',geometry:'Дополнительно: сетка и размеры'};
-    for(const key of ['content','style','behavior','geometry'] as const){const group=el('details','property-group');group.open=true;group.append(el('summary','',labels[key]));groups.set(key,group)}
+    for(const key of ['content','style','behavior','geometry'] as const){const group=el('details','property-group');group.open=opened.get(key)??key!=='geometry';group.addEventListener('toggle',()=>opened.set(key,group.open));group.append(el('summary','',labels[key]));groups.set(key,group)}
     for(const node of Array.from(form.children).slice(2)){const key=(node as HTMLElement).dataset.propertyGroup??(node===geometry||node===placement?'geometry':'content');groups.get(key)!.append(node)}
     for(const group of groups.values())if(group.children.length>1)form.append(group);
     form.append(small('Сбросить неприменённые изменения',()=>{clearTimeout(timer);for(const key of Object.keys(draft))Reflect.deleteProperty(draft,key);Object.assign(draft,JSON.parse(saved));draw();actions.settled(true)}));
-    const footer=el('div','property-actions'),submit=el('button','af-btn','Применить');submit.type='submit';footer.append(feedback,submit,small('Дублировать',()=>{if(apply())actions.duplicate()}),small('Удалить блок',actions.remove));form.append(footer);
+    const footer=el('div','property-actions');footer.append(feedback,small('Дублировать',()=>{if(apply())actions.duplicate()}),small('Удалить блок',actions.remove));form.append(footer);mountControls(form);
   };
   draw();return ()=>apply();
 }

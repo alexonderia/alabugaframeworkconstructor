@@ -17,3 +17,10 @@ test('a failed save is not acknowledged and a retry can recover',async()=>{
  queue.save('id',emptyDocument());await queue.queue;assert.equal(queue.error,true);assert.deepEqual(states,['saving','failed']);
  fail=false;queue.save('id',emptyDocument());await queue.queue;assert.equal(queue.error,false);assert.equal(states.at(-1),'saved');queue.destroy();
 });
+
+test('slow storage coalesces pending edits and still persists the last snapshot before leaving',async()=>{
+ let release!:()=>void;const gate=new Promise<void>(r=>release=r),titles:string[]=[];
+ const queue=new EditorSaveQueue({write:async(_id,doc)=>{await gate;titles.push(doc.title);return doc},revision:async()=>{},state:()=>{},changed:()=>{},revisionError:()=>{}});
+ const doc=emptyDocument();for(let i=0;i<100;i++){doc.title=String(i);queue.save('project',doc)}
+ release();await queue.queue;queue.destroy();assert.deepEqual(titles,['0','99']);assert.equal(queue.error,false);
+});

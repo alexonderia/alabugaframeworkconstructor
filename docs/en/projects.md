@@ -8,7 +8,7 @@ Routes are #/projects, #/edit/ID, #/view/ID and #/trash. Reload and browser back
 
 IndexedDB belongs to this browser profile and origin. Download portable projects for backup; HTML is final output. Clearing browser data removes projects. Trash retains revisions, has no automatic expiry, and can restore a project. Permanent deletion requires confirmation, removes its revisions and draft, preserves shared assets and records a tombstone so another tab's autosave cannot recreate it.
 
-Database version 2 keeps ProjectSummary metadata in the same transaction as documents. Legacy projects, revisions and assets remain; localStorage migration is one-time and preserves the original. The gallery loads summaries and creates thumbnails on visibility, with at most eight live renderers.
+Database version 3 adds a revision index by project. ProjectSummary and the internal write version update atomically with the document. Databases 1–2 upgrade automatically, preserving projects, revisions and assets; localStorage migration is one-time and preserves the original. The gallery loads summaries and creates thumbnails on visibility, with at most eight live renderers.
 
 ## Working on the canvas
 
@@ -24,9 +24,19 @@ Eight composition families cover title, asymmetry, thesis/divider, text/image, e
 
 ## Revisions, motion and quality
 
-«Сохранено» appears only after the transaction completes. Images are stored separately by SHA-256. A revision is created after 30 idle seconds; up to 20 per project are retained. Replacing or restoring saves the current state first. Documents 1/2 normalize to 3; localStorage is retained. Portable JSON includes unique assets; HTML embeds local assets and fonts. External HTTP(S) images still need a network.
+«Сохранено» appears only after the transaction completes. Images are stored separately by SHA-256. Recovery points are created after 30 idle seconds, on leaving and before replacement; «Создать версию» creates one manually. Identical points are deduplicated and up to 20 per project remain. Documents 1/2 normalize to 3; localStorage is retained. Portable JSON includes unique assets; HTML embeds local assets and fonts. External HTTP(S) images still need a network.
 
-Motion presets include thesis emphasis, sequential reveal and image-then-explanation. List order determines steps; «Вместе» groups with the previous step. Advanced properties expose step numbers. Preview starts at the beginning on every run; reduced-motion and print reveal all content. Quality checks locate overflow, unavailable images, missing action targets and insufficient contrast on solid backgrounds; findings open the relevant element. Photographic contrast still needs visual review. Content is never automatically shortened.
+Each write atomically checks an internal version. A stale tab can save its changes as a separate copy or open the saved version. Cross-tab notifications inform the user; the transaction provides the final protection. Local edits remain in the editor until the conflict is resolved.
+
+«Хранилище и материалы» shows storage estimates and image usage. Selected unused assets can be permanently removed; references from projects, trash, revisions and AI drafts are checked again inside the deletion transaction. Individual asset sizes estimate string memory, while the browser supplies origin usage/quota estimates.
+
+Ordinary properties apply automatically after a short delay; errors appear next to the field and Undo remains available. Precise grid settings are collapsed. Calendar properties use Framework 1.1.0 DatePicker; changing option lists explicitly remain native selects. On phones, secondary actions live under «Ещё инструменты» and the full-screen properties drawer contains focus. Optional introductory guidance can be dismissed and reopened from the project menu.
+
+«Название» beside a thumbnail sets a private structure label for this browser without changing published headings or portable documents. Defaults use meaningful headings/content. The asset library supports descriptions, search, sorting and retry after errors. Ctrl/Cmd+S downloads portable JSON from inputs as well as the canvas; JSON/HTML filenames use the project title. Native input undo remains available.
+
+Motion presets include thesis emphasis, sequential reveal and image-then-explanation. List order determines steps; «Вместе» groups with the previous step. Advanced properties expose step numbers. Preview preserves the selected slide; reduced-motion and print reveal all content.
+
+Preview runs in an isolated iframe using Framework's public standalone runtime and CSS. Websites use real desktop/tablet/phone viewport widths; section anchors stay inside the document. Shared quality checks wait for fonts/images and inspect websites at 1440/768/390 px and slides at 1600 px. Findings identify the section and screen and open the relevant element. HTML export stops on clipped content or unavailable images; use the quality dialog to locate the issue. Solid-background contrast is checked automatically; photographic contrast still needs visual review. Content is never automatically shortened.
 
 ## Author acceptance: not conducted
 
