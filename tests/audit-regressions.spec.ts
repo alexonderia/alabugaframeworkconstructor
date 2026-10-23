@@ -1,3 +1,4 @@
+import {chooseOption} from './choose-option';
 import {test,expect,type Page} from '@playwright/test';
 import {readFile} from 'node:fs/promises';
 import {pathToFileURL} from 'node:url';
@@ -25,7 +26,7 @@ test('mobile settings close control receives pointer input and returns focus',as
  await importFixture(page);await page.setViewportSize({width:390,height:844});await page.locator('#page-settings-open').click();await expect(page.locator('#inspector')).toBeVisible();await page.getByRole('button',{name:'Закрыть настройки',exact:true}).click();await expect(page.locator('#inspector')).toBeHidden();await expect(page.locator('#page-settings-open')).toBeFocused();
 });
 test('phone preview matches standalone mobile document geometry',async({page},info)=>{
- await importFixture(page);await page.locator('#device').selectOption('mobile');await page.locator('#preview').click();const preview=page.frameLocator('.project-preview iframe');await expect(preview.locator('#audit-a')).toBeVisible();
+ await importFixture(page);await chooseOption(page.locator('#device'),'mobile');await page.locator('#preview').click();const preview=page.frameLocator('.project-preview iframe');await expect(preview.locator('#audit-a')).toBeVisible();
  const simulated=await preview.locator('[data-widget-id=audit-text-a] .af-widget__content').evaluate(e=>({width:e.clientWidth,height:e.clientHeight,scroll:e.scrollHeight}));
  await page.getByRole('button',{name:'Редактировать',exact:true}).click();const pending=page.waitForEvent('download');await page.locator('#export').click();const file=info.outputPath('mobile.html');await(await pending).saveAs(file);
  const offline=await page.context().newPage();await offline.setViewportSize({width:390,height:844});await offline.route(/^https?:\/\//,r=>r.abort());await offline.goto(pathToFileURL(file).href);await offline.evaluate(async()=>document.fonts.ready);
@@ -33,9 +34,9 @@ test('phone preview matches standalone mobile document geometry',async({page},in
 });
 
 test('fixed page blocks stay readable in the phone authoring canvas and on a phone viewport',async({page,browserName})=>{
- await importFixture(page);await page.locator('#device').selectOption('mobile');const content=page.locator('#canvas [data-widget-id=audit-text-a] .af-widget__content');expect(await content.evaluate(n=>n.clientWidth)).toBeGreaterThan(300);await page.locator('#device').selectOption('desktop');await page.setViewportSize({width:390,height:844});expect(await content.evaluate(n=>n.clientWidth)).toBeGreaterThan(300);await page.screenshot({path:`artifacts/remediation/fixed-phone-authoring-${browserName}.png`});
+ await importFixture(page);await chooseOption(page.locator('#device'),'mobile');const content=page.locator('#canvas [data-widget-id=audit-text-a] .af-widget__content');expect(await content.evaluate(n=>n.clientWidth)).toBeGreaterThan(300);await chooseOption(page.locator('#device'),'desktop');await page.setViewportSize({width:390,height:844});expect(await content.evaluate(n=>n.clientWidth)).toBeGreaterThan(300);await page.screenshot({path:`artifacts/remediation/fixed-phone-authoring-${browserName}.png`});
 });
 test('quality and export identify content clipped only on a real mobile viewport',async({page})=>{
- await importFixture(page,overflow);await page.getByRole('button',{name:'Проверка качества',exact:true}).click();await expect(page.locator('.quality-issue').filter({hasText:'Телефон'})).toBeVisible();await page.locator('dialog[open]').getByRole('button',{name:'Закрыть',exact:true}).click();
+ await importFixture(page,overflow);if(!await page.locator('.project-menu').evaluate(n=>(n as HTMLDetailsElement).open))await page.locator('.project-menu>summary').click();await page.getByRole('button',{name:'Проверка качества',exact:true}).click();await expect(page.locator('.quality-issue').filter({hasText:'Телефон'})).toBeVisible();await page.locator('dialog[open]').getByRole('button',{name:'Закрыть',exact:true}).click();
  let downloaded=false;page.on('download',()=>downloaded=true);await page.locator('#export').click();await expect(page.locator('#status')).toContainText('Телефон');expect(downloaded).toBe(false);
 });

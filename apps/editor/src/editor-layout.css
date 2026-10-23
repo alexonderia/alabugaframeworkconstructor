@@ -1,0 +1,26 @@
+/* Shared surface geometry. Framework supplies the controls and their states. */
+#builder .author-tutorial>summary{margin-bottom:var(--af-space-8)}
+#builder .author-tutorial ol{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));grid-auto-rows:1fr;gap:var(--af-space-12);margin:0;padding:0}
+#builder .author-tutorial li{display:grid;grid-template-columns:var(--af-space-20) minmax(0,1fr);align-items:center;gap:var(--af-space-8);min-width:0}
+#builder .author-tutorial li>.af-btn{height:100%;white-space:normal;text-align:left;justify-content:flex-start}
+#builder .author-tutorial p:empty{display:none}
+#builder .author-tutorial .tutorial-dismiss{align-self:flex-start}
+.af-dialog[open]:not(.ai-dialog){display:flex;flex-direction:column;gap:var(--af-space-16);max-height:calc(100dvh - 32px);overflow:auto}
+.af-dialog[open]>.af-dialog__header{flex:none;align-items:center;gap:var(--af-space-16);margin:0}
+.af-dialog__header>.af-dialog__title{margin:0;min-width:0;overflow-wrap:anywhere}
+.af-dialog__header>.af-btn{flex-shrink:0}
+.af-dialog[open]>:is(p,form,fieldset,.af-field,.af-row,.af-dialog__actions){margin-block:0}
+.af-dialog[open]>.af-dialog__actions{flex-wrap:wrap;justify-content:flex-end}
+.fit-dialog[open]{overflow:hidden}
+.fit-body{flex:1;min-height:0;display:flex;flex-direction:column;gap:var(--af-space-16);overflow:auto;scroll-padding:var(--af-space-8)}
+.fit-body>:is(p,ul,.fit-preview){margin-block:0}
+.fit-body>ul:empty{display:none}
+.fit-dialog>.fit-actions>.af-btn{flex:0 0 auto;max-width:100%}
+.ai-dialog[open]{display:flex;flex-direction:column;overflow:hidden}
+.ai-dialog>.ai-header,.ai-dialog>.ai-readiness{flex:none}
+.ai-dialog>.ai-workspace{flex:1;min-height:0;height:auto}
+.canvas-toolbar .page-picker>.af-label{margin:0}
+@media(max-width:767px){
+ .af-dialog[open]:not(.ai-dialog){max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px)}
+ .fit-dialog>.fit-actions>.af-btn{flex:1 0 100%}
+}

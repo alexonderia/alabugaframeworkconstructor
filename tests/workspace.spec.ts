@@ -1,14 +1,15 @@
+import {chooseOption} from './choose-option';
 import {openEditor} from './open-editor';
 import {test,expect} from '@playwright/test';
 import {savedDocument} from './project-helper';
 
 test('zoom changes physical slide size and Fit restores the canvas',async({page,browserName})=>{
- await openEditor(page);await page.locator('.project-menu summary').click();await page.locator('#demo-deck').click();const slide=page.locator('#canvas .af-slide--active'),before=await slide.boundingBox();await page.locator('.canvas-zoom').getByRole('button',{name:'+',exact:true}).click();await expect.poll(async()=>(await slide.boundingBox())!.width).toBeGreaterThan(before!.width*1.08);await page.locator('.canvas-zoom').getByRole('button',{name:'Вписать',exact:true}).click();await expect.poll(async()=>Math.abs((await slide.boundingBox())!.width-before!.width)).toBeLessThan(2);
+ await openEditor(page);await page.locator('.project-menu summary').click();await page.locator('#demo-deck').click();const slide=page.locator('#canvas .af-slide--active'),before=await slide.boundingBox();await page.locator('.canvas-zoom').getByRole('button',{name:'Увеличить масштаб',exact:true}).click();await expect.poll(async()=>(await slide.boundingBox())!.width).toBeGreaterThan(before!.width*1.08);await page.locator('.canvas-zoom').getByRole('button',{name:'Вписать',exact:true}).click();await expect.poll(async()=>(await slide.boundingBox())!.y+(await slide.boundingBox())!.height).toBeLessThan(1000);await page.getByRole('button',{name:'Масштаб 100%',exact:true}).click();await expect.poll(async()=>Math.abs((await slide.boundingBox())!.width-before!.width)).toBeLessThan(2);
  if(browserName==='chromium'){await page.locator('#preview').click();await page.frameLocator('.project-preview iframe').getByRole('button',{name:'На весь экран',exact:true}).click();await expect.poll(()=>page.evaluate(()=>!!document.fullscreenElement)).toBe(true);const bounds=await page.frameLocator('.project-preview iframe').locator('.af-slide--active').boundingBox();expect(bounds!.width/bounds!.height).toBeCloseTo(16/9,2);await page.evaluate(()=>document.exitFullscreen())}
 });
 
 test('document properties edit the title and switch to section and element context',async({page})=>{
- await openEditor(page);await page.getByRole('button',{name:'Документ',exact:true}).click();await expect(page.locator('#inspector-title')).toHaveText('Настройки документа');await page.getByLabel('Название документа',{exact:true}).fill('Мой фирменный проект');await page.getByLabel('Название документа',{exact:true}).blur();await expect(page.locator('#project-name')).toHaveValue('Мой фирменный проект');await page.locator('#page-settings-open').click();await expect(page.locator('#inspector-title')).toHaveText('Настройки секции');
+ await openEditor(page);await page.locator('.project-menu>summary').click();await page.getByRole('button',{name:'Документ',exact:true}).click();await expect(page.locator('#inspector-title')).toHaveText('Настройки документа');await page.getByLabel('Название документа',{exact:true}).fill('Мой фирменный проект');await page.getByLabel('Название документа',{exact:true}).blur();await expect(page.locator('#project-name')).toHaveValue('Мой фирменный проект');await page.locator('#page-settings-open').click();await expect(page.locator('#inspector-title')).toHaveText('Настройки секции');
  const inline=page.locator('#canvas .af-widget--text [contenteditable]').first();await inline.click();await expect(page.locator('#inspector-title')).toHaveText('Настройки блока');await expect(inline).toBeFocused();
 });
 
@@ -32,8 +33,8 @@ test('v1 legacy is retained, v3 assets deduplicate and revisions are bounded',as
 });
 
 test('properties leave canvas interactive and editing preserves other element identity',async({page})=>{
- await openEditor(page);await page.locator('.project-menu summary').click();await page.locator('#demo-page').click();await page.locator('#pages').selectOption('2');await page.locator('#page-settings-open').click();expect(await page.locator('#canvas').evaluate(n=>(n as HTMLElement).inert)).toBe(false);
- await page.getByLabel('Фирменная тема',{exact:true}).selectOption('contrast');const text=page.locator('#canvas [data-composition=split] .af-widget--text');await text.locator('[contenteditable]').first().click();await expect(text.locator('[contenteditable]').first()).toBeFocused();await expect(page.locator('#inspector-title')).toHaveText('Настройки блока');
+ await openEditor(page);await page.locator('.project-menu summary').click();await page.locator('#demo-page').click();await chooseOption(page.locator('#pages'),'2');await page.locator('#page-settings-open').click();expect(await page.locator('#canvas').evaluate(n=>(n as HTMLElement).inert)).toBe(false);
+ await chooseOption(page.getByLabel('Фирменная тема',{exact:true}),'contrast');const text=page.locator('#canvas [data-composition=split] .af-widget--text');await text.locator('[contenteditable]').first().click();await expect(text.locator('[contenteditable]').first()).toBeFocused();await expect(page.locator('#inspector-title')).toHaveText('Настройки блока');
  const title=page.getByLabel('Название блока',{exact:true});await page.evaluate(()=>{(window as any).unchanged=document.querySelector('#canvas [data-composition=split] .af-widget--image')});await title.fill('New title');await expect.poll(async()=>(await savedDocument(page)).pages[2].widgets[0].title).toBe('New title');await expect(title).toBeFocused();expect(await page.evaluate(()=>(window as any).unchanged===document.querySelector('#canvas [data-composition=split] .af-widget--image'))).toBe(true);
 
 });

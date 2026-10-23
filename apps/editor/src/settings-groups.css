@@ -1,0 +1,6 @@
+/* Shared with AI dialogs opened from the demo, where the editor shell is absent. */
+.property-form{display:flex;flex-direction:column;gap:var(--af-space-16)}
+.settings-group-body{display:flex;flex-direction:column;gap:var(--af-space-16);min-width:0;padding:var(--af-space-16) 0 var(--af-space-4)}
+.settings-group-body>.af-field,.settings-group-body>fieldset{margin:0}
+.property-group>summary,.section-property-group>summary{display:flex;justify-content:space-between;width:100%;gap:var(--af-space-12);margin:0;text-align:left;white-space:normal}
+.property-group[open]>summary>.af-icon--expand,.section-property-group[open]>summary>.af-icon--expand{transform:rotate(180deg)}

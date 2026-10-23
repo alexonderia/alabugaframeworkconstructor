@@ -1,11 +1,14 @@
 import {mountControls,disposeControls} from './component-lifecycle';
 import {frameworkDom as dom} from './framework-adapter';
-import {el,button} from '@alabuga/framework/dom';
+import {el,button,settingsGroup} from './ui';
+import {inputField as field,textareaField as area,selectField as select,checkboxField as check} from './ui-fields';
 import {widgetRegistry,type Widget,type TextBlock} from '@alabuga/framework/schema';
 import {readImage} from './export';
 import {widgetDesign} from './design';
+import {mergePropertyDraft} from './property-patch';
+import {type WidgetLayout,layoutNote} from './widget-layout';
 import type {AFDocument} from '@alabuga/framework/schema';
-type Callbacks={apply:(widget:Widget)=>boolean;remove:()=>void;duplicate:()=>void;error:(message:string)=>void;errorMessage?:()=>string;pending:()=>void;settled:(valid:boolean)=>void;columns:number;document:AFDocument};
+type Callbacks={apply:(widget:Widget)=>boolean;current?:()=>Widget;layout?:()=>WidgetLayout;remove:()=>void;duplicate:()=>void;error:(message:string)=>void;errorMessage?:()=>string;pending:()=>void;settled:(valid:boolean)=>void;columns:number;document:AFDocument};
 export function properties(host:HTMLElement,original:Widget,actions:Callbacks):()=>boolean {
   const draft=structuredClone(original);let saved=JSON.stringify(draft),tablePage=0;
   const form=el('form','property-form');disposeControls(host);host.replaceChildren(form);const opened=new Map<string,boolean>();
@@ -13,28 +16,23 @@ export function properties(host:HTMLElement,original:Widget,actions:Callbacks):(
   const result=(text:string,error=false)=>{feedback.textContent=text;feedback.classList.toggle('af-error',error)};
   let timer:ReturnType<typeof setTimeout>;
   form.noValidate=true;
-  const apply=(report=true)=>{clearTimeout(timer);if(!form.checkValidity()){const invalid=form.querySelector<HTMLInputElement>('input:invalid,textarea:invalid,select:invalid'),text=(invalid?.closest('label')?.querySelector(dom.label)?.textContent??'Поле')+': '+(invalid?.validationMessage??'Проверьте значение.');result(text,true);if(invalid){invalid.setAttribute('aria-invalid','true');let hint=invalid.parentElement?.querySelector<HTMLElement>('.field-error');if(!hint){hint=el('small','field-error af-error');hint.id='error-'+crypto.randomUUID();invalid.after(hint)}hint.textContent=invalid.validationMessage;invalid.setAttribute('aria-describedby',hint.id)}actions.error(text);actions.settled(false);if(report)form.reportValidity();return false;}if(JSON.stringify(draft)===saved){result('Все изменения уже применены.');actions.settled(true);return true;}try{if(!actions.apply(draft)){result(actions.errorMessage?.()||'Изменения не применены. Проверьте положение и размеры блока.',true);actions.settled(false);return false;}saved=JSON.stringify(draft);result('Изменения применены. Состояние записи — в верхней панели.');actions.settled(true);return true;}catch(e){result((e as Error).message,true);actions.error((e as Error).message);actions.settled(false);return false;}};
+  const apply=(report=true)=>{clearTimeout(timer);if(!form.checkValidity()){const invalid=form.querySelector<HTMLInputElement>('input:invalid,textarea:invalid,select:invalid'),text=(invalid?.closest('label')?.querySelector(dom.label)?.textContent??'Поле')+': '+(invalid?.validationMessage??'Проверьте значение.');result(text,true);if(invalid){invalid.setAttribute('aria-invalid','true');let hint=invalid.parentElement?.querySelector<HTMLElement>('.field-error');if(!hint){hint=el('small','field-error af-error');hint.id='error-'+crypto.randomUUID();invalid.after(hint)}hint.textContent=invalid.validationMessage;invalid.setAttribute('aria-describedby',hint.id)}actions.error(text);actions.settled(false);if(report)form.reportValidity();return false;}if(JSON.stringify(draft)===saved){result('Все изменения уже применены.');actions.settled(true);return true;}try{if(!actions.apply(mergePropertyDraft(JSON.parse(saved),draft,actions.current?.()??draft))){result(actions.errorMessage?.()||'Изменения не применены. Проверьте положение и размеры блока.',true);actions.settled(false);return false;}saved=JSON.stringify(draft);result('Изменения применены. Состояние записи — в верхней панели.');actions.settled(true);return true;}catch(e){result((e as Error).message,true);actions.error((e as Error).message);actions.settled(false);return false;}};
   const schedule=()=>{for(const n of form.querySelectorAll<HTMLInputElement>('[aria-invalid=true]'))if(n.validity.valid){n.removeAttribute('aria-invalid');n.parentElement?.querySelector('.field-error')?.remove();n.removeAttribute('aria-describedby')}clearTimeout(timer);if(JSON.stringify(draft)===saved&&form.checkValidity()){if(feedback.classList.contains('af-error'))result('Все изменения уже применены.');actions.settled(true);return;}actions.pending();timer=setTimeout(()=>{if(form.isConnected)apply(false)},220)};
   form.addEventListener('submit',e=>{e.preventDefault();apply()});
-  form.addEventListener('input',()=>{const slider=form.querySelector<HTMLInputElement>('input[type=range]');if(slider){slider.max=String(Math.max(1,actions.columns-draft.position.width+1));slider.value=String(draft.position.col)}schedule()});
+  form.addEventListener('input',()=>{const slider=form.querySelector<HTMLInputElement>('[data-horizontal-position]');if(slider){slider.max=String(Math.max(1,actions.columns-draft.position.width+1));slider.value=String(draft.position.col)}schedule()});
   form.addEventListener('change',schedule);
-  const field=(parent:HTMLElement,title:string,value:string|number,change:(value:string)=>void,type='text')=>{
-    const label=el('label','af-field'),input=el('input','af-input af-input--sm');input.type=type;input.setAttribute('aria-label',title);input.value=String(value);input.addEventListener('input',()=>change(input.value));label.append(el('span','af-label',title),input);parent.append(label);return input;
-  };
-  const area=(parent:HTMLElement,title:string,value:string,change:(value:string)=>void)=>{const label=el('label','af-field'),input=el('textarea','af-textarea');input.value=value;input.rows=3;input.addEventListener('input',()=>change(input.value));label.append(el('span','af-label',title),input);parent.append(label);return input};
-  const select=(parent:HTMLElement,title:string,value:string,options:Record<string,string>,change:(value:string)=>void)=>{const label=el('label','af-field'),input=el('select','af-select');for(const [key,name]of Object.entries(options)){const option=el('option','',name);option.value=key;input.append(option)}input.setAttribute('aria-label',title);input.value=value;input.addEventListener('change',()=>change(input.value));label.append(el('span','af-label',title),input);parent.append(label);return input};
-  const check=(parent:HTMLElement,title:string,value:boolean,change:(value:boolean)=>void)=>{const label=el('label','af-check'),input=el('input','af-checkbox');input.type='checkbox';input.checked=value;input.addEventListener('change',()=>change(input.checked));label.append(input,document.createTextNode(title));parent.append(label)};
   const small=(title:string,action:()=>void)=>button(title,action,'af-btn af-btn--ghost af-btn--sm');
   const draw=()=>{
     if(JSON.stringify(draft)!==saved)schedule();
-    disposeControls(form);form.replaceChildren();form.append(el('h2','inspector-heading',widgetRegistry[draft.type].title),el('p','af-help','Изменения сразу отображаются на странице.'));
+    disposeControls(form);form.replaceChildren();form.append(el('h2','af-title inspector-heading',widgetRegistry[draft.type].title),el('p','af-help','Изменения сразу отображаются на странице.'));
     field(form,'Название блока',draft.title,v=>draft.title=v).maxLength=200;
-    const geometry=el('fieldset','geometry');geometry.append(el('legend','','Положение и размер'));
+    const mode=actions.layout?.()??'grid',geometry=el('fieldset','geometry');geometry.append(el('legend','',mode==='grid'?'Положение и размер':'Базовая сетка для компьютера'));
+    if(mode!=='grid'){const note=el('p','af-help',layoutNote(mode)+' Поля ниже задают базовую сетку для компьютера.');note.style.gridColumn='1 / -1';geometry.append(note)}
     for(const [key,name]of [['col','Колонка'],['row','Строка'],['width','Ширина'],['height','Высота']] as const){const input=field(geometry,name,draft.position[key],v=>draft.position[key]=Number(v),'number');input.min=String(key==='width'?widgetRegistry[draft.type].minWidth:key==='height'?widgetRegistry[draft.type].minHeight:1);input.step='1';input.required=true}
     form.append(geometry);
     const placement=el('fieldset','block-editor');placement.append(el('legend','','Размещение по ширине'));
     const maximum=()=>Math.max(1,actions.columns-draft.position.width+1);
-    const slider=field(placement,'Смещение блока по горизонтали',draft.position.col,v=>{draft.position.col=Number(v);const col=form.querySelector<HTMLInputElement>('.geometry input');if(col)col.value=v},'range');slider.min='1';slider.max=String(maximum());slider.step='1';
+    const slider=field(placement,'Смещение блока по горизонтали',draft.position.col,v=>{draft.position.col=Number(v);const col=form.querySelector<HTMLInputElement>('.geometry input');if(col)col.value=v},'number');slider.dataset.horizontalPosition='';slider.min='1';slider.max=String(maximum());slider.step='1';
     const presets=el('div','af-row');for(const label of ['Слева','По центру','Справа'])presets.append(small(label,()=>{draft.position.col=label==='Слева'?1:label==='Справа'?maximum():Math.floor((maximum()+1)/2);draw()}));placement.append(presets,el('p','af-help','Сдвигается сам блок внутри секции. Для точной позиции задайте колонку или перетащите блок за ручку ↕.'));form.append(placement);
     select(form,'Выравнивание содержимого',draft.align??'left',{left:'По левому краю',center:'По центру',right:'По правому краю'},v=>draft.align=v as 'left'|'center'|'right');
     if(draft.type==='text'){
@@ -75,11 +73,11 @@ export function properties(host:HTMLElement,original:Widget,actions:Callbacks):(
     const beforeDesign=new Set(form.children);
     widgetDesign(form,draft,actions.document,schedule,actions.error,draw);
     for(const node of Array.from(form.children))if(!beforeDesign.has(node)&&!node.hasAttribute('data-property-group'))(node as HTMLElement).dataset.propertyGroup='style';
-    const groups=new Map<string,HTMLDetailsElement>();
-    const labels={content:'Содержание',style:'Оформление',behavior:'Поведение',geometry:'Дополнительно: сетка и размеры'};
-    for(const key of ['content','style','behavior','geometry'] as const){const group=el('details','property-group');group.open=opened.get(key)??key!=='geometry';group.addEventListener('toggle',()=>opened.set(key,group.open));group.append(el('summary','',labels[key]));groups.set(key,group)}
-    for(const node of Array.from(form.children).slice(2)){const key=(node as HTMLElement).dataset.propertyGroup??(node===geometry||node===placement?'geometry':'content');groups.get(key)!.append(node)}
-    for(const group of groups.values())if(group.children.length>1)form.append(group);
+    const groups=new Map<string,ReturnType<typeof settingsGroup>>();
+    const labels={content:'Содержание',style:'Оформление',behavior:'Поведение',geometry:'Размеры и положение'};
+    for(const key of ['content','style','behavior','geometry'] as const){const entry=settingsGroup(labels[key],'property-group');entry.group.open=opened.get(key)??key!=='geometry';entry.group.addEventListener('toggle',()=>opened.set(key,entry.group.open));groups.set(key,entry)}
+    for(const node of Array.from(form.children).slice(2)){const key=(node as HTMLElement).dataset.propertyGroup??(node===geometry||node===placement?'geometry':'content');groups.get(key)!.body.append(node)}
+    for(const {group,body} of groups.values())if(body.children.length)form.append(group);
     form.append(small('Сбросить неприменённые изменения',()=>{clearTimeout(timer);for(const key of Object.keys(draft))Reflect.deleteProperty(draft,key);Object.assign(draft,JSON.parse(saved));draw();actions.settled(true)}));
     const footer=el('div','property-actions');footer.append(feedback,small('Дублировать',()=>{if(apply())actions.duplicate()}),small('Удалить блок',actions.remove));form.append(footer);mountControls(form);
   };

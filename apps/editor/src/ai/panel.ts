@@ -1,5 +1,5 @@
+import {showDialog,el,button,alert} from '../ui';
 import {disposeControls} from '../component-lifecycle';
-import {el,button} from '@alabuga/framework/dom';
 import {renderDocument} from '../framework-adapter';
 import {type DocumentController} from '@alabuga/framework/runtime';
 import {validateDocument,type AFDocument} from '@alabuga/framework/schema';
@@ -23,19 +23,19 @@ export async function openAI(context:Context,apply:(draft:DraftResult)=>Promise<
  const dialog=el('dialog','ai-dialog');dialog.setAttribute('aria-label','Создать с ИИ');
  dialog.innerHTML=`<header class="ai-header"><div><strong>Создать с ИИ</strong><small>Qwen3.5-2B · локально на вашем устройстве</small></div><button type="button" class="af-btn af-btn--ghost" data-close>Закрыть</button></header>
  <div class="ai-workspace"><form class="ai-form">
- <label class="af-field">Результат<select class="af-select" name="target" aria-label="Результат"><option value="section">Секция сайта</option><option value="slide">Слайд</option><option value="page">Сайт</option><option value="presentation">Презентация</option></select></label>
- <label class="af-field">Количество<input class="af-input" name="count" type="number" min="1" max="6" value="1"></label>
- <label class="af-field">Аудитория<input class="af-input" name="audience" maxlength="200" placeholder="Для кого создаём документ"></label>
- <label class="af-field">Запрос<textarea class="af-textarea" name="prompt" rows="4" required minlength="3" maxlength="1800" placeholder="Создай секцию о визуальном конструкторе"></textarea></label>
- <label class="af-field">Исходные сведения<textarea class="af-textarea" name="sources" rows="6" maxlength="6000" placeholder="Факты, описание, показатели и ссылки"></textarea></label>
- <details><summary>Материалы для ИИ</summary><p class="af-help">До шести материалов. ИИ видит описания изображений.</p><div class="ai-assets"></div><label class="af-field">Загрузить изображение<input name="upload" type="file" accept="image/png,image/jpeg,image/webp,image/gif"></label></details>
+ <label class="af-field"><span class="af-label">Результат</span><select class="af-select" name="target" aria-label="Результат"><option value="section">Секция сайта</option><option value="slide">Слайд</option><option value="page">Сайт</option><option value="presentation">Презентация</option></select></label>
+ <label class="af-field"><span class="af-label">Количество</span><input class="af-input" name="count" type="number" min="1" max="6" value="1"></label>
+ <label class="af-field"><span class="af-label">Аудитория</span><input class="af-input" name="audience" maxlength="200" placeholder="Для кого создаём документ"></label>
+ <label class="af-field"><span class="af-label">Запрос</span><textarea class="af-textarea" name="prompt" rows="4" required minlength="3" maxlength="1800" placeholder="Создай секцию о визуальном конструкторе"></textarea></label>
+ <label class="af-field"><span class="af-label">Исходные сведения</span><textarea class="af-textarea" name="sources" rows="6" maxlength="6000" placeholder="Факты, описание, показатели и ссылки"></textarea></label>
+ <details><summary class="af-btn af-btn--clear af-btn--sm">Материалы для ИИ</summary><p class="af-help">До шести материалов. ИИ видит описания изображений.</p><div class="ai-assets"></div><label class="af-field"><span class="af-label">Загрузить изображение</span><input class="af-input" name="upload" type="file" accept="image/png,image/jpeg,image/webp,image/gif"></label></details>
  <div class="ai-form-actions"><button class="af-btn" type="submit">Создать черновик</button><button class="af-btn af-btn--secondary" type="button" data-resume>Продолжить</button><button class="af-btn af-btn--ghost" type="button" data-cancel>Остановить</button></div>
  <button type="button" class="af-btn af-btn--ghost" data-diagnostics>Проверить подключение</button><p class="ai-diagnostics af-help"></p></form>
  <section class="ai-result"><p class="ai-progress" role="status" aria-live="polite">Введите запрос. Текущий проект не изменится до применения.</p><p class="ai-save af-help"></p>
  <div class="ai-toolbar"><select class="af-select" aria-label="Секция черновика" data-section></select><select class="af-select" aria-label="Экран черновика" data-device><option value="1440">Компьютер</option><option value="820">Планшет</option><option value="390">Телефон</option></select><button type="button" class="af-btn af-btn--secondary" data-repeat>Повторить секцию</button><button type="button" class="af-btn af-btn--secondary" data-fit>Подобрать оформление</button><button type="button" class="af-btn af-btn--ghost" data-check>Проверить черновик</button></div>
  <p class="af-help">Текст редактируется прямо в черновике. Для остальных свойств выберите элемент ниже.</p>
- <div class="ai-preview-scroll"><div class="ai-preview"></div></div><div class="ai-elements"></div><div class="ai-issues" role="region" aria-label="Замечания к черновику" tabindex="-1"></div><div class="ai-properties"></div>
- <footer><label class="af-check"><input type="checkbox" data-ack> Содержание и замечания проверены</label><button type="button" class="af-btn" data-apply>Применить черновик</button><button type="button" class="af-btn af-btn--ghost" data-anchor>Вставлять после текущей секции</button></footer></section></div>`;
+ <div class="ai-preview-scroll"><div class="ai-preview"></div></div><div class="ai-elements"></div><div class="ai-issues" role="region" aria-label="Замечания к черновику" tabindex="-1"></div><div class="ai-properties af-card af-card--inner"></div>
+ <footer><label class="af-check"><input class="af-checkbox" type="checkbox" data-ack> Содержание и замечания проверены</label><button type="button" class="af-btn" data-apply>Применить черновик</button><button type="button" class="af-btn af-btn--ghost" data-anchor>Вставлять после текущей секции</button></footer></section></div>`;
  const $=<T extends HTMLElement>(selector:string)=>dialog.querySelector<T>(selector)!;
  const form=$<HTMLFormElement>('form'),field=(name:string)=>form.elements.namedItem(name) as HTMLInputElement;
  const preview=$<HTMLElement>('.ai-preview'),progress=$<HTMLElement>('.ai-progress'),saveState=$<HTMLElement>('.ai-save'),issues=$<HTMLElement>('.ai-issues'),picker=$<HTMLSelectElement>('[data-section]');
@@ -53,7 +53,7 @@ export async function openAI(context:Context,apply:(draft:DraftResult)=>Promise<
  };
  function controls(){form.setAttribute('aria-busy',String(initializing||busy));const example=form.querySelector<HTMLButtonElement>('.ai-example');if(example)example.disabled=initializing||busy;
   const ready=!!d&&d.sections.length===d.request.count&&d.sections.every(Boolean)&&!Object.keys(d.errors).length;
-  const hasResult=!!d?.sections.some(Boolean);for(const hint of dialog.querySelectorAll<HTMLElement>('.ai-result>.af-help'))hint.hidden=!hasResult;$<HTMLElement>('.ai-toolbar').hidden=!hasResult;$<HTMLElement>('.ai-result footer').hidden=!d;
+  const hasResult=!!d?.sections.some(Boolean);for(const hint of dialog.querySelectorAll<HTMLElement>('.ai-result>.af-help'))hint.hidden=!hasResult;$<HTMLElement>('.ai-toolbar').hidden=!hasResult;$<HTMLElement>('.ai-preview-scroll').hidden=!hasResult;$<HTMLElement>('.ai-result footer').hidden=!d;
   $<HTMLElement>('[data-resume]').hidden=!d;$<HTMLElement>('[data-cancel]').hidden=!busy;
   $<HTMLButtonElement>('[data-apply]').disabled=busy||applying||!ready||!$<HTMLInputElement>('[data-ack]').checked||persistFailed;
   $<HTMLButtonElement>('[data-repeat]').disabled=busy||readiness!=='ready'||!d?.outline[selectedIndex];$<HTMLButtonElement>('[data-check]').disabled=busy||!d?.sections.some(Boolean);
@@ -63,7 +63,7 @@ export async function openAI(context:Context,apply:(draft:DraftResult)=>Promise<
   picker.disabled=busy;$<HTMLElement>('.ai-properties').inert=busy;preview.inert=busy;$<HTMLElement>('.ai-elements').inert=busy;
   for(const n of form.querySelectorAll<HTMLInputElement|HTMLSelectElement|HTMLTextAreaElement>('input,select,textarea'))n.disabled=initializing||busy||n.name==='count'&&['section','slide'].includes(field('target').value);
  }
- function messages(){issues.replaceChildren();if(!d)return;for(const [index,error]of Object.entries(d.errors)){const row=el('p');row.append(button('Секция '+(+index+1),()=>{selectedIndex=+index;draw()}),document.createTextNode(' '+error));issues.append(row)}for(const warning of d.warnings)issues.append(el('p','af-help',warning));if(d.projectId!==context.projectId)issues.append(el('p','af-error','Черновик начат в другом проекте. Для одиночной секции выберите новое место вставки.'));}
+ function messages(){issues.replaceChildren();if(!d)return;for(const [index,error]of Object.entries(d.errors)){const row=alert(error,'danger');row.prepend(button('Секция '+(+index+1),()=>{selectedIndex=+index;draw()}));issues.append(row)}for(const warning of d.warnings)issues.append(alert(warning,'warning'));if(d.projectId!==context.projectId)issues.append(alert('Черновик начат в другом проекте. Для одиночной секции выберите новое место вставки.','danger'));}
  function revealIssues(){if(dialog.isConnected&&d&&Object.keys(d.errors).length){issues.scrollIntoView({block:'center'});issues.focus({preventScroll:true})}}
  function updateDraft(doc:AFDocument){
   if(!d)return false;const checked=validateDocument(doc);if(!checked.success){showError(checked.issues[0].message);return false}
@@ -72,10 +72,10 @@ export async function openAI(context:Context,apply:(draft:DraftResult)=>Promise<
  function bind(){if(!d)return;const doc=draftDocument(d);for(const [pi,p]of doc.pages.entries())for(const w of p.widgets){const box=preview.querySelector<HTMLElement>(`[data-widget-id="${w.id}"]`);if(!box)continue;bindInline(box,w,pi,(edit)=>{const next=draftDocument(d!);edit(next);if(!updateDraft(next))return false;controller?.synchronize(next);return true},()=>{});}}
  function editWidget(id:string){
   if(!d||busy||!flush())return;const doc=draftDocument(d),pi=doc.pages.findIndex(p=>p.widgets.some(w=>w.id===id)),original=doc.pages[pi].widgets.find(w=>w.id===id)!;const host=$<HTMLElement>('.ai-properties');
-  flush=properties(host,original,{document:doc,columns:doc.pages[pi].grid.columns,error:showError,pending:()=>{},settled:()=>{},
+  flush=properties(host,original,{document:doc,current:()=>draftDocument(d!).pages[pi].widgets.find(w=>w.id===id)!,columns:doc.pages[pi].grid.columns,error:showError,pending:()=>{},settled:()=>{},
    apply:w=>{const next=draftDocument(d!);next.pages[pi].widgets[next.pages[pi].widgets.findIndex(w=>w.id===id)]=w;if(!updateDraft(next))return false;paintPreview();return true},
    remove:()=>{const next=draftDocument(d!);next.pages[pi].widgets=next.pages[pi].widgets.filter(w=>w.id!==id);if(updateDraft(next)){flush=()=>true;disposeControls(host);host.replaceChildren();paintPreview()}},
-   duplicate:()=>{try{const next=draftDocument(d!),copy=structuredClone(original);copy.id='block-'+crypto.randomUUID();copy.position=findSpace(next,pi,copy.position.width,copy.position.height);next.pages[pi].widgets.push(copy);if(updateDraft(next))paintPreview()}catch(e){showError(e)}}});
+   duplicate:()=>{try{const next=draftDocument(d!),copy=structuredClone(next.pages[pi].widgets.find(w=>w.id===id)!);copy.id='block-'+crypto.randomUUID();copy.position=findSpace(next,pi,copy.position.width,copy.position.height);next.pages[pi].widgets.push(copy);if(updateDraft(next))paintPreview()}catch(e){showError(e)}}});
  }
  function paintPreview(){
   controller?.destroy();controller=undefined;preview.replaceChildren();$('.ai-elements').replaceChildren();if(!d?.sections.some(Boolean))return;
@@ -87,7 +87,7 @@ export async function openAI(context:Context,apply:(draft:DraftResult)=>Promise<
  function drawOutline(){
   dialog.querySelector('.ai-outline')?.remove();if(!d?.awaitingOutline)return;
   const panel=el('section','ai-outline');panel.append(el('h3','','Проверьте структуру перед наполнением'));
-  d.outline.forEach((o,i)=>{const group=el('fieldset','block-editor');for(const key of ['title','purpose'] as const){const label=el('label','af-field'),input=key==='title'?el('input','af-input'):el('textarea','af-input');input.value=o[key];input.maxLength=key==='title'?40:6000;input.required=true;input.setAttribute('aria-label',key+' '+(i+1));input.addEventListener('change',()=>{if(!input.value.trim())return;o[key]=input.value.trim();void persist(d!).catch(showError)});label.append(el('span','',key==='title'?'Заголовок':'Содержание'),input);group.append(label)}panel.append(group)});
+  d.outline.forEach((o,i)=>{const group=el('fieldset','block-editor');for(const key of ['title','purpose'] as const){const label=el('label','af-field'),input=key==='title'?el('input','af-input'):el('textarea','af-textarea');input.value=o[key];input.maxLength=key==='title'?40:6000;input.required=true;input.setAttribute('aria-label',key+' '+(i+1));input.addEventListener('change',()=>{if(!input.value.trim())return;o[key]=input.value.trim();void persist(d!).catch(showError)});label.append(el('span','',key==='title'?'Заголовок':'Содержание'),input);group.append(label)}panel.append(group)});
   $('.ai-result').prepend(panel);
  }
  async function saveProgress(next:DraftResult){d=next;await persist(next);if(dialog.isConnected)draw()}
@@ -123,16 +123,18 @@ export async function openAI(context:Context,apply:(draft:DraftResult)=>Promise<
  $('[data-apply]').addEventListener('click',protect(async()=>{if(!d||busy||applying||!flush())return;applying=true;controls();try{await verify();if(Object.keys(d.errors).length||!d.sections.every(Boolean))return;await queue;await apply(d);dialog.close()}finally{applying=false;controls()}}));
  $('[data-anchor]').addEventListener('click',protect(async()=>{if(!d)return;d.projectId=context.projectId;d.anchorId=context.anchorId;await persist(d);messages()}));
  picker.addEventListener('change',()=>{if(!flush())return;flush=()=>true;disposeControls($('.ai-properties'));$('.ai-properties').replaceChildren();selectedIndex=Number(picker.value);paintPreview();if(d?.request.kind==='page')preview.querySelector(`[data-section-id="${d.sections[selectedIndex]?.id}"]`)?.scrollIntoView({block:'start'})});
- function sizePreview(){const width=$<HTMLSelectElement>('[data-device]').value+'px';preview.style.width=d?.request.kind==='presentation'?'100%':width;preview.style.maxWidth=d?.request.kind==='presentation'?'100%':width}
+ function sizePreview(){const width=$<HTMLSelectElement>('[data-device]').value+'px';preview.dataset.kind=d?.request.kind;preview.style.width=d?.request.kind==='presentation'?'100%':width;preview.style.maxWidth=d?.request.kind==='presentation'?'100%':width}
  $('[data-device]').addEventListener('change',sizePreview);
  $('[data-diagnostics]').addEventListener('click',()=>void preparation());
  $('[data-close]').addEventListener('click',()=>{if(flush())dialog.close()});dialog.addEventListener('cancel',e=>{if(!flush())e.preventDefault()});dialog.addEventListener('close',()=>{abort?.abort();disposeControls(dialog);controller?.destroy();dialog.remove()});
  function materialRow(m:Material,local=false){
-  materials.push(m);const row=el('div','ai-material'),label=el('label'),checkbox=el('input'),img=el('img');checkbox.type='checkbox';checkbox.dataset.material=m.id;checkbox.checked=chosen.has(m.id);checkbox.addEventListener('change',()=>{if(checkbox.checked&&chosen.size>=6){checkbox.checked=false;showError('Выберите не более шести материалов.');return}if(checkbox.checked)chosen.add(m.id);else chosen.delete(m.id)});img.src=m.src;img.alt='';label.append(checkbox,img,document.createTextNode(m.name));row.append(label);
+  materials.push(m);const row=el('div','ai-material'),label=el('label','af-check'),checkbox=el('input','af-checkbox'),img=el('img');checkbox.type='checkbox';checkbox.dataset.material=m.id;checkbox.checked=chosen.has(m.id);checkbox.addEventListener('change',()=>{if(checkbox.checked&&chosen.size>=6){checkbox.checked=false;showError('Выберите не более шести материалов.');return}if(checkbox.checked)chosen.add(m.id);else chosen.delete(m.id)});img.src=m.src;img.alt='';label.append(checkbox,img,document.createTextNode(m.name));row.append(label);
   if(local){const description=el('input','af-input');description.value=m.description;description.placeholder='Что изображено и для чего использовать';description.setAttribute('aria-label','Описание '+m.name);description.maxLength=200;description.addEventListener('change',protect(async()=>{m.description=description.value;await describeAsset(m.id.replace('asset:',''),description.value)}));row.append(description)}$('.ai-assets').append(row);
  }
  form.prepend(button('Заполнить пример о продукте',()=>{field('sources').value=productFacts;field('audience').value='Авторы контента';field('prompt').value=demoPrompts[context.kind]},'af-btn af-btn--secondary ai-example'));
- document.body.append(dialog);dialog.showModal();
+ document.body.append(dialog);showDialog(dialog);
+ const header=dialog.querySelector<HTMLElement>('.ai-header')!,headerSize=new ResizeObserver(()=>dialog.style.setProperty('--ai-header-height',header.offsetHeight+'px'));
+ headerSize.observe(header);dialog.addEventListener('close',()=>headerSize.disconnect(),{once:true});
  const readinessAbort=new AbortController();let readinessTimer:ReturnType<typeof setTimeout>|undefined,readinessRequest=0;
  const connection=el('p','ai-readiness');connection.setAttribute('role','status');connection.setAttribute('aria-live','polite');dialog.querySelector('.ai-header')!.after(connection);
  const retry=button('Повторить проверку',()=>void preparation(),'af-btn af-btn--secondary af-btn--sm');retry.hidden=true;connection.after(retry);

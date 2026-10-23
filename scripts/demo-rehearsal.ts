@@ -1,3 +1,4 @@
+import {chooseOption} from '../tests/choose-option';
 import {chromium,expect,type Page} from '@playwright/test';
 import {mkdir,writeFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
@@ -16,9 +17,9 @@ try{
  report.diagnostics=(await record(page,'settings','demo:diagnostics'))?.value;
  await page.screenshot({path:resolve(out,'diagnostics.png'),fullPage:true});await page.getByRole('button',{name:'Закрыть',exact:true}).click();
  for(const kind of ['page','presentation'] as const){
-  await page.goto(base+'/demo/');await page.getByLabel('Формат проекта').selectOption(kind);await page.getByRole('button',{name:'Собрать из шаблона',exact:true}).click();await expect(page.locator('#save-state')).toHaveText('Сохранено в браузере');
+  await page.goto(base+'/demo/');await chooseOption(page.getByRole('combobox',{name:'Формат проекта'}),kind);await page.getByRole('button',{name:'Собрать из шаблона',exact:true}).click();await expect(page.locator('#save-state')).toHaveText('Сохранено в браузере');
   const id=(await page.evaluate(()=>location.hash)).split('/').at(-1)!,before=(await record(page,'projects',id)).document;
-  await page.getByRole('button',{name:'Создать с ИИ',exact:true}).click();await page.getByLabel('Результат',{exact:true}).selectOption(kind==='page'?'section':'slide');
+  await page.getByRole('button',{name:'Создать с ИИ',exact:true}).click();await chooseOption(page.getByRole('combobox',{name:'Результат',exact:true}),kind==='page'?'section':'slide');
   const prompt=`Покажи три возможности ${kind==='page'?'в секции сайта':'на одном слайде'}: изображения, хранение проектов, автономный экспорт.`;
   await page.getByLabel('Запрос',{exact:true}).fill(prompt);await page.getByLabel('Исходные сведения',{exact:true}).fill(productFacts);
   const start=Date.now();await page.getByRole('button',{name:'Создать черновик',exact:true}).click();await expect(page.locator('.ai-progress')).toContainText('Черновик готов',{timeout:180000});

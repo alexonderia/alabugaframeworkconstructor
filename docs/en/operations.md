@@ -54,3 +54,9 @@ Set ALABUGA_NPM_REGISTRY and ALABUGA_NPMRC_FILE from .env.example for builds. np
 VITE_FRAMEWORK_DOCS_URL sets the independent reference URL before building web; Actions reads repository variable FRAMEWORK_DOCS_URL. Local split verification uses docs port 4391 and application port 4390. These test origins do not replace the user installation on 4176.
 
 Use Framework infra/registry/README.md to configure HTTPS registry hosting, publisher/read accounts, backups, recovery and monitoring. JWTs expire in 30 days; rotate secrets by day 25. Constructor never receives publisher credentials. Framework releases do not deploy the application.
+
+## UI acceptance in Docker
+
+After updating containers, run `npm run test:docker`. The suite uses the already running application at `http://127.0.0.1:4176`; set `AF_ACCEPTANCE_URL` to use a different address. It checks narrow and short viewports, user text spacing, panel roles, focus during responsive command moves and description contrast in interactive cards. It does not run model generation. Results and traces are stored in `artifacts/docker-ui-tests`.
+
+This is automated UI verification. It does not replace acceptance with an on-screen keyboard on a real phone, screen-reader testing or author sessions.

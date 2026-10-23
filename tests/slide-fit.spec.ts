@@ -43,7 +43,7 @@ test('preview applies once, rejects stale edits and survives storage and export'
  });
  await expect(page.getByRole('button',{name:'Применить оформление',exact:true})).toBeEnabled({timeout:20000});
  await page.evaluate(()=>{(window as any).fitModel.change((d:any)=>d.title='Новое название')});
- await page.getByRole('button',{name:'Применить оформление',exact:true}).click();await expect(page.locator('.fit-dialog > [role=status]')).toContainText('Проект изменился');await page.locator('.fit-dialog').getByRole('button',{name:'Закрыть',exact:true}).click();
+ await page.getByRole('button',{name:'Применить оформление',exact:true}).click();await expect(page.locator('.fit-body > [role=status]')).toContainText('Проект изменился');await page.locator('.fit-dialog').getByRole('button',{name:'Закрыть',exact:true}).click();
  await page.evaluate(()=>{(window as any).fitModel.undo();(window as any).openFit()});await expect(page.getByRole('button',{name:'Применить оформление',exact:true})).toBeEnabled({timeout:20000});await page.getByRole('button',{name:'Применить оформление',exact:true}).click();
  const r=await page.evaluate(async()=>{
   const model=(window as any).fitModel,formatted=model.document;model.undo();const undo=JSON.stringify(model.document)===JSON.stringify((window as any).fitOriginal);model.redo();
@@ -66,7 +66,9 @@ test('whole deck previews and applies atomically, while cancel keeps original',a
  test.setTimeout(60000);await openEditor(page);await page.evaluate(async()=>{
   const {slideFitFixtures}=await import('/tests/slide-fit-fixtures.ts' as string),{openSlideFit}=await import('/apps/editor/src/slide-fit.ts' as string),{EditorModel}=await import('/apps/editor/src/model.ts' as string);
   const model=new EditorModel({schemaVersion:3,kind:'presentation',title:'Проверка',pages:slideFitFixtures().slice(0,3)});(window as any).fitModel=model;(window as any).fitOriginal=model.document;(window as any).openFit=()=>openSlideFit(()=>({id:'deck',document:model.document}),0,(d:any)=>{model.change((doc:any)=>doc.pages=d.pages);return true},true);(window as any).openFit();
- });await page.getByRole('button',{name:'Отменить расчёт',exact:true}).click();await expect(page.locator('.fit-dialog > [role=status]')).toContainText('отменён');expect(await page.evaluate(()=>JSON.stringify((window as any).fitModel.document)===JSON.stringify((window as any).fitOriginal))).toBe(true);
+  // Cancel while calculation is in flight, before a fast engine can finish it.
+  Array.from(document.querySelectorAll<HTMLButtonElement>('.fit-actions button')).find(n=>n.textContent==='Отменить расчёт')!.click();
+ });await expect(page.locator('.fit-body > [role=status]')).toContainText('отменён');expect(await page.evaluate(()=>JSON.stringify((window as any).fitModel.document)===JSON.stringify((window as any).fitOriginal))).toBe(true);
  await page.getByRole('button',{name:'Рассчитать оформление',exact:true}).click();await expect(page.getByRole('button',{name:'Применить оформление',exact:true})).toBeEnabled({timeout:30000});await page.getByRole('button',{name:'Применить оформление',exact:true}).click();
  expect(await page.evaluate(()=>{const model=(window as any).fitModel,all=model.document.pages.every((p:any)=>p.appearance.fitted);model.undo();return all&&JSON.stringify(model.document)===JSON.stringify((window as any).fitOriginal)})).toBe(true);
 });

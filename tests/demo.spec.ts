@@ -1,3 +1,4 @@
+import {chooseOption} from './choose-option';
 import {test,expect} from '@playwright/test';
 import {savedDocument} from './project-helper';
 import {pathToFileURL} from 'node:url';
@@ -30,8 +31,8 @@ test('demo preview does not save; each explicit action creates its own editable 
  await page.goto('/demo/');await expect(page.getByRole('heading',{name:'От идеи — к своей истории.'})).toBeVisible();
  expect(await page.evaluate(async()=>{const s=await import('/apps/editor/src/storage.ts' as string);return (await s.listProjectSummaries()).length})).toBe(0);
  await page.getByRole('button',{name:'Настроить элементы',exact:true}).click();await expect(page.locator('#project-name')).toBeVisible();await expect(page.locator('.author-tutorial')).toBeVisible();const first=await savedDocument(page);expect(first.pages).toHaveLength(10);
- await page.getByLabel('Масштаб текста',{exact:true}).selectOption('large');await page.getByLabel('Цвет текста',{exact:true}).selectOption('blue');await expect.poll(async()=>(await savedDocument(page)).pages[4].widgets[0].style?.color).toBe('blue');await page.reload();await expect(page.locator('#canvas [data-element-color]').first()).toBeVisible();
- await page.goto('/demo/');await page.getByLabel('Формат проекта').selectOption('presentation');await page.getByRole('button',{name:'Собрать из шаблона',exact:true}).click();await expect(page.locator('#project-name')).toBeVisible();expect((await savedDocument(page)).pages).toHaveLength(11);
+ await chooseOption(page.getByLabel('Масштаб текста',{exact:true}),'large');await chooseOption(page.getByLabel('Цвет текста',{exact:true}),'blue');await expect.poll(async()=>(await savedDocument(page)).pages[4].widgets[0].style?.color).toBe('blue');await page.reload();await expect(page.locator('#canvas [data-element-color]').first()).toBeVisible();
+ await page.goto('/demo/');await chooseOption(page.getByLabel('Формат проекта'),'presentation');await page.getByRole('button',{name:'Собрать из шаблона',exact:true}).click();await expect(page.locator('#project-name')).toBeVisible();expect((await savedDocument(page)).pages).toHaveLength(11);
  expect(await page.evaluate(async()=>{const s=await import('/apps/editor/src/storage.ts' as string);return (await s.listProjectSummaries()).length})).toBe(2);
 });
 test('semantic layout keeps content and manual formatting and rejects additional widgets',async({page})=>{
@@ -42,9 +43,9 @@ test('demo specimens validate and slides fit with fonts and images loaded',async
  await page.goto('/demo/');const issues=await page.evaluate(async()=>{const {demoDocument}=await import('/tests/framework/demo-documents.ts' as string),{validateDocument}=await import('/tests/framework/schema.ts' as string),{renderDocument}=await import('/tests/framework/runtime.ts' as string);const doc=demoDocument('presentation');const valid=validateDocument(doc);if(!valid.success)return valid.issues;const host=document.createElement('div');host.style.width='1600px';document.body.append(host);const c=renderDocument(host,doc,{editing:true});await document.fonts.ready;await Promise.all([...host.querySelectorAll('img')].map(i=>i.decode()));const errors=c.checkOverflow();c.destroy();host.remove();return errors});expect(issues).toEqual([]);
 });
 test('layout preview applies in one undo step and author typography survives offline export',async({page},info)=>{
- await page.goto('/demo/');await page.getByLabel('Формат проекта').selectOption('presentation');await page.getByRole('button',{name:'Собрать из шаблона',exact:true}).click();await expect(page.locator('#project-name')).toBeVisible();const before=await savedDocument(page);
+ await page.goto('/demo/');await chooseOption(page.getByLabel('Формат проекта'),'presentation');await page.getByRole('button',{name:'Собрать из шаблона',exact:true}).click();await expect(page.locator('#project-name')).toBeVisible();const before=await savedDocument(page);
  await page.locator('#page-settings-open').click();await page.getByRole('button',{name:'Изменить компоновку',exact:true}).click();await page.getByRole('button',{name:'Применить: Асимметрия / справа',exact:true}).click();await expect.poll(async()=>(await savedDocument(page)).pages[0].layoutVariant).toBe('asymmetric');await page.locator('#undo').click();expect((await savedDocument(page)).pages[0]).toEqual(before.pages[0]);
- await page.locator('#canvas .af-slide--active [data-widget-id]').first().press('Enter');await page.getByLabel('Размер заголовка',{exact:true}).selectOption('96');await expect.poll(async()=>(await savedDocument(page)).pages[0].widgets[0].typography.heading).toBe(96);
+ await page.locator('#canvas .af-slide--active [data-widget-id]').first().press('Enter');await chooseOption(page.getByLabel('Размер заголовка',{exact:true}),'96');await expect.poll(async()=>(await savedDocument(page)).pages[0].widgets[0].typography.heading).toBe(96);
  const event=page.waitForEvent('download');await page.locator('#export').click();const download=await event,file=info.outputPath('styled.html');await download.saveAs(file);await page.route(/^https?:\/\//,r=>r.abort());await page.goto(pathToFileURL(file).href);await expect(page.locator('.af-slide--active .af-title')).toHaveCSS('font-size','96px');
 });
 test('slide fitting retains individually locked author typography',async({page})=>{

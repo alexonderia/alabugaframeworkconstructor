@@ -3,9 +3,18 @@ const mounted=new WeakMap<HTMLElement,()=>void>();
 /** Enhance only editor controls. Never walk the author-controlled canvas. */
 export function mountControls(root:HTMLElement){
  disposeControls(root);
- // Selects with changing option sets retain the platform keyboard and touch UI.
- root.querySelectorAll('select').forEach(n=>n.setAttribute('data-af-select-native',''));
- const cleanup=initComponents(root);mounted.set(root,cleanup);
+ const controls=new Map<HTMLElement,()=>void>();
+ const sync=()=>{
+  for(const [control,cleanup]of controls)if(!root.contains(control)){cleanup();controls.delete(control)}
+  for(const control of root.querySelectorAll<HTMLElement>('select.af-select,input.af-datepicker[type=date]')){
+   if(controls.has(control)||control.closest('.af-document--page,.af-document--presentation'))continue;
+   // Framework observes option/value changes itself, including dynamic lists.
+   controls.set(control,initComponents(control));
+  }
+ };
+ const observer=new MutationObserver(sync);
+ observer.observe(root,{childList:true,subtree:true});sync();
+ const cleanup=()=>{observer.disconnect();for(const dispose of controls.values())dispose();controls.clear()};mounted.set(root,cleanup);
  return ()=>disposeControls(root);
 }
 export function disposeControls(root:HTMLElement){

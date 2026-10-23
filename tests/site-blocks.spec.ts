@@ -1,3 +1,4 @@
+import {chooseOption} from './choose-option';
 import {openGeometry} from './property-helper';
 import {openEditor} from './open-editor';
 import {savedDocument} from './project-helper';
@@ -14,7 +15,7 @@ test('header and footer are editable landmarks and survive export',async({page},
 test('place a block right of center and align its contents independently',async({page},info)=>{
   await page.locator('#add-widget').click();await page.locator('[data-add="text"]').click();await page.locator('#canvas .af-widget').hover();await page.getByRole('button',{name:'Настройки блока',exact:true}).click();
   await openGeometry(page);await page.getByLabel('Ширина',{exact:true}).fill('3');await expect.poll(async()=>(await doc(page)).pages[0].widgets[0].position.width).toBe(3);await page.getByRole('button',{name:'Справа',exact:true}).click();await expect.poll(async()=>(await doc(page)).pages[0].widgets[0].position.col).toBe(10);
-  await page.getByLabel('Смещение блока по горизонтали',{exact:true}).fill('8');await page.getByLabel('Выравнивание содержимого',{exact:true}).selectOption('center');await expect.poll(async()=>(await doc(page)).pages[0].widgets[0].position.col).toBe(8);await expect(page.locator('#canvas .af-widget')).toHaveCSS('text-align','center');
+  await page.getByLabel('Смещение блока по горизонтали',{exact:true}).fill('8');await chooseOption(page.getByLabel('Выравнивание содержимого',{exact:true}),'center');await expect.poll(async()=>(await doc(page)).pages[0].widgets[0].position.col).toBe(8);await expect(page.locator('#canvas .af-widget')).toHaveCSS('text-align','center');
   await page.locator('#close-inspector').click();const box=await page.locator('#canvas .af-widget').boundingBox(),panel=await page.locator('#canvas .af-panel').boundingBox();expect(box!.x).toBeGreaterThan(panel!.x+panel!.width/2);
   const event=page.waitForEvent('download');await page.locator('#export').click();const download=await event,path=info.outputPath('offset.html');await download.saveAs(path);await page.goto(pathToFileURL(path).href);await expect(page.locator('.af-widget')).toHaveCSS('grid-column','8 / span 3');await expect(page.locator('.af-widget')).toHaveCSS('text-align','center');
 });
@@ -27,7 +28,7 @@ test('tools hide when pointer leaves, including narrow desktop, and return on ke
 test('drag an unselected block in a different section',async({page})=>{
   await page.setViewportSize({width:1440,height:1600});
   await page.locator('#add-widget').click();await page.locator('[data-add="metric"]').click();
-  await page.locator('#end-add .insert-button').click();await page.locator('[data-template="blank"]').click();await page.locator('#page-settings-open').click();await page.getByLabel('Высота секции',{exact:true}).selectOption('fixed');await page.locator('#close-inspector').click();await page.locator('#add-widget').click();await page.locator('[data-add="metric"]').click();
+  await page.locator('#end-add .insert-button').click();await page.locator('[data-template="blank"]').click();await page.locator('#page-settings-open').click();await chooseOption(page.getByLabel('Высота секции',{exact:true}),'fixed');await page.locator('#close-inspector').click();await page.locator('#add-widget').click();await page.locator('[data-add="metric"]').click();
   await page.locator('#canvas .af-widget').first().click();
   const section=page.locator('#canvas .af-page').nth(1),box=section.locator('.af-widget').first();await box.hover();await box.locator('.move-handle').evaluate(n=>n.scrollIntoView({block:'center'}));
   const handle=await box.locator('.move-handle').boundingBox(),panel=await section.locator('.af-panel').boundingBox();expect(handle!.y+253).toBeLessThan(1600);

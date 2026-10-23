@@ -19,12 +19,13 @@
     "ai:report": "python scripts/ai-report.py",
     "predev": "tsx scripts/build-docs.ts",
     "dev": "vite --host 127.0.0.1",
-    "build": "npm run typecheck && npm run check:boundaries && tsx scripts/build.ts",
+    "build": "npm run typecheck && npm run check:boundaries && npm run check:ui && tsx scripts/build.ts",
     "test": "tsx --test tests/editor.test.ts tests/editor-save.test.ts tests/project-import.test.ts",
     "test:browser": "playwright test",
     "preview": "vite preview --outDir dist/site --host 127.0.0.1",
     "typecheck": "tsc --noEmit",
     "check:boundaries": "node scripts/check-boundaries.mjs",
+    "check:ui": "node scripts/check-ui-styles.mjs",
     "build:editor": "npm run build -w @alabuga/editor",
     "build:docs": "tsx scripts/build-docs.ts",
     "build:ai": "npm run build -w @alabuga/ai",
@@ -34,7 +35,8 @@
     "check:docs": "tsx scripts/check-docs.ts",
     "test:release": "node scripts/release-smoke.mjs",
     "registry:configure": "node scripts/configure-registry.mjs",
-    "test:compatibility": "node scripts/check-framework-version.mjs"
+    "test:compatibility": "node scripts/check-framework-version.mjs",
+    "test:docker": "playwright test --config=playwright.docker.config.ts"
   },
   "dependencies": {
     "zod": "^4.5.4",
@@ -46,6 +48,7 @@
     "axe-core": "^4.13.0",
     "esbuild": "0.28.2",
     "marked": "17.0.5",
+    "postcss": "8.5.28",
     "tsx": "^4.23.13",
     "typescript": "^5.9.2",
     "vite": "^7.3.6"

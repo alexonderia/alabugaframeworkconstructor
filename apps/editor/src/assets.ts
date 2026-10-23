@@ -1,8 +1,7 @@
-import {el,button} from '@alabuga/framework/dom';
+import {showDialog,el,button} from './ui';
 import {readImage} from './export';
 import {loadBrandManifest} from './brand-manifest';
 import {listAssets,describeAsset,addAsset} from './storage';
-import {initComponents} from '@alabuga/framework/components';
 
 export async function chooseAsset(apply:(src:string)=>void){
  const dialog=el('dialog','asset-library'),grid=el('div','asset-grid'),filter=el('select','af-select'),error=el('p','af-error'),status=el('p'),search=el('input','af-input'),sort=el('select','af-select');
@@ -13,7 +12,7 @@ export async function chooseAsset(apply:(src:string)=>void){
  type Item={id:string;name:string;description:string;src:string;thumbnail:string;category:string;details?:string};let items:Item[]=[],request=0,closed=false;
  const pick=(src:string)=>{try{apply(src);dialog.close()}catch(e){error.textContent=(e as Error).message}};
  const draw=()=>{grid.replaceChildren();const q=search.value.trim().toLocaleLowerCase();const visible=items.filter(a=>a.category===filter.value&&(!q||(a.name+' '+a.description).toLocaleLowerCase().includes(q))).sort((a,b)=>a.name.localeCompare(b.name,'ru')*(sort.value==='reverse'?-1:1));
-  for(const a of visible){const card=el('div','asset-item'),b=button('',()=>pick(a.src),'asset-card'),img=el('img');img.src=a.thumbnail;img.alt='';img.loading='lazy';b.append(img,el('strong','',a.name),el('small','',a.description));if(a.details)b.append(el('small','',a.details));card.append(b);
+  for(const a of visible){const card=el('div','asset-item'),b=button('',()=>pick(a.src),'asset-card'),img=el('img');img.src=a.thumbnail;img.alt='';img.loading='lazy';b.append(img,el('strong','',a.name),el('span','',a.description));if(a.details)b.append(el('span','',a.details));card.append(b);
    if(a.category==='local'){const label=el('label','af-field'),description=el('input','af-input');description.value=a.description;description.maxLength=200;description.setAttribute('aria-label','Описание '+a.name);description.addEventListener('change',()=>{void describeAsset(a.id,description.value).then(()=>{a.description=description.value;a.name=description.value||'Без описания';status.textContent='Описание сохранено.'}).catch(e=>error.textContent=(e as Error).message)});label.append(el('span','af-label','Описание'),description);card.append(label)}grid.append(card)}
   if(!visible.length)grid.append(el('p','',items.length?'Материалы не найдены. Измените запрос или загрузите изображение.':'Здесь пока нет материалов. Можно загрузить своё изображение.'));
  };
@@ -25,10 +24,9 @@ export async function chooseAsset(apply:(src:string)=>void){
   const failed=results.some(r=>r.status==='rejected');status.textContent=failed?'Доступна часть библиотеки. Загрузка своего изображения работает.':'Материалы загружены.';if(failed){error.textContent='Не удалось загрузить часть материалов. Проверьте подключение и повторите попытку.';retry.hidden=false}draw();
  }
  upload.addEventListener('change',()=>{void (async()=>{try{const file=upload.files?.[0];if(!file)return;const src=await readImage(file);if(closed)return;await addAsset(src,file.name);if(!closed)pick(src)}catch(e){error.textContent=(e as Error).message}finally{upload.value=''}})()});
- dialog.append(el('h2','','Библиотека материалов'),button('Закрыть',()=>dialog.close()),filter,search,sort,el('label','','Или загрузите своё изображение'),upload,status,error,retry,grid);document.body.append(dialog);
- // Dynamic category/search controls stay native; the library owns their options.
- dialog.querySelectorAll('select').forEach(n=>n.setAttribute('data-af-select-native',''));
- const cleanup=initComponents(dialog);dialog.addEventListener('close',()=>{closed=true;request++;cleanup();dialog.remove()},{once:true});filter.addEventListener('change',draw);search.addEventListener('input',draw);sort.addEventListener('change',draw);dialog.showModal();void load();
+ const uploadField=el('label','af-field');uploadField.append(el('span','af-label','Или загрузите своё изображение'),upload);
+ dialog.append(el('h2','','Библиотека материалов'),button('Закрыть',()=>dialog.close()),filter,search,sort,uploadField,status,error,retry,grid);document.body.append(dialog);
+ dialog.addEventListener('close',()=>{closed=true;request++;dialog.remove()},{once:true});filter.addEventListener('change',draw);search.addEventListener('input',draw);sort.addEventListener('change',draw);showDialog(dialog);void load();
 }
 
 export type FocalPoint={x:number;y:number};

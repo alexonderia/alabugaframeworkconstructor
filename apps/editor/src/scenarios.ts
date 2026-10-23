@@ -1,4 +1,4 @@
-import {el,button} from '@alabuga/framework/dom';
+import {el,button} from './ui';
 import {type AFDocument,type Widget,widgetRegistry} from '@alabuga/framework/schema';
 type Commit=(edit:(doc:AFDocument)=>void)=>boolean;
 export function motionScenarios(host:HTMLElement,doc:AFDocument,index:number,commit:Commit){

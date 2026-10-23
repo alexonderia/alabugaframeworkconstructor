@@ -1,3 +1,44 @@
-.ai-dialog{width:min(1500px,96vw);height:94vh;max-width:96vw;max-height:96vh;border:1px solid #d9e4f0;border-radius:16px;padding:0;background:#f3f6fb;color:#000d3c;box-shadow:0 20px 100px #000d3c44}.ai-dialog::backdrop{background:#000d3c66}.ai-header{display:flex;justify-content:space-between;align-items:center;padding:18px 24px;background:white;border-bottom:1px solid #d9e4f0}.ai-header strong{font-size:24px}.ai-header small{display:block;margin-top:4px;color:#526375}.ai-workspace{display:grid;grid-template-columns:320px minmax(0,1fr);height:calc(100% - 92px)}.ai-form{overflow:auto;background:white;border-right:1px solid #d9e4f0;padding:20px;display:flex;flex-direction:column;gap:16px}.ai-form .af-field{display:flex;flex-direction:column;gap:6px}.ai-form textarea{width:100%}.ai-result{overflow:auto;padding:20px;min-width:0}.ai-progress{font-size:18px;font-weight:600;min-height:28px}.ai-toolbar,.ai-form-actions,.ai-result footer{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0}.ai-toolbar select{max-width:260px}.ai-preview-scroll{max-height:60vh;overflow:auto;background:#dce4ef;padding:12px}.ai-preview{width:100%;margin:auto;background:white;min-height:140px}.ai-preview .inline-editable{cursor:text;outline-offset:4px}.ai-preview .inline-editable:focus{outline:2px solid #0c6ff1}.ai-properties:empty{display:none}.ai-properties{padding:16px;background:white;margin-top:16px;border-radius:8px}.ai-properties .property-form{max-width:650px}.ai-material{border-bottom:1px solid #d9e4f0;padding:8px 0}.ai-material label{display:flex;gap:8px;align-items:center;font-size:12px}.ai-material img{width:48px;height:38px;object-fit:contain}.ai-assets{max-height:250px;overflow:auto}.ai-issues{font-size:13px}.ai-issues p{padding:8px;background:#fff5de}.ai-save{font-size:12px}.ai-result footer{position:sticky;bottom:0;background:#f3f6fb;padding:12px 0}.ai-result footer label{font-size:13px}@media(max-width:760px){.ai-workspace{grid-template-columns:1fr;height:auto}.ai-dialog{overflow:auto}.ai-form{overflow:visible}.ai-result{overflow:visible}.ai-preview-scroll{max-height:55vh}.ai-header{position:sticky;top:0;z-index:4}.ai-form textarea{max-height:140px}}@media(prefers-reduced-motion:reduce){.ai-dialog *{scroll-behavior:auto!important}}
-.ai-issues{font-size:14px;scroll-margin-block:24px}.ai-issues:focus-visible{outline:2px solid #0956bb;outline-offset:4px}.ai-issues p{overflow-wrap:anywhere}
-.ai-dialog [hidden]{display:none}.ai-readiness{margin:8px 24px 16px;font-size:16px}.ai-dialog>.af-btn{margin:0 24px 16px}.ai-jump{display:none}@media(max-width:767px){.ai-jump{display:block}.ai-readiness{margin:12px}}
+.ai-dialog{width:min(1500px,96vw);height:94dvh;max-width:96vw;max-height:96dvh;padding:0}
+.ai-header{display:flex;justify-content:space-between;align-items:center;gap:var(--af-space-16);padding:var(--af-space-16) var(--af-space-24);background:var(--af-bg-surface);border-bottom:1px solid var(--af-border-default)}
+.ai-header small{display:block;margin-top:var(--af-space-4);color:var(--af-text-secondary)}
+.ai-workspace{display:grid;grid-template-columns:320px minmax(0,1fr)}
+.ai-form{min-width:0;overflow:auto;background:var(--af-bg-surface);border-right:1px solid var(--af-border-default);padding:var(--af-space-20);display:flex;flex-direction:column;gap:var(--af-space-16)}
+.ai-form textarea{width:100%}
+.ai-result{overflow:auto;padding:var(--af-space-20);min-width:0;display:flex;flex-direction:column;gap:var(--af-space-16)}
+.ai-result>*{flex:none;min-width:0;margin-block:0}
+.ai-progress{font-size:18px;font-weight:600;min-height:28px}
+.ai-toolbar,.ai-form-actions,.ai-result footer,.ai-elements{display:flex;gap:var(--af-space-8);flex-wrap:wrap;align-items:center;margin:0}
+.ai-toolbar select,.ai-toolbar>.af-select-box{max-width:260px}
+.ai-toolbar>.af-btn,.ai-form-actions>.af-btn,.ai-result footer>.af-btn{flex:0 0 auto;max-width:100%}
+.ai-preview-scroll{max-height:60dvh;overflow:auto;container-type:inline-size;background:var(--af-color-neutral-50);padding:var(--af-space-12)}
+.ai-preview{width:100%;margin:auto;background:var(--af-bg-surface);min-height:140px}
+.ai-preview[data-kind=presentation]{height:calc(100cqw * 9 / 16);min-height:0}
+.ai-preview .inline-editable{cursor:text;outline-offset:4px}
+.ai-preview .inline-editable:focus{outline:2px solid var(--af-color-brand-blue)}
+.ai-properties .property-form{max-width:650px}
+.ai-material{border-bottom:1px solid var(--af-border-default);padding:var(--af-space-8) 0}
+.ai-material img{width:48px;height:38px;object-fit:contain}
+.ai-assets{max-height:250px;overflow:auto}
+.ai-issues{font-size:14px;scroll-margin-block:24px}
+.ai-issues:focus-visible{outline:2px solid var(--af-text-link);outline-offset:4px}
+.ai-issues p{overflow-wrap:anywhere}
+.ai-save{font-size:12px}
+.ai-result footer{padding:var(--af-space-12) 0}
+.ai-result footer>.af-check{flex-basis:100%}
+.ai-dialog [hidden],.ai-properties:empty,.ai-save:empty,.ai-diagnostics:empty,.ai-elements:empty,.ai-issues:empty{display:none}
+.ai-readiness{margin:var(--af-space-12) var(--af-space-24);font-size:16px}
+.ai-dialog>.af-btn{margin:0 var(--af-space-24) var(--af-space-16)}
+.ai-jump{display:none}
+@media(max-width:1023px),(max-height:500px){
+ .ai-dialog[open]{overflow:auto}
+ .ai-dialog>.ai-workspace{flex:none}
+ .ai-workspace{grid-template-columns:minmax(0,1fr)}
+ .ai-form,.ai-result{overflow:visible}
+ .ai-form{border-right:0;border-bottom:1px solid var(--af-border-default)}
+ .ai-preview-scroll{max-height:55dvh}
+ .ai-header{position:sticky;top:0;z-index:4}
+ .ai-form textarea{max-height:140px}
+ .ai-jump{display:block}
+ .ai-progress,.ai-issues{scroll-margin-block-start:calc(var(--ai-header-height,var(--af-space-96)) + var(--af-space-16))}
+}
+@media(prefers-reduced-motion:reduce){.ai-dialog *{scroll-behavior:auto!important}}

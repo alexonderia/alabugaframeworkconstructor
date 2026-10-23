@@ -3,6 +3,7 @@ import {spawn} from 'node:child_process';
 import {mkdir,writeFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
+import {chooseOption} from '../tests/choose-option.ts';
 const port=process.env.AF_SMOKE_PORT||'4388',base=process.env.AF_SMOKE_URL||`http://127.0.0.1:${port}`,out=resolve('artifacts/release-smoke');
 await mkdir(out,{recursive:true});
 const service=process.env.AF_SMOKE_URL?null:spawn(process.execPath,['apps/ai-server/dist/ai-server.js'],{windowsHide:true,stdio:'inherit',env:{...process.env,AF_AI_PORT:port,AF_OLLAMA_PORT:'1'}});
@@ -18,7 +19,7 @@ try{
  for(const width of [390,768,1440,1920]){await page.setViewportSize({width,height:1000});await page.goto(base+'/demo/');await page.screenshot({path:resolve(out,`demo-${width}.png`),fullPage:true});report.screens.push(width)}
  await page.setViewportSize({width:1440,height:1000});
  for(const kind of ['page','presentation']){
-  await page.goto(base+'/demo/');await page.getByLabel('Формат проекта').selectOption(kind);await page.getByRole('button',{name:'Собрать из шаблона',exact:true}).click();await expect(page.locator('#save-state')).toHaveText('Сохранено в браузере');
+  await page.goto(base+'/demo/');await chooseOption(page.getByRole('combobox',{name:'Формат проекта'}),kind);await page.getByRole('button',{name:'Собрать из шаблона',exact:true}).click();await expect(page.locator('#save-state')).toHaveText('Сохранено в браузере');
   await page.screenshot({path:resolve(out,`${kind}-editor.png`)});
   const download=page.waitForEvent('download');await page.locator('#export').click();const path=resolve(out,kind+'.html');await(await download).saveAs(path);
   const offline=await browser.newPage({viewport:{width:1600,height:1000},reducedMotion:'reduce'});await offline.route(/^https?:\/\//,r=>r.abort());await offline.goto(pathToFileURL(path).href);

@@ -1,9 +1,10 @@
-import {el,button} from '@alabuga/framework/dom';
+import {el,button} from './ui';
+import {selectField} from './ui-fields';
 import type {AFDocument,Widget,SlideTypography} from '@alabuga/framework/schema';
 import {slideTypeDefaults} from '@alabuga/framework/element-style';
 export function elementDesign(host:HTMLElement,w:Widget,doc:AFDocument,changed:()=>void,refresh:()=>void){
  const group=el('fieldset','block-editor');group.append(el('legend','','Фирменное оформление элемента'));host.append(group);
- const select=(label:string,value:string,options:Record<string,string>,set:(v:string)=>void)=>{const l=el('label','af-field'),s=el('select','af-select');s.setAttribute('aria-label',label);for(const [v,t]of Object.entries(options)){const o=el('option','',t);o.value=v;s.append(o)}s.value=value;s.addEventListener('change',()=>{set(s.value);w.style={...w.style,locked:true};changed()});l.append(el('span','af-label',label),s);group.append(l)};
+ const select=(label:string,value:string,options:Record<string,string>,set:(v:string)=>void)=>selectField(group,label,value,options,v=>{set(v);w.style={...w.style,locked:true};changed()});
  if(doc.kind==='presentation'){
   const roles:Record<keyof SlideTypography,[string,number[]]>={heading:['Размер заголовка',[64,80,96,112]],body:['Размер основного текста',[32,36,40]],caption:['Размер подписи',[24,28]],cardTitle:['Заголовки карточек',[36,40,44]],table:['Текст таблицы',[28,32]],metric:['Размер показателя',[96,120,144]]};
   const keys:(keyof SlideTypography)[]=w.type==='text'||w.type==='quote'?['heading','body','caption']:w.type==='cards'?['cardTitle','body']:w.type==='metric'?['metric','caption']:w.type==='table'?['table']:['caption'];

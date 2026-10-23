@@ -2,7 +2,8 @@ import '@alabuga/framework/standalone.css';
 import '@alabuga/framework';
 import '../src/product.css';
 import './style.css';
-import {el,button} from '@alabuga/framework/dom';
+import {mountControls} from '../src/component-lifecycle';
+import {el,button} from '../src/ui';
 import {renderDocument} from '../src/framework-adapter';
 
 import {demoDocument} from '@alabuga/framework/demo-documents';
@@ -26,9 +27,9 @@ async function create(mode:'template'|'elements'|'ai'){
   const doc=demoDocument(kind),id=crypto.randomUUID();doc.title+=' — моя копия';await saveProject(id,doc);await writeSetting('tutorial:'+id,{enabled:true,section:mode==='elements'?(kind==='page'?4:5):0,done:[]});location.href='../builder/#/edit/'+id;
  }catch(e){status.textContent='Не удалось создать копию: '+String(e)}finally{busy=false;actions.inert=false}
 }
-actions.append(select,button('Собрать из шаблона',()=>void create('template'),'af-btn'),button('Настроить элементы',()=>void create('elements'),'af-btn af-btn--secondary'),button('Создать с ИИ',()=>void create('ai'),'af-btn af-btn--secondary'));hero.append(actions,status,el('p','demo-note','Без аккаунта. Проекты хранятся в этом браузере. Исходный образец остаётся неизменным.'));root.append(hero);
+actions.append(select,button('Собрать из шаблона',()=>void create('template'),'af-btn'),button('Настроить элементы',()=>void create('elements'),'af-btn af-btn--secondary'),button('Создать с ИИ',()=>void create('ai'),'af-btn af-btn--secondary'));hero.append(actions,status,el('p','demo-note','Без аккаунта. Проекты хранятся в этом браузере. Исходный образец остаётся неизменным.'));root.append(hero);const disposeControls=mountControls(actions);
 const gallery=el('section','demo-gallery');gallery.append(el('h2','','Один конструктор. Два результата.'),el('p','','Это живые документы из штатных компонентов. Посмотрите образцы, затем откройте свою копию.'));
 const controllers:ReturnType<typeof renderDocument>[]=[];
 for(const kind of ['page','presentation'] as const){const article=el('article','demo-sample'),head=el('div','demo-sample-head');head.append(el('h3','',kind==='page'?'Сайт · 10 секций':'Презентация · 11 слайдов'));head.append(button('Открыть свою копию',()=>{select.value=kind;void create('template')},'af-btn af-btn--secondary'));const host=el('div','demo-preview '+kind);article.append(head,host);gallery.append(article);controllers.push(renderDocument(host,demoDocument(kind)))}root.append(gallery);
 const footer=el('footer','demo-footer');footer.append(el('p','','Создано средствами Alabuga Framework. Эти образцы подготовлены редактором; новые черновики ИИ создаются отдельно.'),el('p','','Шаблоны → содержание → настройка → предпросмотр → экспорт.'));root.append(footer);
-window.addEventListener('pagehide',()=>controllers.forEach(c=>c.destroy()),{once:true});
+window.addEventListener('pagehide',()=>{disposeControls();controllers.forEach(c=>c.destroy())},{once:true});

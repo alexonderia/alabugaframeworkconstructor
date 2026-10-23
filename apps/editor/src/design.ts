@@ -2,21 +2,21 @@ import {elementDesign} from './element-design';
 import {layoutChooser} from './layout-chooser';
 import {motionScenarios} from './scenarios';
 import {compositionChooser} from './variants';
-import {el,button} from '@alabuga/framework/dom';
+import {settingsGroup,el,button} from './ui';
+import {inputField,textareaField,selectField as select} from './ui-fields';
 import {widgetRegistry,type AFDocument,type Widget,type Section} from '@alabuga/framework/schema';
 import {makeComposition,changeComposition,compositionCatalog} from '@alabuga/framework/compositions';
 import {chooseAsset,cropControl} from './assets';
 import {readImage} from './export';
 type Change=()=>void;
-function select(host:HTMLElement,label:string,value:string,options:Record<string,string>,update:(v:string)=>void){const wrap=el('label','af-field'),s=el('select','af-select');s.setAttribute('aria-label',label);for(const [v,text]of Object.entries(options)){const o=el('option','',text);o.value=v;s.append(o)}s.value=value;s.addEventListener('change',()=>update(s.value));wrap.append(el('span','af-label',label),s);host.append(wrap);return s}
-function input(host:HTMLElement,label:string,value:string,update:(v:string)=>void,multi=false){const wrap=el('label','af-field'),i=multi?el('textarea','af-textarea'):el('input','af-input');i.value=value;i.addEventListener('input',()=>update(i.value));wrap.append(el('span','af-label',label),i);host.append(wrap);return i}
-function upload(host:HTMLElement,label:string,update:(src:string)=>void,error:(s:string)=>void){host.append(button('Выбрать из библиотеки',()=>void chooseAsset(update),'af-btn af-btn--secondary af-btn--sm'));const wrap=el('label','af-field'),i=el('input','af-input');i.type='file';i.accept='image/png,image/jpeg,image/webp,image/gif';i.addEventListener('change',async()=>{try{if(i.files?.[0])update(await readImage(i.files[0]))}catch(e){error((e as Error).message)}});wrap.append(el('span','af-label',label),i);host.append(wrap)}
+function input(host:HTMLElement,label:string,value:string,update:(v:string)=>void,multi=false){return multi?textareaField(host,label,value,update):inputField(host,label,value,update)}
+function upload(host:HTMLElement,label:string,update:(src:string)=>void,error:(s:string)=>void){host.append(button('Выбрать из библиотеки',()=>void chooseAsset(update),'af-btn af-btn--secondary af-btn--sm'));const i=inputField(host,label,'',()=>{},'file');i.accept='image/png,image/jpeg,image/webp,image/gif';i.addEventListener('change',async()=>{try{if(i.files?.[0])update(await readImage(i.files[0]))}catch(e){error((e as Error).message)}});}
 export function widgetDesign(host:HTMLElement,w:Widget,doc:AFDocument,changed:Change,error:(s:string)=>void,refresh:Change=changed){
  const update=(fn:()=>void)=>{fn();changed()};
  elementDesign(host,w,doc,changed,refresh);
  select(host,'Поверхность',w.surface??'card',{plain:'Без рамки',card:'Карточка'},v=>update(()=>w.surface=v as 'plain'|'card'));
  for(const [key,title]of [['tabletOrder','Порядок на планшете'],['mobileOrder','Порядок на телефоне']] as const){const i=input(host,title,String(w[key]??0),v=>update(()=>w[key]=Number(v))) as HTMLInputElement;i.type='number';i.min='0';i.max='100'}
- const motionDetails=el('details');motionDetails.dataset.propertyGroup='behavior';motionDetails.append(el('summary','','Дополнительно: движение'));const motionHost=el('div','af-stack');motionDetails.append(motionHost);host.append(motionDetails);
+ const motionDetails=el('details');motionDetails.dataset.propertyGroup='behavior';motionDetails.append(el('summary','af-btn af-btn--clear af-btn--sm','Дополнительно: движение'));const motionHost=el('div','af-stack');motionDetails.append(motionHost);host.append(motionDetails);
  const motion=w.motion??{effect:'none',speed:'normal',intensity:'subtle',step:0};
  select(motionHost,'Эффект',motion.effect,{none:'Без эффекта',fade:'Появление',rise:'Мягкий сдвиг',scale:'Масштаб',sequence:'Последовательность'},v=>update(()=>{motion.effect=v as typeof motion.effect;w.motion=motion}));
  select(motionHost,'Темп',motion.speed,{fast:'Быстрый',normal:'Обычный',slow:'Спокойный'},v=>update(()=>{motion.speed=v as typeof motion.speed;w.motion=motion}));
@@ -64,8 +64,8 @@ export function sectionDesign(host:HTMLElement,doc:AFDocument,index:number,commi
  select(host,'Композиция',page.composition??'blank',Object.fromEntries(compositionCatalog(doc.kind).map(([id,title])=>[id,title])),v=>commit(d=>{d.pages[index]=changeComposition(d.pages[index],v,d.kind)}));
  if(doc.kind==='presentation')select(host,'Переход слайда',page.transition??'none',{none:'Без эффекта',fade:'Растворение',slide:'Сдвиг'},v=>commit(d=>d.pages[index].transition=v as Section['transition']));
  modalSettings(host,doc,commit);
- const groups=new Map<string,HTMLElement>();for(const title of ['Структура','Оформление','Поведение']){const group=el('details','section-property-group');group.open=true;group.append(el('summary','',title));groups.set(title,group)}
- let modals=false;for(const child of Array.from(host.children)){const text=child.textContent??'';if(text==='Оформление секции'){child.remove();continue}if(text==='Модальные окна проекта')modals=true;const target=modals||child.classList.contains('motion-scenarios')?'Поведение':/^(Выбрать композицию|Композиция|Высота секции|Воздух|Ширина содержимого)/.test(text)?'Структура':'Оформление';groups.get(target)!.append(child)}host.append(...groups.values());
+ const groups=new Map<string,ReturnType<typeof settingsGroup>>();for(const title of ['Структура','Оформление','Поведение']){const entry=settingsGroup(title,'section-property-group');entry.group.open=true;groups.set(title,entry)}
+ let modals=false;for(const child of Array.from(host.children)){const text=child.textContent??'';if(text==='Оформление секции'){child.remove();continue}if(text==='Модальные окна проекта')modals=true;const target=modals||child.classList.contains('motion-scenarios')?'Поведение':/^(Выбрать композицию|Композиция|Высота секции|Воздух|Ширина содержимого)/.test(text)?'Структура':'Оформление';groups.get(target)!.body.append(child)}host.append(...[...groups.values()].map(entry=>entry.group));
 }
 function modalSettings(host:HTMLElement,doc:AFDocument,commit:(edit:(d:AFDocument)=>void)=>boolean){
  host.append(el('h3','','Модальные окна проекта'));
@@ -75,10 +75,10 @@ function modalSettings(host:HTMLElement,doc:AFDocument,commit:(edit:(d:AFDocumen
 
 function slideDesign(host:HTMLElement,doc:AFDocument,index:number,commit:(edit:(d:AFDocument)=>void)=>boolean,tools:SlideTools){
  const page=doc.pages[index],active=host.dataset.slideTab??'structure';host.replaceChildren();
- host.append(el('h2','inspector-heading',`Слайд ${index+1}`),el('p','af-help','Формат 16:9. Изменения применяются к текущему слайду.'));
+ host.append(el('h2','af-title inspector-heading',`Слайд ${index+1}`),el('p','af-help','Формат 16:9. Изменения применяются к текущему слайду.'));
  const nav=el('div','slide-settings-tabs');nav.setAttribute('role','tablist');nav.setAttribute('aria-label','Настройки слайда');host.append(nav);
  const tabs=new Map<string,HTMLButtonElement>(),panels=new Map<string,HTMLElement>();
- const activate=(id:string)=>{host.dataset.slideTab=id;tabs.forEach((b,key)=>{b.setAttribute('aria-selected',String(key===id));b.tabIndex=key===id?0:-1});panels.forEach((p,key)=>p.hidden=key!==id)};
+ const activate=(id:string)=>{host.dataset.slideTab=id;tabs.forEach((b,key)=>{b.setAttribute('aria-selected',String(key===id));b.classList.toggle('af-btn--ghost',key!==id);b.tabIndex=key===id?0:-1});panels.forEach((p,key)=>p.hidden=key!==id)};
  for(const [id,title]of [['structure','Структура'],['background','Оформление'],['behavior','Поведение']]){const tab=button(title,()=>activate(id),'slide-settings-tab');tab.id='slide-tab-'+id;tab.setAttribute('role','tab');tab.setAttribute('aria-controls','slide-panel-'+id);nav.append(tab);tabs.set(id,tab);const panel=el('div','slide-settings-panel');panel.id='slide-panel-'+id;panel.setAttribute('role','tabpanel');panel.setAttribute('aria-labelledby',tab.id);host.append(panel);panels.set(id,panel);tab.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();const keys=[...tabs.keys()],current=keys.indexOf(id),next=e.key==='Home'?0:e.key==='End'?keys.length-1:(current+(e.key==='ArrowRight'?1:-1)+keys.length)%keys.length;activate(keys[next]);tabs.get(keys[next])!.focus()})}
  activate(active);
  const structure=panels.get('structure')!,background=panels.get('background')!,behavior=panels.get('behavior')!;
@@ -88,7 +88,7 @@ function slideDesign(host:HTMLElement,doc:AFDocument,index:number,commit:(edit:(
  const title=input(structure,'Заголовок слайда',page.title,()=>{});title.addEventListener('change',()=>commit(d=>d.pages[index].title=title.value));
  select(structure,'Шаблон слайда',page.composition??'blank',Object.fromEntries(compositionCatalog('presentation').map(([id,name])=>[id,name])),v=>commit(d=>d.pages[index]=changeComposition(d.pages[index],v,d.kind)));
  structure.append(el('p','af-help','Смена шаблона сохраняет содержимое и доступна для совместимой структуры. Для другой структуры добавьте новый слайд.'),button('Добавить слайд по шаблону',tools.addTemplate,'af-btn af-btn--secondary af-btn--sm'));
- const grid=el('details','slide-grid');grid.append(el('summary','','Сетка и размеры'));const form=el('form','af-stack');form.dataset.gridDraft='true';form.addEventListener('input',()=>form.dataset.dirty='true');const draft={...page.grid};for(const [key,label,min,max]of [['columns','Колонки',1,24],['rowHeight','Строка, px',32,160],['gap','Отступ, px',0,48]] as const){const field=input(form,label,String(draft[key]),v=>draft[key]=Number(v)) as HTMLInputElement;field.type='number';field.min=String(min);field.max=String(max);field.required=true}const save=el('button','af-btn af-btn--ghost af-btn--sm','Применить сетку');save.type='submit';form.append(save);form.addEventListener('submit',e=>{e.preventDefault();form.dataset.applied=String(commit(d=>d.pages[index].grid=draft))});grid.append(form);structure.append(grid,el('h3','','Элементы слайда'));
+ const grid=el('details','slide-grid');grid.append(el('summary','af-btn af-btn--clear af-btn--sm','Сетка и размеры'));const form=el('form','af-stack');form.dataset.gridDraft='true';form.addEventListener('input',()=>form.dataset.dirty='true');const draft={...page.grid};for(const [key,label,min,max]of [['columns','Колонки',1,24],['rowHeight','Строка, px',32,160],['gap','Отступ, px',0,48]] as const){const field=input(form,label,String(draft[key]),v=>draft[key]=Number(v)) as HTMLInputElement;field.type='number';field.min=String(min);field.max=String(max);field.required=true}const save=el('button','af-btn af-btn--ghost af-btn--sm','Применить сетку');save.type='submit';form.append(save);form.addEventListener('submit',e=>{e.preventDefault();form.dataset.applied=String(commit(d=>d.pages[index].grid=draft))});grid.append(form);structure.append(grid,el('h3','','Элементы слайда'));
  if(!page.widgets.length)structure.append(el('p','af-help','Слайд пока пуст. Выберите шаблон или добавьте блок.'));
  page.widgets.forEach((w,i)=>{const row=el('div','slide-element');row.append(button(`${i+1}. ${w.title||widgetRegistry[w.type].title}`,()=>tools.editWidget(w.id),'af-btn af-btn--ghost af-btn--sm'),el('span','af-help',`${w.position.width}×${w.position.height} · колонка ${w.position.col}, строка ${w.position.row}`));structure.append(row)});
  const appearance=structuredClone(page.appearance??makeComposition('blank','presentation').appearance!);appearance.layout='fixed';const apply=()=>commit(d=>d.pages[index].appearance=structuredClone(appearance));
@@ -104,8 +104,8 @@ function slideDesign(host:HTMLElement,doc:AFDocument,index:number,commit:(edit:(
  select(behavior,'Переход слайда',page.transition??'none',{none:'Без эффекта',fade:'Растворение',slide:'Сдвиг'},v=>commit(d=>d.pages[index].transition=v as Section['transition']));
  select(behavior,'Показ элементов',page.widgets.some(w=>w.motion?.step)?'steps':'all',{all:'Все сразу',steps:'По шагам'},v=>commit(d=>d.pages[index].widgets.forEach((w,i)=>{w.motion={effect:w.motion?.effect??'fade',speed:w.motion?.speed??'normal',intensity:w.motion?.intensity??'subtle',step:v==='all'?0:i}})));
  behavior.append(el('p','af-help','«Далее» раскрывает следующий шаг, затем переключает слайд. «Назад» возвращает предыдущий шаг. Автоматического перелистывания нет.'));
- const advanced=el('details');advanced.append(el('summary','','Дополнительно: шаги и эффекты'));behavior.append(advanced);
+ const advanced=el('details');advanced.append(el('summary','af-btn af-btn--clear af-btn--sm','Дополнительно: шаги и эффекты'));behavior.append(advanced);
  page.widgets.forEach((w,i)=>{const group=el('fieldset','block-editor');group.append(el('legend','',`${i+1}. ${w.title||widgetRegistry[w.type].title}`));const motion=w.motion??{effect:'none' as const,speed:'normal' as const,intensity:'subtle' as const,step:0};const step=input(group,'Шаг: '+(w.title||widgetRegistry[w.type].title),String(motion.step),()=>{}) as HTMLInputElement;step.type='number';step.min='0';step.max='20';step.required=true;step.addEventListener('change',()=>{if(step.reportValidity())commit(d=>{d.pages[index].widgets[i].motion={...motion,step:Number(step.value)}})});select(group,'Эффект: '+(w.title||widgetRegistry[w.type].title),motion.effect,{none:'Нет',fade:'Появление',rise:'Сдвиг',scale:'Масштаб',sequence:'Последовательность'},v=>commit(d=>{d.pages[index].widgets[i].motion={...motion,effect:v as NonNullable<Widget['motion']>['effect']}}));advanced.append(group)});
  behavior.append(el('p','af-help','Шаг 0 — сразу. Одинаковый номер — показ вместе. При печати видны все элементы.'),button('Посмотреть этот слайд',tools.preview,'af-btn'));
- const modals=el('details');modals.append(el('summary','','Окна презентации'));modalSettings(modals,doc,commit);behavior.append(modals);
+ const modals=el('details');modals.append(el('summary','af-btn af-btn--clear af-btn--sm','Окна презентации'));modalSettings(modals,doc,commit);behavior.append(modals);
 }

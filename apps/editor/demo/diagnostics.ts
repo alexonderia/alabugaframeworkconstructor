@@ -1,4 +1,4 @@
-import {el,button} from '@alabuga/framework/dom';
+import {showDialog,el,button} from '../src/ui';
 import {brandAssets} from '@alabuga/framework/brand';
 import {OllamaProvider} from '@alabuga/ai/provider';
 import {newDraft,generateDraft} from '../src/ai/generation';
@@ -36,9 +36,9 @@ export async function openDiagnostics(){
   checks.append(el('li','','Запись локального отчёта проверена.'));
   status.textContent=data.ready?'Техническая репетиция пройдена: секция и слайд созданы. Проверьте содержание образцов ниже.':probe?(data.probes.every((p:any)=>p.success)?'Фрагменты созданы. Для полной проверки выполните сценарий показа и проверьте замечания ниже.':'Пробная генерация не прошла. Повторите проверку или откройте готовые образцы.'):'Диагностика сохранена. Модель ещё нужно проверить пробной генерацией.';
  }catch(e){if(!abort.signal.aborted){status.textContent='Проверка не завершена: '+String(e);result.textContent='Запустите локальный сервис: npm run ai. Затем повторите проверку. Готовые образцы доступны без генерации.'}}finally{busy=false;commands.forEach(b=>b.disabled=false)}};
- const details=el('details');details.append(el('summary','','Технические сведения'),result);
+ const details=el('details');details.append(el('summary','af-btn af-btn--clear af-btn--sm','Технические сведения'),result);
  commands.push(button('Проверить подключение',()=>void run(),'af-btn af-btn--secondary'),button('Прогреть и проверить секцию',()=>void run('page'),'af-btn af-btn--secondary'),button('Проверить слайд',()=>void run('presentation'),'af-btn af-btn--secondary'),button('Проверить сценарий показа',()=>void run('both'),'af-btn'));
  const fallback=button('Вернуться к готовым образцам',()=>dialog.close(),'af-btn af-btn--ghost');
  dialog.append(...commands,button('Закрыть',()=>dialog.close(),'af-btn af-btn--ghost'),status,checks,el('p','','Образцы на главной странице подготовлены заранее. Они не заменяют успешную генерацию вживую.'),fallback,previews,details);
- dialog.addEventListener('close',()=>{abort.abort();controllers.splice(0).forEach(c=>c.destroy());dialog.remove()});document.body.append(dialog);dialog.showModal();await run();
+ dialog.addEventListener('close',()=>{abort.abort();controllers.splice(0).forEach(c=>c.destroy());dialog.remove()});document.body.append(dialog);showDialog(dialog);await run();
 }
