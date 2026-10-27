@@ -22,7 +22,7 @@ async function openName(page:Page){
  await menu.locator('[data-action=rename]').click();return page.getByRole('dialog',{name:'Название в структуре',exact:true});
 }
 async function geometry(page:Page,dialog:Locator,name:string,engine:string){
- const directory=`artifacts/editor-recovery-2026-10-26/verified/${engine}`;await mkdir(directory,{recursive:true});
+ const directory=`artifacts/dialogs/recovery/verified/${engine}`;await mkdir(directory,{recursive:true});
  for(const [width,height]of [[1536,1000],[390,844],[320,568],[844,390]]){
   await page.setViewportSize({width,height});
   for(const spaced of [false,true]){

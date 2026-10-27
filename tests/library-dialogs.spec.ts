@@ -23,7 +23,7 @@ async function hittable(control:Locator){
  expect(await control.evaluate(n=>{const r=n.getBoundingClientRect();return n.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2))})).toBe(true);
 }
 async function checkLayout(page:Page,dialog:Locator,name:string,engine:string){
- const directory=`artifacts/library-dialogs-2026-10-26/verified/${engine}`;await mkdir(directory,{recursive:true});
+ const directory=`artifacts/dialogs/library/verified/${engine}`;await mkdir(directory,{recursive:true});
  for(const [width,height]of [[1536,1000],[390,844],[320,568],[844,390]]){
   await page.setViewportSize({width,height});
   const body=dialog.locator('.library-dialog-body'),header=dialog.locator('.af-dialog__header'),close=dialog.getByRole('button',{name:'Закрыть',exact:true});

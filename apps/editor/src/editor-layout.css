@@ -26,6 +26,7 @@
 .fit-body{flex:1;min-height:0;display:flex;flex-direction:column;gap:var(--af-space-16);overflow:auto;scroll-padding:var(--af-space-8)}
 .fit-body>:is(p,ul,.fit-preview){margin-block:0}
 .fit-body>ul:empty{display:none}
+.fit-backgrounds>.af-btn{flex-direction:column;gap:var(--af-space-6);min-width:0;height:auto;overflow-wrap:anywhere}
 .fit-dialog>.fit-actions>.af-btn{flex:0 0 auto;max-width:100%}
 .ai-dialog[open]{display:flex;flex-direction:column;overflow:hidden}
 .ai-dialog>.ai-header,.ai-dialog>.ai-readiness{flex:none}

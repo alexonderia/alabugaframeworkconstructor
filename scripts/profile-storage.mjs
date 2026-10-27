@@ -13,5 +13,5 @@ try{
   const start=performance.now();requests=0;await storage.hydrate(project.document);const hydrate={milliseconds:performance.now()-start,requests};times.sort((a,b)=>a-b);
   return {browser:navigator.userAgent,revisions:{projects:100,total:2000,widgetsPerDocument:100,medianMs:times[5],p90Ms:times[9]},hydrate};
  });
- await mkdir('artifacts/remediation',{recursive:true});await writeFile(`artifacts/remediation/storage-${process.argv[2]||'current'}.json`,JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
+ await mkdir('artifacts/audit/remediation',{recursive:true});await writeFile(`artifacts/audit/remediation/storage-${process.argv[2]||'current'}.json`,JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
 }finally{await browser.close()}

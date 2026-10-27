@@ -4,7 +4,7 @@ import {chooseOption} from './choose-option';
 test.use({reducedMotion:'reduce'});test.setTimeout(60000);
 async function fixture(page:Page){await page.goto('/builder/');await page.locator('.product-header input[type=file]').setInputFiles({name:'interaction.json',mimeType:'application/json',buffer:await readFile(new URL('./fixtures/audit-links.json',import.meta.url))});await expect(page.locator('#project-name')).toBeVisible()}
 async function portable(page:Page){await expect(page.locator('#save-state')).not.toContainText(/Проверяем|Сохраняем/);const event=page.waitForEvent('download');await page.keyboard.press('Control+s');return JSON.parse(await readFile((await(await event).path())!,'utf8')).document}
-async function capture(page:Page,name:string,engine:string){const directory=`artifacts/editor-followup-2026-10-23/verified/${engine}`;await mkdir(directory,{recursive:true});await page.screenshot({path:`${directory}/${name}.png`})}
+async function capture(page:Page,name:string,engine:string){const directory=`artifacts/editor/followup/verified/${engine}`;await mkdir(directory,{recursive:true});await page.screenshot({path:`${directory}/${name}.png`})}
 
 test('inspector keeps canvas text when another property is changed',async({page})=>{
  await fixture(page);const box=page.locator('#canvas [data-widget-id="audit-text-a"]');await box.focus();await box.press('Enter');

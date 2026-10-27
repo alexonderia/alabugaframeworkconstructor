@@ -1,6 +1,6 @@
 import {chromium} from '@playwright/test';
 import {mkdir,writeFile} from 'node:fs/promises';
-const dir='artifacts/project-gallery';await mkdir(dir,{recursive:true});
+const dir='artifacts/projects/gallery';await mkdir(dir,{recursive:true});
 const browser=await chromium.launch(),page=await browser.newPage({viewport:{width:1440,height:1000}});
 await page.goto('http://127.0.0.1:4175/builder/');await page.locator('.library-tools').waitFor();
 await page.screenshot({path:dir+'/empty.png',fullPage:true});

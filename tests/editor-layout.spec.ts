@@ -11,7 +11,7 @@ async function openFixture(page:Page){
  await expect(page.locator('#project-name')).toBeVisible();
 }
 async function capture(page:Page,state:string,engine:string){
- const directory=`artifacts/editor-layout-2026-10-23/verified/${engine}`;await mkdir(directory,{recursive:true});await page.screenshot({path:`${directory}/${state}.png`});
+ const directory=`artifacts/editor/layout/verified/${engine}`;await mkdir(directory,{recursive:true});await page.screenshot({path:`${directory}/${state}.png`});
 }
 async function usableHandles(page:Page){
  const result=await page.locator('#canvas .is-selected>.widget-handle').evaluateAll(nodes=>nodes.map(node=>{

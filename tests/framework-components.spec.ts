@@ -20,7 +20,7 @@ async function expectFrameworkControls(page:Page){
  expect(missing).toEqual([]);
 }
 async function capture(page:Page,name:string,engine:string){
- const directory=`artifacts/framework-components-2026-10-23/${engine}`;await mkdir(directory,{recursive:true});await page.screenshot({path:`${directory}/${name}.png`});
+ const directory=`artifacts/editor/components/${engine}`;await mkdir(directory,{recursive:true});await page.screenshot({path:`${directory}/${name}.png`});
 }
 
 test('project cards, menus, badges and creation choices use public components',async({page},info)=>{

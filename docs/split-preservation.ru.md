@@ -36,7 +36,7 @@ node scripts/audit-split.mjs --framework-root ../alabuga-framework --output docs
 - Вернулись библиотечные разделы навигации «Локальный ИИ» и «Проекты и материалы», ведущие в Constructor; прежние #ai/#workspace перенаправляются туда. /demo/guide.html открывает руководство автора. Адреса задаются конфигурацией сборки.
 - В отдельном окне «Помощь» витрины ссылка «Документация» исправлена с прежнего index.html#workspace на /docs/ru/projects.html. Проверено именно нажатие ссылки в диалоге с открытием документации в новой вкладке; эта проверка включена в повторный обход сайтов.
 - В Framework вновь генерируются все четыре прежних standalone HTML: index, slides, landing, presentation. Проверено открытие без HTTP-сети, включая изображения и шрифты.
-- Восстановлен библиотечный scripts/acceptance.mjs: три ширины сайта, 11 снимков слайдов и PDF. Редакторские доказательства остаются в Constructor demo-artifacts/release-smoke.
+- Восстановлен библиотечный scripts/acceptance.mjs: три ширины сайта, 11 снимков слайдов и PDF. Редакторские доказательства формируют скрипты Constructor `scripts/demo-artifacts.mjs` и `scripts/release-smoke.mjs`; smoke-материалы находятся в `artifacts/release/smoke/`.
 - Необязательный PyMuPDF для отчётов Constructor объявлен в scripts/requirements-reports.txt; исходные зависимости подготовки материалов остались в Framework.
 - Шаблоны issue/PR и подробные правила contribution сохранены в обоих проектах. У Framework main удалена унаследованная привязка к origin/extract_framework; origin направлен на alexonderia/alabuga-framework. Текущий репозиторий Constructor и его origin сохранены.
 

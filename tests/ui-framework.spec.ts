@@ -116,7 +116,7 @@ test('documentation uses Framework fonts and token changes on both locales',asyn
 
 test('capture the migrated editor, mobile workspace, demo and documentation',async({page},info)=>{
  if(info.project.name!=='chromium')test.skip();
- const output='artifacts/ui-ux-implementation-2026-10-23';await mkdir(output,{recursive:true});await openEditor(page);
+ const output='artifacts/editor/implementation';await mkdir(output,{recursive:true});await openEditor(page);
  await page.locator('#page-settings-open').click();await page.screenshot({path:`${output}/desktop-inspector.png`});await page.locator('#close-inspector').click();
  await page.setViewportSize({width:390,height:844});await page.screenshot({path:`${output}/mobile-workspace.png`});
  await page.getByRole('button',{name:'Структура',exact:true}).click();await page.screenshot({path:`${output}/mobile-structure.png`});await page.keyboard.press('Escape');

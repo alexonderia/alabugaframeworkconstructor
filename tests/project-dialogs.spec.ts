@@ -20,7 +20,7 @@ async function hit(control:Locator){
  await expect(control).toBeInViewport();expect(await control.evaluate(n=>{const r=n.getBoundingClientRect();return n.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2))})).toBe(true);
 }
 async function layout(page:Page,dialog:Locator,name:string,engine:string){
- const directory=`artifacts/window-continuation-2026-10-26/verified/${engine}`;await mkdir(directory,{recursive:true});
+ const directory=`artifacts/dialogs/projects/verified/${engine}`;await mkdir(directory,{recursive:true});
  for(const [width,height]of [[1536,1000],[390,844],[320,568],[844,390]]){
   await page.setViewportSize({width,height});
   for(const spaced of [false,true]){

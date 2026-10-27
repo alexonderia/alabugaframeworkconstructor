@@ -60,7 +60,7 @@ Content requests put a compact field contract, priority evidence and delivery re
 
 `sourceEvidence` preserves original sentences and can add independent actions from an unambiguous affirmative list with a known actor. Negation, conditions and unsupported prefixes disable splitting. Card references use disjoint permitted source groups; original input remains in the request. `source-table` only accepts short same-property facts belonging to the correct format, without shortening them or inventing values. Results still become the existing commands and Document schema 3. Repeating a whole paragraph across sections triggers one repair; already-used source prose remains available for paraphrasing.
 
-`AF_AI_CASES=1,2` runs an explicitly marked debug subset, which cannot count as 20-task acceptance. `AF_AI_TASKS_FILE` supplies a different fixture with `label`, `sources`, `cases` and optional `count`. Control inputs and criteria are retained in `artifacts/ai-instructions-2026-10-26/holdout-input.json`. By default the script owns its temporary dev server, so termination of an external server cannot interrupt acceptance. The HTML report counts a control set separately from the 18/20 target.
+`AF_AI_CASES=1,2` runs an explicitly marked debug subset, which cannot count as 20-task acceptance. `AF_AI_TASKS_FILE` supplies a different fixture with `label`, `sources`, `cases` and optional `count`. Control inputs and criteria are retained in `artifacts/ai/instructions/holdout-input.json`. By default the script owns its temporary dev server, so termination of an external server cannot interrupt acceptance. The HTML report counts a control set separately from the 18/20 target.
 
 ## Adding an element or composition
 

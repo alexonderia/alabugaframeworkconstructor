@@ -57,6 +57,6 @@ Use Framework infra/registry/README.md to configure HTTPS registry hosting, publ
 
 ## UI acceptance in Docker
 
-After updating containers, run `npm run test:docker`. The suite uses the already running application at `http://127.0.0.1:4176`; set `AF_ACCEPTANCE_URL` to use a different address. It checks narrow and short viewports, user text spacing, panel roles, focus during responsive command moves and description contrast in interactive cards. It does not run model generation. Results and traces are stored in `artifacts/docker-ui-tests`.
+After updating containers, run `npm run test:docker`. The suite uses the already running application at `http://127.0.0.1:4176`; set `AF_ACCEPTANCE_URL` to use a different address. It checks narrow and short viewports, user text spacing, panel roles, focus during responsive command moves and description contrast in interactive cards. It does not run model generation. Results and traces are stored in `artifacts/release/docker-tests`.
 
 This is automated UI verification. It does not replace acceptance with an on-screen keyboard on a real phone, screen-reader testing or author sessions.

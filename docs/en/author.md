@@ -37,3 +37,9 @@ Choose a screen in «Вид холста», open block properties and expand «�
 The resize handle supports pointer input and arrows: left/right adjust width by 5 percentage points (10 with Shift), up/down adjust minimum height by 16 px. The move handle changes reading order. Escape cancels an active drag; Undo restores an applied size. Simulated device widths stay stable when properties open; use canvas scrolling or «Вписать» when space is limited.
 
 Keyboard and screen reader users can activate the named block settings, move and resize buttons. Closing properties returns focus to the invoking button.
+
+## Slide header and page number
+
+Open Slide settings ? Appearance to find Presentation header and Page numbering. Headers share the same insets and type size across slides; edit the text or hide it. Empty text restores ALABUGA / project title. Numbers support visibility, format (01, 1 or 1 / total), bottom alignment and custom text. Empty values use the automatic slide order, including after reordering. Changes affect the current slide, support undo, persist in the project and appear in HTML/PDF.
+
+Page numbering also offers independent Background and Text color controls. Choose transparent or a brand background and a separate text color; select From theme to restore automatic text color. Solid backgrounds add a small inset around the number.

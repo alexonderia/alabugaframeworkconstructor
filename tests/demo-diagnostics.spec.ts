@@ -13,7 +13,7 @@ async function records(page:Page){
  return page.evaluate(()=>new Promise<{projects:number;diagnostics:any}>((resolve,reject)=>{const request=indexedDB.open('alabuga-workspace',3);request.onerror=()=>reject(request.error);request.onsuccess=()=>{const db=request.result,tx=db.transaction(['projects','settings']),projects=tx.objectStore('projects').count(),diagnostics=tx.objectStore('settings').get('demo:diagnostics');tx.oncomplete=()=>{db.close();resolve({projects:projects.result,diagnostics:diagnostics.result?.value})};tx.onerror=()=>{db.close();reject(tx.error)}}}));
 }
 async function geometry(page:Page,dialog:Locator,engine:string,state:string){
- const directory=`artifacts/diagnostics-2026-10-26/verified/${engine}`;await mkdir(directory,{recursive:true});
+ const directory=`artifacts/ai/diagnostics/verified/${engine}`;await mkdir(directory,{recursive:true});
  for(const [width,height]of [[1536,1000],[390,844],[320,568],[844,390]]){
   await page.setViewportSize({width,height});
   for(const spaced of [false,true]){

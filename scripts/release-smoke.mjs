@@ -4,7 +4,7 @@ import {mkdir,writeFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {chooseOption} from '../tests/choose-option.ts';
-const port=process.env.AF_SMOKE_PORT||'4388',base=process.env.AF_SMOKE_URL||`http://127.0.0.1:${port}`,out=resolve('artifacts/release-smoke');
+const port=process.env.AF_SMOKE_PORT||'4388',base=process.env.AF_SMOKE_URL||`http://127.0.0.1:${port}`,out=resolve('artifacts/release/smoke');
 await mkdir(out,{recursive:true});
 const service=process.env.AF_SMOKE_URL?null:spawn(process.execPath,['apps/ai-server/dist/ai-server.js'],{windowsHide:true,stdio:'inherit',env:{...process.env,AF_AI_PORT:port,AF_OLLAMA_PORT:'1'}});
 const report={base,modelAcceptanceRun:false,externalService:Boolean(process.env.AF_SMOKE_URL),documents:[],screens:[]};let browser;

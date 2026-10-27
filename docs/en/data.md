@@ -29,3 +29,7 @@ Undo covers the active editor session; revisions and portable files provide long
 The database name alabuga-workspace and object stores stay unchanged; version 3 adds an index by project for revisions. The legacy alabuga.builder.document.v1 key is retained. Documents 1–3 normalize to 3; project envelopes 1–3 and missing version remain readable. Future versions and missing assets fail before storage writes. First startup does not bulk-rewrite projects. Installed-collection markers, revisions, trash, tombstones and AI drafts remain.
 
 Concurrent writes check an internal project version in the transaction. A stale tab must save a separate copy or open the saved document. The storage dialog lists asset usage and rechecks all projects, trash, revisions and AI drafts before deleting selected unused assets. Manual recovery points are available from the project menu.
+
+Slide header and number settings (`page.chrome`, Framework 1.3+) use document schema 5 and require Framework 1.3 or later to reopen. Documents without these settings keep their previous version 3/4 normalization. Portable project envelopes and IndexedDB remain at version 3.
+
+Independent page number background and text colors require Framework 1.3.1 or later and remain in document schema 5.

@@ -34,7 +34,7 @@ test('phone preview matches standalone mobile document geometry',async({page},in
 });
 
 test('fixed page blocks stay readable in the phone authoring canvas and on a phone viewport',async({page,browserName})=>{
- await importFixture(page);await chooseOption(page.locator('#device'),'mobile');const content=page.locator('#canvas [data-widget-id=audit-text-a] .af-widget__content');expect(await content.evaluate(n=>n.clientWidth)).toBeGreaterThan(300);await chooseOption(page.locator('#device'),'desktop');await page.setViewportSize({width:390,height:844});expect(await content.evaluate(n=>n.clientWidth)).toBeGreaterThan(300);await page.screenshot({path:`artifacts/remediation/fixed-phone-authoring-${browserName}.png`});
+ await importFixture(page);await chooseOption(page.locator('#device'),'mobile');const content=page.locator('#canvas [data-widget-id=audit-text-a] .af-widget__content');expect(await content.evaluate(n=>n.clientWidth)).toBeGreaterThan(300);await chooseOption(page.locator('#device'),'desktop');await page.setViewportSize({width:390,height:844});expect(await content.evaluate(n=>n.clientWidth)).toBeGreaterThan(300);await page.screenshot({path:`artifacts/audit/remediation/fixed-phone-authoring-${browserName}.png`});
 });
 test('quality and export identify content clipped only on a real mobile viewport',async({page})=>{
  await importFixture(page,overflow);if(!await page.locator('.project-menu').evaluate(n=>(n as HTMLDetailsElement).open))await page.locator('.project-menu>summary').click();await page.getByRole('button',{name:'Проверка качества',exact:true}).click();await expect(page.locator('.quality-issue').filter({hasText:'Телефон'})).toBeVisible();await page.locator('dialog[open]').getByRole('button',{name:'Закрыть',exact:true}).click();

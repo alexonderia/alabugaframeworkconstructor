@@ -10,7 +10,7 @@ async function aiDraft(page:Page){
  await expect(page.locator('.ai-progress')).toContainText('Черновик готов');
 }
 async function editor(page:Page){await page.goto('/demo/');await page.getByRole('button',{name:'Настроить элементы',exact:true}).click();await expect(page.locator('#project-name')).toBeVisible()}
-async function capture(page:Page,name:string,engine:string){const directory=`artifacts/editor-dialogs-2026-10-23/verified/${engine}`;await mkdir(directory,{recursive:true});await page.screenshot({path:`${directory}/${name}.png`})}
+async function capture(page:Page,name:string,engine:string){const directory=`artifacts/dialogs/editor/verified/${engine}`;await mkdir(directory,{recursive:true});await page.screenshot({path:`${directory}/${name}.png`})}
 async function hittable(control:Locator){
  await expect(control).toBeInViewport();expect(await control.evaluate(node=>{const r=node.getBoundingClientRect(),hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return hit===node||!!hit&&node.contains(hit)})).toBe(true);
 }
