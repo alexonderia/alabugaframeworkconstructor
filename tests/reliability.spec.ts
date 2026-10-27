@@ -29,7 +29,7 @@ test('a stalled status request times out and the user can retry',async({page})=>
  await page.route('**/api/ai/status',r=>{if(++calls===1)return;return r.fulfill({json:{model:'qwen3.5:2b',version:'test',digest:'test',loaded:[]}})});
  await page.route('**/api/ai/diagnostics',r=>r.fulfill({json:{gpu:[]}}));
  await page.goto('/demo/');await page.getByRole('button',{name:'Готовность к показу',exact:true}).click();
- await expect(page.locator('.demo-diagnostics > [role=status]')).toContainText('8 секунд');
+ await expect(page.locator('.demo-diagnostics > .library-dialog-body > [role=status]')).toContainText('8 секунд');
  const retry=page.getByRole('button',{name:'Проверить подключение',exact:true});await expect(retry).toBeEnabled();await retry.click();
  await expect(page.locator('.demo-checks')).toContainText('Локальный сервис доступен');
  await page.getByRole('button',{name:'Закрыть',exact:true}).click();await expect(page.locator('.demo-diagnostics')).toHaveCount(0);

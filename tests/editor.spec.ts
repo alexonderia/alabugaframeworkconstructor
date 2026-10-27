@@ -1,4 +1,4 @@
-import {settledProperties,openGeometry} from './property-helper';
+import {settledProperties,openGeometry,widgetTools} from './property-helper';
 import {openEditor} from './open-editor';
 import {savedDocument} from './project-helper';
 import {test,expect} from '@playwright/test';
@@ -7,14 +7,14 @@ import {readFile} from 'node:fs/promises';
 import {pathToFileURL} from 'node:url';
 const draft=savedDocument;
 async function newDocument(page:any,id='new-page'){await page.locator('.project-menu summary').click();await page.locator('#'+id).click()}
-async function add(page:any,type:string,settings=true){await page.locator('#add-widget').click();await page.locator('[data-add="'+type+'"]').click();if(settings&&!(await page.locator('#inspector').isVisible())){await page.locator('.is-selected').hover();await page.locator('.is-selected .widget-tools').getByRole('button',{name:'Настройки блока',exact:true}).click()}}
+async function add(page:any,type:string,settings=true){await page.locator('#add-widget').click();await page.locator('[data-add="'+type+'"]').click();if(settings&&!(await page.locator('#inspector').isVisible())){await page.locator('.is-selected').hover();await page.locator('.canvas-widget-tools>.widget-tools:not([hidden])').getByRole('button',{name:'Настройки блока',exact:true}).click()}}
 test.beforeEach(async({page})=>{await openEditor(page);await newDocument(page)});
 test('add, edit, reject overlap, undo, duplicate, delete and restore draft',async({page})=>{
   await add(page,'text');await page.getByLabel('Название блока',{exact:true}).fill('Мой текст');await page.getByRole('textbox',{name:'Текст',exact:true}).fill('Текст проекта');await settledProperties(page);
   await expect(page.locator('#canvas')).toContainText('Текст проекта');await openGeometry(page);await page.getByLabel('Ширина',{exact:true}).fill('2');await settledProperties(page);expect((await draft(page)).pages[0].widgets[0].position.width).toBe(2);
   await add(page,'metric');await openGeometry(page);await page.getByLabel('Колонка',{exact:true}).fill('1');await settledProperties(page);await expect(page.locator('#status')).toContainText('Пересечение');expect((await draft(page)).pages[0].widgets[1].position.col).toBe(3);
   await page.locator('#undo').click();await expect(page.locator('#canvas .af-widget')).toHaveCount(1);await page.locator('#redo').click();await expect(page.locator('#canvas .af-widget')).toHaveCount(2);
-  await page.locator('#close-inspector').click();await page.locator('#canvas .af-widget').first().hover();await page.locator('#canvas .af-widget').first().getByRole('button',{name:'Настройки блока',exact:true}).click();await page.getByRole('button',{name:'Дублировать',exact:true}).click();await expect(page.locator('#canvas .af-widget')).toHaveCount(3);await page.getByRole('button',{name:'Удалить блок',exact:true}).click();await expect(page.locator('#canvas .af-widget')).toHaveCount(2);
+  await page.locator('#close-inspector').click();await page.locator('#canvas .af-widget').first().click({position:{x:4,y:4}});await (await widgetTools(page,page.locator('#canvas .af-widget').first())).getByRole('button',{name:'Настройки блока',exact:true}).click();await page.getByRole('button',{name:'Дублировать',exact:true}).click();await expect(page.locator('#canvas .af-widget')).toHaveCount(3);await page.getByRole('button',{name:'Удалить блок',exact:true}).click();await expect(page.locator('#canvas .af-widget')).toHaveCount(2);
   await page.reload();await expect(page.locator('#canvas')).toContainText('Текст проекта');await expect(page.locator('#canvas .af-widget')).toHaveCount(2);
 });
 test('pointer and keyboard placement snap to grid',async({page})=>{

@@ -1,4 +1,5 @@
-import {showDialog,el,button,invocationTarget} from './ui';
+import {showDialog,libraryDialog,el,button,iconButton,invocationTarget} from './ui';
+import {compositionPreview} from './composition-preview';
 import {editorMarkup} from './editor-shell';
 import {editorCommands,labelEditorCommands} from './editor-commands';
 import {canvasAffordances} from './canvas-affordances';
@@ -36,7 +37,7 @@ import {saveProject,saveRevision,hydrate,portableProject,getProject,projectVersi
 import {projectDialog} from './projects';
 import {createOutline} from './outline';
 
-export async function mountEditor(root:HTMLElement,projectId:string,initial:AFDocument,navigate:(route:string)=>void,changed:(id:string)=>void,initialVersion=projectVersion(projectId)){
+export async function mountEditor(root:HTMLElement,projectId:string,initial:AFDocument,navigate:(route:string)=>void,changed:(id:string)=>void,initialVersion=projectVersion(projectId),beforeMount:()=>void=()=>{}){
 const lifecycle=new AbortController();
 let storedVersion=initialVersion;
 const learning=await tutorialState(projectId);let sectionNames=await loadSectionNames(projectId);
@@ -44,7 +45,8 @@ const initialMessage='';
 function fitCurrent(all:boolean){if(!flush())return;openSlideFit(()=>({id:projectId,document:model.document}),pageIndex,doc=>commit(d=>{d.pages=doc.pages}),all)}
 let model=new EditorModel(initial);let pageIndex=Math.min(readViewState(projectId)?.section??learning?.section??0,initial.pages.length-1),selected='',preview=false,documentMode=false,controller:DocumentController|undefined,flush=()=>true,catalogMode:'section'|'widget'='widget',insertAt=0;
 
-root.innerHTML=editorMarkup;
+// Keep the outgoing surface intact through all asynchronous preparation.
+beforeMount();root.className='';root.innerHTML=editorMarkup;
 const get=<T extends HTMLElement=HTMLElement>(id:string)=>document.getElementById(id) as T;
 const canvas=get('canvas'),inspector=get('properties'),drawer=get('inspector'),catalog=get<HTMLDialogElement>('catalog');
 const drawerAccess=responsiveDrawer(root,drawer,closeInspector,lifecycle.signal);
@@ -66,11 +68,12 @@ get('save-state').setAttribute('role','status');get('save-state').setAttribute('
 subscribeProjectChanges(change=>{if(change.id===projectId&&change.version>storedVersion)message(change.deleted?'Проект перемещён в корзину в другой вкладке. Сохраните свою копию.':'Проект изменён в другой вкладке. При сохранении мы предложим выбрать версию.',true)},lifecycle.signal);
 function showConflict(){
  if(lifecycle.signal.aborted||document.querySelector('.save-conflict'))return;
- const dialog=el('dialog','product-dialog save-conflict'),status=el('p');dialog.setAttribute('aria-label','Конфликт сохранения');
- const actions=el('div','save-conflict-actions');
- const perform=(work:()=>Promise<void>)=>async()=>{actions.querySelectorAll('button').forEach(b=>b.disabled=true);try{await autosave.queue;await work();dialog.close()}catch(e){status.textContent=(e as Error).message}finally{actions.querySelectorAll('button').forEach(b=>b.disabled=false)}};
- dialog.append(el('h2','','Конфликт сохранения'),el('p','','Проект изменён в другой вкладке. Ваши правки остались в редакторе. Сохраните их отдельной копией или откройте версию из браузерного хранилища.'),status,actions);
- actions.append(button('Сохранить мою копию',perform(async()=>{const doc=model.document;doc.title=(doc.title+' — копия').slice(0,200);const id=crypto.randomUUID();await saveProject(id,doc);projectId=id;storedVersion=projectVersion(id);model=new EditorModel(doc);autosave.acknowledge();changed(id);draw();message('Ваша копия сохранена. Исходный проект не изменён.')})),button('Открыть сохранённую версию',perform(async()=>{const latest=await getProject(projectId);if(latest.deletedAt)throw new Error('Проект в корзине. Сначала восстановите его или сохраните свою копию.');model=new EditorModel(await hydrate(latest.document));storedVersion=latest.version??0;autosave.acknowledge();draw();message('Открыта сохранённая версия.')}),'af-btn af-btn--secondary'),button('Продолжить редактирование',()=>dialog.close(),'af-btn af-btn--ghost'));
+ const {dialog,body}=libraryDialog('Конфликт сохранения','product-dialog save-conflict'),status=el('p');status.setAttribute('role','status');let resolving=false;
+ const actions=el('div','af-dialog__actions library-dialog-actions save-conflict-actions');
+ dialog.addEventListener('cancel',e=>{if(resolving)e.preventDefault()});
+ const perform=(work:()=>Promise<void>)=>async()=>{if(resolving)return;resolving=true;const trigger=invocationTarget(),controls=dialog.querySelectorAll('button');controls.forEach(b=>b.disabled=true);status.setAttribute('role','status');status.textContent='Выполняем выбранное действие…';try{await autosave.queue;await work();dialog.close()}catch(e){status.setAttribute('role','alert');status.textContent=(e as Error).message}finally{resolving=false;controls.forEach(b=>b.disabled=false);if(dialog.open)trigger?.focus({preventScroll:true})}};
+ body.append(el('p','','Проект изменён в другой вкладке. Ваши правки остались в редакторе. Сохраните их отдельной копией или откройте версию из браузерного хранилища.'),status);dialog.append(actions);
+ actions.append(button('Сохранить мою копию',perform(async()=>{const doc=model.document,suffix=' — копия';doc.title=doc.title.slice(0,200-suffix.length)+suffix;const id=crypto.randomUUID();await saveProject(id,doc);projectId=id;storedVersion=projectVersion(id);model=new EditorModel(doc);autosave.acknowledge();changed(id);draw();message('Ваша копия сохранена. Исходный проект не изменён.')}),'af-btn'),button('Открыть сохранённую версию',perform(async()=>{const latest=await getProject(projectId);if(latest.deletedAt)throw new Error('Проект в корзине. Сначала восстановите его или сохраните свою копию.');model=new EditorModel(await hydrate(latest.document));storedVersion=latest.version??0;autosave.acknowledge();draw();message('Открыта сохранённая версия.')}),'af-btn af-btn--secondary'),button('Продолжить редактирование',()=>dialog.close(),'af-btn af-btn--ghost'));
  document.body.append(dialog);dialog.addEventListener('close',()=>dialog.remove());showDialog(dialog);
 }
 
@@ -116,8 +119,8 @@ function sectionAction(action:'copy'|'delete'|'up'|'down'|'rename',index:number)
 const commands=editorCommands(root,lifecycle.signal,text=>message(text,true));
 const run=commands.bind;
 const symbols:Record<Widget['type'],string>={text:'T',image:'▧',metric:'24',calendar:'▦',table:'☷',button:'↗',quote:'❞',cards:'▥',gallery:'▧'};
-for(const type of Object.keys(widgetRegistry) as Widget['type'][]){const b=button('',()=>{try{const w=createWidget(type,model.document,pageIndex);selected=w.id;if(commit(d=>d.pages[pageIndex].widgets.push(w),'Блок добавлен. Нажмите на текст, чтобы изменить его.')){catalog.close();scrollSection()}}catch(e){message((e as Error).message,true);get('catalog-description').textContent=(e as Error).message}},'palette-button');b.dataset.add=type;b.append(el('span','palette-icon',symbols[type]),el('strong','',widgetRegistry[type].title),el('span','','Добавить в секцию'));get('palette').append(b)}
-function drawCatalog(){thumbnailControllers.splice(0).forEach(c=>c.destroy());get('templates').replaceChildren();for(const [type,title,description]of compositionCatalog(model.document.kind)){const b=button('',()=>{const section=catalogComposition(type);if(commit(d=>d.pages.splice(insertAt,0,section),'Композиция добавлена.')){pageIndex=insertAt;selected='';catalog.close();draw();scrollSection()}},'template-card');b.dataset.template=type;const visual=el('div','composition-thumbnail');visual.setAttribute('aria-hidden','true');visual.inert=true;const inner=el('div');visual.append(inner);const c=renderDocument(inner,{schemaVersion:2,kind:model.document.kind,title, pages:[catalogComposition(type)]},{editing:true});thumbnailControllers.push(c);b.append(visual,el('strong','',title),el('span','',description));get('templates').append(b)}}
+for(const type of Object.keys(widgetRegistry) as Widget['type'][]){const b=button('',()=>{try{const w=createWidget(type,model.document,pageIndex);selected=w.id;if(commit(d=>d.pages[pageIndex].widgets.push(w),'Блок добавлен. Нажмите на текст, чтобы изменить его.')){catalog.close();scrollSection()}}catch(e){message((e as Error).message,true);get('catalog-description').textContent=(e as Error).message}},'palette-button');b.dataset.add=type;const icon=el('span','palette-icon',symbols[type]);icon.setAttribute('aria-hidden','true');b.append(icon,el('strong','',widgetRegistry[type].title),el('span','','Добавить в секцию'));get('palette').append(b)}
+function drawCatalog(){thumbnailControllers.splice(0).forEach(c=>c.destroy());get('templates').replaceChildren();for(const [type,title,description]of compositionCatalog(model.document.kind)){const b=button('',()=>{const section=catalogComposition(type);if(commit(d=>d.pages.splice(insertAt,0,section),'Композиция добавлена.')){pageIndex=insertAt;selected='';catalog.close();draw();scrollSection()}},'template-card');b.dataset.template=type;const visual=el('div','composition-thumbnail');const c=compositionPreview(visual,{schemaVersion:2,kind:model.document.kind,title,pages:[catalogComposition(type)]});thumbnailControllers.push(c);b.append(visual,el('strong','',title),el('span','',description));get('templates').append(b)}}
 const thumbnailControllers:DocumentController[]=[];
 function catalogComposition(type:string){const section=makeComposition(type,model.document.kind),theme=get<HTMLSelectElement>('catalog-theme').value;if(theme!=='default'){section.appearance!.theme=theme as NonNullable<typeof section.appearance>['theme'];if(theme==='image')section.appearance!.background='../assets/brand-landscape.svg'}return section}
 get('catalog-theme').addEventListener('change',drawCatalog);
@@ -152,7 +155,7 @@ function draw(keepProperties=false){
         // Renderer owns initial grid placement; do not override its mobile rules.
         const content=box.querySelector<HTMLElement>(dom.content)!;content.removeAttribute('tabindex');if(content.getAttribute('role')==='region')content.removeAttribute('role');content.querySelectorAll<HTMLButtonElement>('button').forEach(b=>{if(w.type!=='button')b.disabled=true;b.tabIndex=-1});
         bindInline(box,w,index,inlineCommit,()=>focusWidget(w.id,index));
-        const bar=el('div','widget-tools');bar.style.left=w.position.col>page.grid.columns/2?'auto':'0';bar.style.right=w.position.col>page.grid.columns/2?'0':'auto';bar.append(small('Настройки блока',()=>openInspector(w.id,index)),small('Копия',()=>duplicateWidget(w.id,index)),small('Удалить',()=>removeWidget(w.id,index)));box.append(bar);
+        const bar=el('div','widget-tools');bar.style.left=w.position.col>page.grid.columns/2?'auto':'0';bar.style.right=w.position.col>page.grid.columns/2?'0':'auto';bar.append(iconButton('Настройки блока',()=>openInspector(w.id,index),'settings','af-btn af-btn--ghost af-btn--sm context-button'),iconButton('Копия',()=>duplicateWidget(w.id,index),'copy','af-btn af-btn--ghost af-btn--sm context-button'),iconButton('Удалить',()=>removeWidget(w.id,index),'delete','af-btn af-btn--ghost af-btn--sm context-button'));box.append(bar);
         if(w.type==='image'){const change=small('Заменить изображение',()=>openInspector(w.id,index));change.classList.add('image-change');box.append(change)}
         box.addEventListener('click',e=>{if((e.target as HTMLElement).closest('button,[contenteditable]'))return;e.preventDefault();selectWidget(w.id)});
         box.addEventListener('keydown',e=>{if(e.target===box&&(e.key==='Enter'||e.key===' ')){e.preventDefault();openInspector(w.id,index)}});
@@ -196,7 +199,13 @@ get<HTMLInputElement>('open').addEventListener('change',async e=>{try{const pars
 run('export',async()=>{if(!flush())return;const control=get<HTMLButtonElement>('export');control.disabled=true;message('Подготовка HTML…');try{await downloadEditorHTML(model.document);message('HTML скачан. Внешние изображения по HTTP(S) требуют сети.')}catch(e){message((e as Error).message,true)}finally{control.disabled=false}});
 bindEditorShortcuts(lifecycle.signal,{close:()=>{if(root.classList.contains('outline-open')){closeOutline();return true}if(drawer.hidden)return false;closeInspector();return true},undo:()=>get('undo').click(),redo:()=>get('redo').click(),save:()=>{if(document.activeElement instanceof HTMLElement&&root.contains(document.activeElement))document.activeElement.blur();get('save').click()}});
 for(const [id,kind]of [['demo-page','page'],['demo-deck','presentation']] as const)run(id,async()=>{if(!flush())return;await startProject();model=new EditorModel(showcase(kind));pageIndex=0;selected='';preview=false;drawer.hidden=true;(root.querySelector('.project-menu') as HTMLDetailsElement).open=false;saveLocal();draw();message('Создан отдельный проект из эталона. Предыдущий доступен в «Мои проекты».')});
-get<HTMLSelectElement>('device').addEventListener('change',e=>{canvas.dataset.device=(e.target as HTMLSelectElement).value;zoomControls.reset()});
+let restoringDevice=false;
+get<HTMLSelectElement>('device').addEventListener('change',e=>{
+ if(restoringDevice)return;const select=e.target as HTMLSelectElement;
+ if(!flush()){restoringDevice=true;select.value=canvas.dataset.device??'desktop';select.dispatchEvent(new Event('change'));restoringDevice=false;return}
+ canvas.dataset.device=select.value;zoomControls.reset();
+ if(selected&&!drawer.hidden){const doc=model.document;renderProperties(doc,doc.pages[pageIndex])}
+});
 
 function drawDocumentProperties(doc:AFDocument){
  get('inspector-title').textContent='Настройки документа';get('design-settings').hidden=true;(drawer.querySelector('.page-settings') as HTMLElement).hidden=true;disposeControls(inspector);inspector.replaceChildren();flush=()=>true;draftState='valid';paintSaveState();
@@ -240,7 +249,7 @@ root.querySelector('.canvas-toolbar')!.prepend(button('Структура',()=>{
 
 
 get('save-state').classList.add('header-save-state');root.querySelector('.document-name')!.after(get('save-state'));
-const gridDetails=el('details','advanced-grid');gridDetails.append(el('summary','af-btn af-btn--clear af-btn--sm','Дополнительно: сетка'),get('settings').querySelector('.settings-grid')!);get('settings').append(gridDetails);
+const gridDetails=el('details','advanced-grid settings-disclosure');gridDetails.append(el('summary','af-btn af-btn--clear af-btn--sm','Дополнительно: сетка'),get('settings').querySelector('.settings-grid')!);get('settings').append(gridDetails);
 const showLearning=tutorial(root.querySelector('.editor-workspace')!,projectId,learning,step=>{
  if(!flush())return;
  const doc=model.document;const current=doc.pages[pageIndex];

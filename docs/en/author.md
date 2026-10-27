@@ -29,3 +29,11 @@ Drafts are isolated from projects. Edit them, retry a section, cancel or resume 
 ## Before delivery
 
 Wait for «Сохранено в браузере». Check websites on mobile and presentations in full screen. Download a portable project as a backup. HTML with embedded local assets works without the model; external HTTP(S) resources require a network. Use browser printing for PDF and verify that every slide occupies a separate page.
+
+## Tablet and phone sizes
+
+Choose a screen in «Вид холста», open block properties and expand «Размеры и положение». Set percentage width and minimum pixel height independently for tablet and phone. Content can grow beyond the minimum height. «Автоматический размер» resets only the current screen. These settings apply to flow website sections; desktop grid and slide geometry remain separate.
+
+The resize handle supports pointer input and arrows: left/right adjust width by 5 percentage points (10 with Shift), up/down adjust minimum height by 16 px. The move handle changes reading order. Escape cancels an active drag; Undo restores an applied size. Simulated device widths stay stable when properties open; use canvas scrolling or «Вписать» when space is limited.
+
+Keyboard and screen reader users can activate the named block settings, move and resize buttons. Closing properties returns focus to the invoking button.

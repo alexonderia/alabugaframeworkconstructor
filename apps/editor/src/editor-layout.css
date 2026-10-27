@@ -11,6 +11,17 @@
 .af-dialog__header>.af-btn{flex-shrink:0}
 .af-dialog[open]>:is(p,form,fieldset,.af-field,.af-row,.af-dialog__actions){margin-block:0}
 .af-dialog[open]>.af-dialog__actions{flex-wrap:wrap;justify-content:flex-end}
+.library-dialog[open]{overflow:hidden}
+.library-dialog-body{flex:1;min-height:0;min-width:0;display:flex;flex-direction:column;gap:var(--af-space-16);overflow:auto;overflow-wrap:anywhere;scroll-padding:var(--af-space-8)}
+.library-dialog-body>*{flex-shrink:0;min-width:0;margin-block:0}
+.library-dialog-body>:is([role=status],[role=alert]):empty{display:none}
+.library-dialog-actions{flex:none;display:flex;gap:var(--af-space-12)}
+.product-form-actions>.af-btn{flex:1}
+.library-dialog-body .product-error:empty{display:none}
+.library-dialog .storage-asset>span{min-width:0}
+.library-dialog .asset-card,.project-library-list>.af-btn{white-space:normal;overflow-wrap:anywhere;height:auto;min-height:var(--af-size-control-m)}
+.variant-card>.af-btn{max-width:100%;white-space:normal;height:auto;min-height:var(--af-size-control-m)}
+.save-conflict>.save-conflict-actions>.af-btn{flex:1 0 100%;max-width:100%;white-space:normal;height:auto;min-height:var(--af-size-control-m)}
 .fit-dialog[open]{overflow:hidden}
 .fit-body{flex:1;min-height:0;display:flex;flex-direction:column;gap:var(--af-space-16);overflow:auto;scroll-padding:var(--af-space-8)}
 .fit-body>:is(p,ul,.fit-preview){margin-block:0}
@@ -20,7 +31,12 @@
 .ai-dialog>.ai-header,.ai-dialog>.ai-readiness{flex:none}
 .ai-dialog>.ai-workspace{flex:1;min-height:0;height:auto}
 .canvas-toolbar .page-picker>.af-label{margin:0}
+.constructor-file-picker{display:flex;align-items:center;flex-wrap:wrap;gap:var(--af-space-12);min-width:0}
+.constructor-file-native[hidden]{display:none}
+.constructor-file-picker>.af-btn{flex:none}
+.constructor-file-name{flex:1;min-width:0;margin:0;overflow-wrap:anywhere}
 @media(max-width:767px){
  .af-dialog[open]:not(.ai-dialog){max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px)}
  .fit-dialog>.fit-actions>.af-btn{flex:1 0 100%}
+ .product-dialog>.section-name-actions>.af-btn{flex:1 0 100%}
 }

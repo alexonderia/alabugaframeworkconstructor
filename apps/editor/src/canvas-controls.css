@@ -1,10 +1,15 @@
 /* Affordances stay inside their block and retain screen size while zooming. */
 .widget-tools{top:auto;bottom:calc(100% + var(--af-space-8)*var(--constructor-ui-scale,1));flex-wrap:wrap;gap:var(--af-space-4);padding:var(--af-space-4);transform:scale(var(--constructor-ui-scale,1));transform-origin:bottom left;white-space:normal}
+.canvas-scroll{position:relative}
+.canvas-widget-tools{position:absolute;inset:0;z-index:20;pointer-events:none}
+.canvas-widget-tools>.widget-tools{transform:none;opacity:1;pointer-events:auto}
+.canvas-widget-tools>.widget-tools[hidden]{display:none}
+#canvas .af-widget:not([data-controls-active])>:is(.widget-tools,.widget-handle){opacity:0;pointer-events:none}
 /* Geometry uses individual transforms: Framework disables button animation
    transforms for reduced motion, which must not shrink these hit targets. */
 .move-handle{bottom:calc(-1*var(--constructor-handle-half)*var(--constructor-ui-scale,1));transform:none;translate:-50% 0;scale:var(--constructor-ui-scale,1);transform-origin:bottom center}
 .resize-handle{bottom:calc(-1*var(--constructor-handle-half)*var(--constructor-ui-scale,1));transform:none;scale:var(--constructor-ui-scale,1);transform-origin:bottom right}
-.af-widget.is-selected>.widget-handle{opacity:1;pointer-events:auto}
+#canvas .af-widget[data-controls-active]>.widget-handle{opacity:1;pointer-events:auto}
 .af-widget[data-controls-clipped]>.widget-handle,.af-widget[data-controls-clipped]>.widget-tools{visibility:hidden}
 @media(pointer:coarse){.widget-tools{gap:var(--af-space-8)}}
 

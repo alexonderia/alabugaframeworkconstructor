@@ -1,12 +1,13 @@
 import {mountControls,disposeControls} from './component-lifecycle';
 import {frameworkDom as dom} from './framework-adapter';
 import {el,button,settingsGroup} from './ui';
+import type {ActionIcon} from './action-icons';
 import {inputField as field,textareaField as area,selectField as select,checkboxField as check} from './ui-fields';
 import {widgetRegistry,type Widget,type TextBlock} from '@alabuga/framework/schema';
 import {readImage} from './export';
 import {widgetDesign} from './design';
 import {mergePropertyDraft} from './property-patch';
-import {type WidgetLayout,layoutNote} from './widget-layout';
+import {type WidgetLayout,layoutNote,responsiveSize,setResponsiveSize,responsiveKey} from './widget-layout';
 import type {AFDocument} from '@alabuga/framework/schema';
 type Callbacks={apply:(widget:Widget)=>boolean;current?:()=>Widget;layout?:()=>WidgetLayout;remove:()=>void;duplicate:()=>void;error:(message:string)=>void;errorMessage?:()=>string;pending:()=>void;settled:(valid:boolean)=>void;columns:number;document:AFDocument};
 export function properties(host:HTMLElement,original:Widget,actions:Callbacks):()=>boolean {
@@ -21,13 +22,20 @@ export function properties(host:HTMLElement,original:Widget,actions:Callbacks):(
   form.addEventListener('submit',e=>{e.preventDefault();apply()});
   form.addEventListener('input',()=>{const slider=form.querySelector<HTMLInputElement>('[data-horizontal-position]');if(slider){slider.max=String(Math.max(1,actions.columns-draft.position.width+1));slider.value=String(draft.position.col)}schedule()});
   form.addEventListener('change',schedule);
-  const small=(title:string,action:()=>void)=>button(title,action,'af-btn af-btn--ghost af-btn--sm');
+  const small=(title:string,action:()=>void,icon?:ActionIcon)=>button(title,action,'af-btn af-btn--ghost af-btn--sm',icon);
   const draw=()=>{
     if(JSON.stringify(draft)!==saved)schedule();
     disposeControls(form);form.replaceChildren();form.append(el('h2','af-title inspector-heading',widgetRegistry[draft.type].title),el('p','af-help','Изменения сразу отображаются на странице.'));
     field(form,'Название блока',draft.title,v=>draft.title=v).maxLength=200;
     const mode=actions.layout?.()??'grid',geometry=el('fieldset','geometry');geometry.append(el('legend','',mode==='grid'?'Положение и размер':'Базовая сетка для компьютера'));
-    if(mode!=='grid'){const note=el('p','af-help',layoutNote(mode)+' Поля ниже задают базовую сетку для компьютера.');note.style.gridColumn='1 / -1';geometry.append(note)}
+    if(mode==='auto'){const note=el('p','af-help',layoutNote(mode));note.style.gridColumn='1 / -1';geometry.append(note)}
+    else if(mode!=='grid'){
+      const responsive=el('fieldset','geometry');responsive.dataset.propertyGroup='geometry';responsive.append(el('legend','',mode==='tablet'?'Размер на планшете':'Размер на телефоне'));
+      const note=el('p','af-help',layoutNote(mode));note.style.gridColumn='1 / -1';responsive.append(note);
+      const size=responsiveSize(draft,mode);
+      for(const [key,label,min,max]of [['width','Ширина, %',1,100],['minHeight','Минимальная высота, px',0,3200]] as const){const control=field(responsive,label,size[key],v=>setResponsiveSize(draft,mode,{[key]:Number(v)}),'number');control.min=String(min);control.max=String(max);control.step='1';control.required=true}
+      const reset=small('Автоматический размер',()=>{if(draft.responsive){delete draft.responsive[responsiveKey(mode)];if(!Object.keys(draft.responsive).length)delete draft.responsive}draw()});reset.style.gridColumn='1 / -1';responsive.append(reset);form.append(responsive);
+    }
     for(const [key,name]of [['col','Колонка'],['row','Строка'],['width','Ширина'],['height','Высота']] as const){const input=field(geometry,name,draft.position[key],v=>draft.position[key]=Number(v),'number');input.min=String(key==='width'?widgetRegistry[draft.type].minWidth:key==='height'?widgetRegistry[draft.type].minHeight:1);input.step='1';input.required=true}
     form.append(geometry);
     const placement=el('fieldset','block-editor');placement.append(el('legend','','Размещение по ширине'));
@@ -79,7 +87,7 @@ export function properties(host:HTMLElement,original:Widget,actions:Callbacks):(
     for(const node of Array.from(form.children).slice(2)){const key=(node as HTMLElement).dataset.propertyGroup??(node===geometry||node===placement?'geometry':'content');groups.get(key)!.body.append(node)}
     for(const {group,body} of groups.values())if(body.children.length)form.append(group);
     form.append(small('Сбросить неприменённые изменения',()=>{clearTimeout(timer);for(const key of Object.keys(draft))Reflect.deleteProperty(draft,key);Object.assign(draft,JSON.parse(saved));draw();actions.settled(true)}));
-    const footer=el('div','property-actions');footer.append(feedback,small('Дублировать',()=>{if(apply())actions.duplicate()}),small('Удалить блок',actions.remove));form.append(footer);mountControls(form);
+    const footer=el('div','property-actions');footer.append(feedback,small('Дублировать',()=>{if(apply())actions.duplicate()},'copy'),small('Удалить блок',actions.remove,'delete'));form.append(footer);mountControls(form);
   };
   draw();return ()=>apply();
 }

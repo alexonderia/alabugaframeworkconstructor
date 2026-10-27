@@ -1,5 +1,5 @@
 import {chooseOption} from './choose-option';
-import {openGeometry} from './property-helper';
+import {openGeometry,widgetTools} from './property-helper';
 import {openEditor} from './open-editor';
 import {savedDocument} from './project-helper';
 import {test,expect} from '@playwright/test';
@@ -19,18 +19,21 @@ test('place a block right of center and align its contents independently',async(
   await page.locator('#close-inspector').click();const box=await page.locator('#canvas .af-widget').boundingBox(),panel=await page.locator('#canvas .af-panel').boundingBox();expect(box!.x).toBeGreaterThan(panel!.x+panel!.width/2);
   const event=page.waitForEvent('download');await page.locator('#export').click();const download=await event,path=info.outputPath('offset.html');await download.saveAs(path);await page.goto(pathToFileURL(path).href);await expect(page.locator('.af-widget')).toHaveCSS('grid-column','8 / span 3');await expect(page.locator('.af-widget')).toHaveCSS('text-align','center');
 });
-test('tools hide when pointer leaves, including narrow desktop, and return on keyboard focus',async({page})=>{
+test('selected tools stay visible while unselected tools follow hover and keyboard focus',async({page})=>{
   for(const width of [1440,1000]){await page.setViewportSize({width,height:900});if(!(await page.locator('#canvas .af-widget').count())){await page.locator('#add-widget').click();await page.locator('[data-add="metric"]').click()}
-    const box=page.locator('#canvas .af-widget').first(),bar=box.locator('.widget-tools');await page.mouse.move(1,1);await expect(bar).toHaveCSS('opacity','0');await box.hover();await expect(bar).toHaveCSS('opacity','1');await expect(box.locator('.move-handle')).toHaveCSS('opacity','1');await page.mouse.move(1,1);await expect(bar).toHaveCSS('opacity','0');await page.keyboard.press('Tab');await box.locator('.move-handle').focus();await expect(bar).toHaveCSS('opacity','1');await box.locator('.move-handle').blur();
+    const box=page.locator('#canvas .af-widget').first(),bar=await widgetTools(page,box);
+    await box.click({position:{x:4,y:4}});await page.mouse.move(1,1);await expect(bar).toBeVisible();
+    await page.locator('#page-settings-open').click();await page.locator('#close-inspector').click();await expect(box).not.toHaveClass(/is-selected/);
+    await page.mouse.move(1,1);await expect(bar).toBeHidden();await box.hover();await expect(bar).toBeVisible();await expect(box.locator('.move-handle')).toHaveCSS('opacity','1');await page.mouse.move(1,1);await expect(bar).toBeHidden();await page.keyboard.press('Tab');await box.locator('.move-handle').focus();await expect(bar).toBeVisible();await box.locator('.move-handle').blur();
   }
 });
 
-test('drag an unselected block in a different section',async({page})=>{
+test('select and drag a block in a different section',async({page})=>{
   await page.setViewportSize({width:1440,height:1600});
   await page.locator('#add-widget').click();await page.locator('[data-add="metric"]').click();
   await page.locator('#end-add .insert-button').click();await page.locator('[data-template="blank"]').click();await page.locator('#page-settings-open').click();await chooseOption(page.getByLabel('Высота секции',{exact:true}),'fixed');await page.locator('#close-inspector').click();await page.locator('#add-widget').click();await page.locator('[data-add="metric"]').click();
   await page.locator('#canvas .af-widget').first().click();
-  const section=page.locator('#canvas .af-page').nth(1),box=section.locator('.af-widget').first();await box.hover();await box.locator('.move-handle').evaluate(n=>n.scrollIntoView({block:'center'}));
+  const section=page.locator('#canvas .af-page').nth(1),box=section.locator('.af-widget').first();await box.click({position:{x:4,y:4}});await box.locator('.move-handle').evaluate(n=>n.scrollIntoView({block:'center'}));
   const handle=await box.locator('.move-handle').boundingBox(),panel=await section.locator('.af-panel').boundingBox();expect(handle!.y+253).toBeLessThan(1600);
   await page.mouse.move(handle!.x+13,handle!.y+13);await page.mouse.down();await page.mouse.move(handle!.x+13+(panel!.width+16)/12,handle!.y+13+240,{steps:10});await page.mouse.up();
   await expect.poll(async()=>(await doc(page)).pages[1].widgets[0].position).toMatchObject({col:2,row:4});expect((await doc(page)).pages[0].widgets[0].position).toMatchObject({col:1,row:1});

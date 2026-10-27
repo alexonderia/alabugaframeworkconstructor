@@ -57,7 +57,7 @@ test('AI upload, material selection and storage cleanup share Framework fields a
  await openProject(page);await page.locator('.project-menu>summary').click();await page.getByRole('button',{name:'Создать с ИИ',exact:true}).click();
  const dialog=page.locator('.ai-dialog');await dialog.locator('summary').click();await expect(dialog.locator('input[type=file]')).toHaveClass(/af-input/);
  const png=await page.evaluate(()=>{const canvas=document.createElement('canvas');canvas.width=2;canvas.height=2;canvas.getContext('2d')!.fillRect(0,0,2,2);return canvas.toDataURL('image/png').split(',')[1]});
- await dialog.locator('input[type=file]').setInputFiles({name:'framework-check.png',mimeType:'image/png',buffer:Buffer.from(png,'base64')});
+ const upload=dialog.locator('input[type=file]');await expect(upload).toBeEnabled();await upload.setInputFiles({name:'framework-check.png',mimeType:'image/png',buffer:Buffer.from(png,'base64')});
  const material=dialog.locator('.ai-material [data-material^="asset:"]');await expect(material).toBeVisible();await material.check();await expect(material).toBeChecked();await material.uncheck();await expect(material).toHaveCSS('appearance','none');
  await expectFrameworkControls(page);await capture(page,'ai-materials',info.project.name);await dialog.getByRole('button',{name:'Закрыть',exact:true}).click();
  if(!await page.locator('.project-menu').evaluate(n=>(n as HTMLDetailsElement).open))await page.locator('.project-menu>summary').click();

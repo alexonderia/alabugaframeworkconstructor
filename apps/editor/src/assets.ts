@@ -1,10 +1,10 @@
-import {showDialog,el,button} from './ui';
+import {showDialog,libraryDialog,el,button} from './ui';
 import {readImage} from './export';
 import {loadBrandManifest} from './brand-manifest';
 import {listAssets,describeAsset,addAsset} from './storage';
 
 export async function chooseAsset(apply:(src:string)=>void){
- const dialog=el('dialog','asset-library'),grid=el('div','asset-grid'),filter=el('select','af-select'),error=el('p','af-error'),status=el('p'),search=el('input','af-input'),sort=el('select','af-select');
+ const {dialog,body}=libraryDialog('Библиотека материалов','asset-library'),grid=el('div','asset-grid'),filter=el('select','af-select'),error=el('p','af-error'),status=el('p'),search=el('input','af-input'),sort=el('select','af-select');
  dialog.setAttribute('aria-label','Библиотека материалов');filter.setAttribute('aria-label','Категория материалов');search.type='search';search.placeholder='Найти по названию и описанию';search.setAttribute('aria-label','Поиск материалов');sort.setAttribute('aria-label','Сортировка материалов');status.setAttribute('role','status');error.setAttribute('role','alert');
  for(const [value,label] of [['background','Фоны'],['logo','Логотипы'],['photo','Фотографии'],['decoration','Графика'],['local','Материалы моих проектов']]){const o=el('option','',label);o.value=value;filter.append(o)}
  for(const [value,label]of [['name','По названию'],['reverse','В обратном порядке']]){const o=el('option','',label);o.value=value;sort.append(o)}
@@ -25,7 +25,7 @@ export async function chooseAsset(apply:(src:string)=>void){
  }
  upload.addEventListener('change',()=>{void (async()=>{try{const file=upload.files?.[0];if(!file)return;const src=await readImage(file);if(closed)return;await addAsset(src,file.name);if(!closed)pick(src)}catch(e){error.textContent=(e as Error).message}finally{upload.value=''}})()});
  const uploadField=el('label','af-field');uploadField.append(el('span','af-label','Или загрузите своё изображение'),upload);
- dialog.append(el('h2','','Библиотека материалов'),button('Закрыть',()=>dialog.close()),filter,search,sort,uploadField,status,error,retry,grid);document.body.append(dialog);
+ body.append(filter,search,sort,uploadField,status,error,retry,grid);document.body.append(dialog);
  dialog.addEventListener('close',()=>{closed=true;request++;dialog.remove()},{once:true});filter.addEventListener('change',draw);search.addEventListener('input',draw);sort.addEventListener('change',draw);showDialog(dialog);void load();
 }
 

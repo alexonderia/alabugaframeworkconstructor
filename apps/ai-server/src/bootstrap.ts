@@ -1,9 +1,10 @@
-import {mkdir,writeFile,rename} from 'node:fs/promises';
+import {mkdir} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import lock from '../../../config/model-lock.json';
 import {preparePinnedModel} from './pinned-model';
+import {writeBootstrapState} from './bootstrap-state';
 const base=process.env.AF_OLLAMA_URL||'http://127.0.0.1:11434',dir=resolve(process.env.AF_AI_STATE_DIR||'artifacts/ai');
-async function state(stage:string,message:string){await mkdir(dir,{recursive:true});const file=resolve(dir,'bootstrap.json');await writeFile(file+'.tmp',JSON.stringify({stage,message,upstream:base,updated:new Date().toISOString()}));await rename(file+'.tmp',file);console.log(message)}
+async function state(stage:string,message:string){await mkdir(dir,{recursive:true});await writeBootstrapState(resolve(dir,'bootstrap.json'),{stage,message,upstream:base,updated:new Date().toISOString()});console.log(message)}
 async function request(path:string,options?:RequestInit){const r=await fetch(base+path,{...options,signal:options?.signal??AbortSignal.timeout(10000)});if(!r.ok)throw new Error(`Ollama ${r.status}: ${await r.text()}`);return r}
 export async function initializeModel(){
  try{

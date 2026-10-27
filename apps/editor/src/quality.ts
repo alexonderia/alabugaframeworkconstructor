@@ -1,4 +1,4 @@
-import {showDialog,el,button} from './ui';
+import {showDialog,libraryDialog,el,button} from './ui';
 import {frameworkDom as dom} from './framework-adapter';
 import type {AFDocument} from '@alabuga/framework/schema';
 import {documentSurface} from './document-surface';
@@ -35,8 +35,8 @@ export async function preflightDocument(doc:AFDocument):Promise<QualityIssue[]>{
  }finally{surface.destroy();host.remove()}
 }
 export function qualityDialog(doc:AFDocument,_canvas:HTMLElement,go:(issue:QualityIssue)=>void){
- const dialog=el('dialog','project-library'),status=el('p','','Проверяем документ на компьютере, планшете и телефоне…');status.setAttribute('role','status');dialog.setAttribute('aria-label','Проверка качества');dialog.append(el('h2','','Проверка качества'),button('Закрыть',()=>dialog.close()),status);document.body.append(dialog);dialog.addEventListener('close',()=>dialog.remove());showDialog(dialog);
+ const {dialog,body}=libraryDialog('Проверка качества','project-library'),status=el('p','','Проверяем документ на компьютере, планшете и телефоне…');status.setAttribute('role','status');body.append(status);document.body.append(dialog);dialog.addEventListener('close',()=>dialog.remove());showDialog(dialog);
  void preflightDocument(doc).then(issues=>{if(!dialog.isConnected)return;status.textContent=issues.length?'Найдены замечания. Перейдите к настройкам нужного блока.':'Автоматических замечаний нет. Проверьте композицию и читаемость фотографий в предпросмотре.';
-  for(const issue of issues){const row=el('div','quality-issue');row.append(el('h3','',`Секция ${issue.section+1} · ${issue.screens?.join(', ')}: ${issue.message}`),el('p','',issue.fix),button('Перейти к настройкам',()=>{dialog.close();go(issue)}));dialog.append(row)}
+  for(const issue of issues){const row=el('div','quality-issue');row.append(el('h3','',`Секция ${issue.section+1} · ${issue.screens?.join(', ')}: ${issue.message}`),el('p','',issue.fix),button('Перейти к настройкам',()=>{dialog.close();go(issue)}));body.append(row)}
  }).catch(error=>{if(dialog.isConnected)status.textContent='Проверка не завершена: '+(error as Error).message});
 }

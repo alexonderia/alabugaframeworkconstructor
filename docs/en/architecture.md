@@ -1,6 +1,6 @@
 # Architecture
 
-Constructor pins Framework 1.1.0 and requires at least 1.1.0. UI components initialize only in editor-owned containers and clean up before DOM replacement. DatePicker is enhanced; dynamic Select controls explicitly retain native behavior. The editable document canvas is not passed to general component initialization.
+Constructor pins Framework 1.2.0 and requires at least 1.2.0. UI components initialize only in editor-owned containers and clean up before DOM replacement. DatePicker is enhanced; Select controls retain their native backing field and use the public Framework component. The editable document canvas is not passed to general component initialization.
 
 `document-surface.ts` hosts the public standalone runtime/CSS inside an iframe. Preview, shared quality checks and exported HTML use the same Framework runtime without copying renderer implementation. The isolation serves document sizing and routing; the iframe contains trusted runtime and a validated AFDocument. Preflight checks website viewports at 1440/768/390 px and slides at 1600 px, blocking export for clipped content or unavailable images.
 
@@ -40,6 +40,6 @@ There is no server project database, account system or synchronization. The mode
 
 ## Independent repositories
 
-Framework is now a separate repository publishing @alabuga/framework. Constructor 0.7.0 pins 1.1.0 in its manifests and lockfile; editor, ai and ai-server remain private internal workspaces. Framework releases never release or deploy Constructor. Cross-package access uses public exports. apps/editor/src/framework-adapter.ts centralizes rendering, fitting, built-in resource URLs and DOM editing hooks.
+Framework is now a separate repository publishing @alabuga/framework. Constructor 0.7.0 pins 1.2.0 in its manifests and lockfile; editor, ai and ai-server remain private internal workspaces. Framework releases never release or deploy Constructor. Cross-package access uses public exports. apps/editor/src/framework-adapter.ts centralizes rendering, fitting, built-in resource URLs and DOM editing hooks.
 
 The installed package already provides standalone.css and standalone.js. Constructor never builds Framework. Library DOM/CSS/API compatibility is a SemVer contract documented in Framework docs/public-contract.md. The Framework reference is a separate static website; VITE_FRAMEWORK_DOCS_URL configures its link and CONSTRUCTOR_URL configures return links when building that site. Browser storage and AI stay in Constructor.

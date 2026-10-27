@@ -18,7 +18,7 @@ Up to 20 revisions are retained after an editing pause, when leaving and before 
 
 ## Compatibility
 
-Documents remain at schema version 3. IndexedDB version 3 adds the revisions.project index and migrates databases 1?2 without rewriting their documents. Legacy local storage is migrated once. Future schema changes require explicit migrations and tests against old documents. If a database upgrade is blocked, close other tabs and reopen.
+Documents with responsive size overrides use schema 4 (Framework 1.2+). Legacy documents without overrides still normalize from schemas 1–3 to 3; explicit schema 4 is preserved. Framework 1.1 readers reject schema 4. Portable project envelopes remain version 3. IndexedDB version 3 adds the revisions.project index and migrates databases 1?2 without rewriting their documents. Legacy local storage is migrated once. Future schema changes require explicit migrations and tests against old documents. If a database upgrade is blocked, close other tabs and reopen.
 
 ## Undo and recovery
 

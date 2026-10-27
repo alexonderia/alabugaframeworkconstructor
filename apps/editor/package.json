@@ -8,7 +8,7 @@
     "test": "cd ../.. && tsx --test tests/editor.test.ts tests/editor-save.test.ts"
   },
   "dependencies": {
-    "@alabuga/framework": "1.1.0",
+    "@alabuga/framework": "1.2.0",
     "@alabuga/ai": "0.7.0"
   }
 }

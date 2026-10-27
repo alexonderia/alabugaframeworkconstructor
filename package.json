@@ -17,6 +17,7 @@
     "ai:acceptance": "node scripts/ai-live.mjs",
     "ai:examples": "node scripts/ai-live.mjs --examples",
     "ai:report": "python scripts/ai-report.py",
+    "test:ai-report": "python -m unittest discover -s tests -p ai_report_test.py",
     "predev": "tsx scripts/build-docs.ts",
     "dev": "vite --host 127.0.0.1",
     "build": "npm run typecheck && npm run check:boundaries && npm run check:ui && tsx scripts/build.ts",
@@ -40,7 +41,7 @@
   },
   "dependencies": {
     "zod": "^4.5.4",
-    "@alabuga/framework": "1.1.0"
+    "@alabuga/framework": "1.2.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
@@ -60,7 +61,7 @@
   "packageManager": "npm@11.17.0",
   "license": "UNLICENSED",
   "alabugaFramework": {
-    "minimum": "1.1.0",
+    "minimum": "1.2.0",
     "major": 1
   }
 }

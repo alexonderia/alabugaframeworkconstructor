@@ -15,6 +15,14 @@ async function expectAccessible(page:Page){
 }
 test.beforeEach(async({page})=>openRelease(page));
 
+test('catalog keyboard wraps both ends and restores its invoking button',async({page})=>{
+ await page.locator('#add-widget').click();const dialog=page.locator('#catalog'),first=page.locator('#close-catalog'),last=dialog.locator('#palette button').last();
+ await first.focus();await page.keyboard.press('Shift+Tab');await expect(last).toBeFocused();await page.keyboard.press('Tab');await expect(first).toBeFocused();
+ await page.keyboard.press('Escape');await expect(page.locator('#add-widget')).toBeFocused();
+ // A static dialog is reused; reopening must not retain a stale key handler.
+ await page.locator('#add-widget').click();await first.focus();await page.keyboard.press('Shift+Tab');await expect(last).toBeFocused();await page.keyboard.press('Escape');
+});
+
 test('compact actions fit narrow screens and text spacing without covering the page end',async({page})=>{
  for(const width of [320,360,375,390]){
   await page.setViewportSize({width,height:844});

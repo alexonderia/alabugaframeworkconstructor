@@ -5,6 +5,18 @@ export function imageChoices(id:string,task:string,materials:Material[]){
 }
 /** Classify the requested presentation form, not words inside its topic list. */
 export function sourceFacts(source:string){return source.split(/(?:\r?\n)+|(?<=[\p{L}\p{N}»][.!?])\s+(?=[А-ЯA-Z])/u).map(text=>text.trim()).filter(Boolean).map((text,index)=>({id:'F'+(index+1),text}));}
+/** Keep original sentences and derive independent, affirmative actor/action clauses. */
+export function sourceEvidence(source:string){
+ const facts: {id:string;text:string;parentId?:string}[]=sourceFacts(source),clauses:typeof facts=[];
+ const verb='(?:выбирает|редактирует|просматривает|экспортирует|сохраняет|добавляет|проверяет|создаёт|создает|пишет)';
+ for(const fact of facts){
+  if(/(?:^|\s)(?:не|если|только|после|до|при|кроме|пока)(?:\s|[,.])/i.test(fact.text))continue;
+  const first=fact.text.match(new RegExp('^(.+?)\\s+('+verb+'\\s.+)$','i'));if(!first||!/^(?:пользователь|автор|команда|клиент|редактор|сервис|инструмент)$/i.test(first[1]))continue;
+  const parts=first[2].split(new RegExp(',\\s*(?='+verb+'\\s)','i'));if(parts.length<2)continue;
+  parts.forEach((part,i)=>clauses.push({id:fact.id+'C'+(i+1),parentId:fact.id,text:first[1]+' '+part.replace(/[.!?]$/,'')+'.'}));
+ }
+ return [...facts,...clauses];
+}
 export function requestedComposition(prompt:string){
  const form=prompt.split(/[:«]/,1)[0];
  if(/три возможности|преимуществ|аргумент/i.test(form))return 'features';

@@ -2,10 +2,28 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {spawn} from 'node:child_process';
-import {mkdtemp,readFile,rm} from 'node:fs/promises';
+import {mkdtemp,readFile,writeFile,rename,rm,rmdir} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join,resolve,dirname,basename} from 'node:path';
 import lock from '../config/model-lock.json';
+import {writeBootstrapState} from '../apps/ai-server/src/bootstrap-state';
+
+test('bootstrap state retries temporary Windows locks and publishes a complete replacement',async()=>{
+ const dir=await mkdtemp(join(tmpdir(),'alabuga-bootstrap-state-')),file=join(dir,'bootstrap.json');
+ try{
+  await writeFile(file,JSON.stringify({stage:'waiting'}));let attempts=0;
+  await writeBootstrapState(file,{stage:'ready'},async(from,to)=>{attempts++;if(attempts<=3){assert.equal(JSON.parse(await readFile(file,'utf8')).stage,'waiting');throw Object.assign(new Error('Reader holds state'),{code:['EPERM','EACCES','EBUSY'][attempts-1]})}await rename(from,to)});
+  assert.equal(attempts,4);assert.deepEqual(JSON.parse(await readFile(file,'utf8')),{stage:'ready'});
+ }finally{await rm(file,{force:true});await rm(file+'.tmp',{force:true});await rmdir(dir)}
+});
+
+test('bootstrap state preserves the previous report and stops retrying permanent failures',async()=>{
+ const dir=await mkdtemp(join(tmpdir(),'alabuga-bootstrap-state-')),file=join(dir,'bootstrap.json');
+ try{
+  await writeFile(file,JSON.stringify({stage:'waiting'}));
+  for(const [code,expected]of [['EPERM',6],['ENOSPC',1]] as const){let attempts=0;const failure=Object.assign(new Error('Cannot publish'),{code});await assert.rejects(writeBootstrapState(file,{stage:'ready'},async()=>{attempts++;throw failure}),error=>error===failure);assert.equal(attempts,expected);assert.deepEqual(JSON.parse(await readFile(file,'utf8')),{stage:'waiting'})}
+ }finally{await rm(file,{force:true});await rm(file+'.tmp',{force:true});await rmdir(dir)}
+});
 test('initializer installs once, verifies pin, preserves cached weights and recovers interrupted pulls',async()=>{
  let installed=false,pulls=0,wrong=false,interrupt=false;
  const server=createServer(async(req,res)=>{
