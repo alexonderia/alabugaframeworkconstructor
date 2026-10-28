@@ -9,7 +9,7 @@ Development requires Node.js 24, npm 11 and Git. Exact tool versions are recorde
 ## Editor without AI
 
 ```sh
-node scripts/configure-registry.mjs https://YOUR_REGISTRY/
+node scripts/configure-registry.mjs https://npm.acom-offer-desk.ru/
 npm ci
 npm run dev
 ```
@@ -42,6 +42,24 @@ Authors must verify AI-generated claims. A technically valid draft is not a guar
 
 ## Registry and documentation
 
-Configure the scoped registry and a read token in your user npm config before installation. Never commit tokens. The prepared local registry is http://127.0.0.1:4873/; NPM_CONFIG_USERCONFIG can point to its read config. Only installation and builds require registry access; the built application does not.
+`@alabuga/framework` version **1.3.1** is available from the external HTTPS registry:
+
+```text
+https://npm.acom-offer-desk.ru/
+```
+
+Anonymous read is enabled for the test contour; publishing is restricted. Add this to the project `.npmrc`:
+
+```ini
+@alabuga:registry=https://npm.acom-offer-desk.ru/
+```
+
+Then install the dependencies:
+
+```sh
+npm install --save-exact @alabuga/framework@1.3.1
+```
+
+Use Node.js 24 and npm 11. For production, use a dedicated read token and do not keep anonymous access. Only installation and builds require registry access; the built application does not.
 
 Documentation opens the independently deployed [interactive Framework reference]({{FRAMEWORK_DOCS_URL}}). Set VITE_FRAMEWORK_DOCS_URL when building Constructor. Application guides remain here: [AI](ai.md), [projects and assets](projects.md), [slide fitting](slide-fit.md).
