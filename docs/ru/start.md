@@ -9,7 +9,7 @@ Alabuga Constructor — локальный визуальный конструк
 ## Редактор без ИИ
 
 ```sh
-node scripts/configure-registry.mjs https://YOUR_REGISTRY/
+node scripts/configure-registry.mjs https://npm.acom-offer-desk.ru/
 npm ci
 npm run dev
 ```
@@ -42,6 +42,24 @@ docker compose -f compose.yaml -f compose.build.yaml --profile ai up --build -d
 
 ## Реестр и документация
 
-Перед установкой настройте scoped registry и read token в пользовательском npm config. Токены не записываются в Git. Для подготовленной локальной среды реестр находится на http://127.0.0.1:4873/; read config можно указать через NPM_CONFIG_USERCONFIG. Реестр нужен установке и сборке, готовому приложению он не нужен.
+Пакет `@alabuga/framework` версии **1.3.1** ставится из внешнего HTTPS-реестра:
+
+```text
+https://npm.acom-offer-desk.ru/
+```
+
+В тестовом контуре чтение открыто, логин не нужен. Публикация закрыта. В проекте добавьте в `.npmrc`:
+
+```ini
+@alabuga:registry=https://npm.acom-offer-desk.ru/
+```
+
+Затем установите зависимости:
+
+```sh
+npm install --save-exact @alabuga/framework@1.3.1
+```
+
+Нужны Node.js 24 и npm 11. Для production-контура используйте отдельный read token и не оставляйте реестр анонимным. Реестр нужен установке и сборке, готовому приложению он не нужен.
 
 Ссылка «Документация» открывает [интерактивный справочник Framework]({{FRAMEWORK_DOCS_URL}}). Этот сайт развёртывается отдельно; адрес задаётся VITE_FRAMEWORK_DOCS_URL при сборке. Руководства самого Constructor находятся здесь: [ИИ](ai.md), [проекты и материалы](projects.md), [подбор оформления](slide-fit.md).
