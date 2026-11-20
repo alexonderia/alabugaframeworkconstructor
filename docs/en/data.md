@@ -8,6 +8,8 @@ The `alabuga-workspace` IndexedDB database stores projects, assets, revisions, s
 
 ## Backup
 
+A failed write rolls back its transaction. In particular, if saving an uploaded image's description fails, the image is not retained as a partial library entry. Retrying creates a normal material; failure does not alter the current project content.
+
 Download a project file from the gallery or editor. It contains the document and required local assets and remains editable. Exported HTML is a finished result, not a replacement for a portable project. External HTTP(S) images remain external; upload them into the library before export if independent delivery is required.
 
 Before changing the domain, port, browser or profile, or clearing browser data, download your projects. Open the new address and import them. There is no automatic cross-origin transfer or device synchronization.
@@ -26,7 +28,7 @@ Undo covers the active editor session; revisions and portable files provide long
 
 ## Compatibility after the split
 
-The database name alabuga-workspace and object stores stay unchanged; version 3 adds an index by project for revisions. The legacy alabuga.builder.document.v1 key is retained. Documents 1–3 normalize to 3; project envelopes 1–3 and missing version remain readable. Future versions and missing assets fail before storage writes. First startup does not bulk-rewrite projects. Installed-collection markers, revisions, trash, tombstones and AI drafts remain.
+The database name alabuga-workspace and object stores stay unchanged; version 3 adds an index by project for revisions. The legacy alabuga.builder.document.v1 key is retained. Document schemas 1–5 are supported: legacy schemas 1–3 without newer features normalize to 3, while schemas 4 and 5 retain responsive sizes and slide settings. Project envelopes 1–3 and missing version remain readable; new envelopes stay at version 3. Future versions and missing assets fail before storage writes. First startup does not bulk-rewrite projects. Installed-collection markers, revisions, trash, tombstones and AI drafts remain.
 
 Concurrent writes check an internal project version in the transaction. A stale tab must save a separate copy or open the saved document. The storage dialog lists asset usage and rechecks all projects, trash, revisions and AI drafts before deleting selected unused assets. Manual recovery points are available from the project menu.
 

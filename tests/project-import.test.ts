@@ -2,6 +2,18 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {importProject} from '../apps/editor/src/storage';
 const doc={schemaVersion:3,kind:'page',title:'Compatible',pages:[{id:'p',title:'',grid:{columns:12,rowHeight:64,gap:16},widgets:[]}]};
+
+test('import preserves matching section and element headings without changing the source file',()=>{
+ for(const kind of ['page','presentation']){
+  const content=[{type:'heading',text:'Один\nзаголовок'},{type:'paragraph',text:'Сохранить абзац.',dropCap:false}];
+  const input={...doc,kind,pages:[{...doc.pages[0],title:'Один заголовок',widgets:[{id:'text',type:'text',title:'',position:{col:1,row:1,width:8,height:4},content}]}]};
+  const original=structuredClone(input),result=importProject(input);
+  assert.equal(result.pages[0].title,'Один заголовок');assert.deepEqual(result.pages[0].widgets[0].type==='text'&&result.pages[0].widgets[0].content,content);assert.deepEqual(input,original);
+  assert.deepEqual(importProject(result),result);
+  input.pages[0].title='Другой заголовок';assert.equal(importProject(input).pages[0].title,'Другой заголовок');
+ }
+});
+
 test('legacy bare documents and project envelopes 1–3 remain readable',()=>{
  for(const schemaVersion of [1,2,3])assert.equal(importProject({...doc,schemaVersion}).schemaVersion,3);
  for(const version of [undefined,1,2,3])assert.equal(importProject({format:'alabuga-project',version,document:doc,assets:[]}).title,'Compatible');

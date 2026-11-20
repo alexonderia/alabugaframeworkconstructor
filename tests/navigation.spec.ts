@@ -2,7 +2,7 @@ import {test,expect,type Page} from '@playwright/test';
 
 async function referenceSite(page:Page){
  await page.goto('/demo/');
- const base=new URL((await page.getByRole('link',{name:'Документация',exact:true}).getAttribute('href'))!,page.url());
+ const base=new URL((await page.getByRole('link',{name:'Справочник Framework',exact:true}).getAttribute('href'))!,page.url());
  base.search='';base.hash='';if(!base.pathname.endsWith('/'))base.pathname+='/';
  // The independently deployed docs site is a remote dependency, not a second checkout.
  await page.route(url=>url.origin===base.origin&&url.pathname.startsWith(base.pathname),route=>route.fulfill({contentType:'text/html',body:'<!doctype html><html lang="ru"><meta charset="utf-8"><h1>Справочник Framework</h1></html>'}));

@@ -2,7 +2,7 @@
 
 ## Run and apply
 
-Open the slide's «Структура» → «Подобрать оформление» control, or «Оформить презентацию» for the deck. Applying a preview is one undoable operation. AI drafts content; the library chooses geometry, typography and backgrounds. Fitting does not run while typing.
+Open «Оформление» (Design) in the slide inspector. Under «Этот слайд» (This slide), select «Подобрать фон и размещение» (Fit background and placement). Under «Все слайды» (All slides), select «Подобрать оформление всей презентации» (Fit the entire presentation). Review the preview and apply it in one undoable operation. The library calculates sizes, grid and background.
 
 Lock composition, background or text sizes that must remain. Background placements are full, left/right quarter, left/right third, or none. Review custom grids and manually locked values separately.
 

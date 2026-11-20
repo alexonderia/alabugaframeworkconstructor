@@ -1,0 +1,27 @@
+.composition-thumbnail {
+  aspect-ratio: 16/10;
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  padding: var(--af-space-12);
+  background: var(--af-color-neutral-50);
+  pointer-events: none;
+}
+.composition-thumbnail > div {
+  position: absolute;
+  width: 1280px;
+  transform-origin: top left;
+}
+.composition-thumbnail .af-composition {
+  min-height: 500px;
+}
+.composition-thumbnail .af-document {
+  container-type: normal;
+}
+.composition-thumbnail .af-deck__controls {
+  display: none;
+}
+.template-card {
+  overflow: hidden;
+  text-align: left;
+}

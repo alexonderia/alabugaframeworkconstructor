@@ -1,0 +1,16 @@
+.creation-methods .af-help {
+  display: block;
+}
+.author-tutorial {
+  display: block;
+}
+.library-tools > .af-select-box {
+  max-width: 290px;
+}
+.page-picker > .af-select-box {
+  max-width: 300px;
+}
+summary.af-btn {
+  white-space: normal;
+  text-align: left;
+}

@@ -8,13 +8,15 @@ The gallery separates websites and presentations. The “+” card creates a pro
 
 The document outline is on the left, canvas in the centre and contextual properties on the right. Select a section or slide, open «Изменить компоновку» and compare layouts using your content. Incompatible layouts are not applied. Content, actions and identifiers are preserved.
 
-Edit text directly on the canvas. Select an element for content, appearance and behaviour settings: corporate type sizes, colours, spacing, alignment and grid position. Undo restores the previous state. Author overrides take precedence over composition defaults.
+Edit text on the canvas or in the expanded «Содержание» (Content) group. Open «Оформление» (Design) for type and colour, «Поведение» (Behaviour) for effects, or «Размеры и положение» (Size and position) for the grid. «Параметры абзаца» (Paragraph settings) contains the drop-cap option. In section settings, «Посмотреть шаблоны» (View templates) shows compatible templates. «Изменить компоновку» (Change layout) shows ways to arrange the existing elements.
 
 ## Images and slides
 
 Choose a library asset or upload PNG, JPEG, WebP or GIF up to 2 MB. To crop, select the fill mode and drag the image inside its frame. Mobile focus is configured separately. Contain mode keeps the whole image visible.
 
-Slides use a 1600×900 source canvas and scale as a whole. Choose full-slide or side-quarter/side-third backgrounds. «Подобрать оформление» proposes a layout without shortening your text. If content overflows, edit it or split the slide manually; validation never deletes content automatically.
+Slides use a 1600×900 source canvas and scale as a whole. In «Оформление» (Design), choose «Этот слайд» (This slide) or «Все слайды» (All slides) to set the scope of automatic fitting. Fitting proposes background and placement while preserving text. If content overflows, edit it or split the slide manually.
+
+The compact single-line «Заголовок слайда» / «Заголовок секции» field names the section in the outline and settings. The name stays in the editable project but adds no text to the canvas, preview or finished HTML. Headings and text inside elements are edited separately on the canvas or through block properties. These values are independent: editing one does not change the other, an empty title is not filled from a text element, and matching values are not automatically removed. Opening settings or changing the grid preserves existing line breaks.
 
 ## Actions and motion
 
@@ -28,7 +30,7 @@ Drafts are isolated from projects. Edit them, retry a section, cancel or resume 
 
 ## Before delivery
 
-Wait for «Сохранено в браузере». Check websites on mobile and presentations in full screen. Download a portable project as a backup. HTML with embedded local assets works without the model; external HTTP(S) resources require a network. Use browser printing for PDF and verify that every slide occupies a separate page.
+Wait for «Сохранено в браузере» (Saved in this browser). Check websites on mobile and presentations in full screen. Select «Скачать копию (.json)» (Download a copy) next to «Скачать HTML» (Download HTML). On mobile, both actions are in the «Проект» (Project) menu. Import JSON to edit the project in another browser. Use HTML to share the finished output. External HTTP(S) assets require a network. Use browser printing for PDF and check that each slide occupies a separate page.
 
 ## Tablet and phone sizes
 
@@ -40,6 +42,6 @@ Keyboard and screen reader users can activate the named block settings, move and
 
 ## Slide header and page number
 
-Open Slide settings ? Appearance to find Presentation header and Page numbering. Headers share the same insets and type size across slides; edit the text or hide it. Empty text restores ALABUGA / project title. Numbers support visibility, format (01, 1 or 1 / total), bottom alignment and custom text. Empty values use the automatic slide order, including after reordering. Changes affect the current slide, support undo, persist in the project and appear in HTML/PDF.
+In slide settings, open «Оформление» (Design) and expand «Подпись и номер слайда» (Slide header and number). Headers share the same insets and type size across slides. Edit the text or hide it. Empty text restores ALABUGA / project title. Numbers support visibility, format (01, 1 or 1 / total), bottom alignment and custom text. Empty values use the automatic slide order, including after reordering. Changes affect the current slide, support undo, persist in the project and appear in HTML/PDF.
 
 Page numbering also offers independent Background and Text color controls. Choose transparent or a brand background and a separate text color; select From theme to restore automatic text color. Solid backgrounds add a small inset around the number.

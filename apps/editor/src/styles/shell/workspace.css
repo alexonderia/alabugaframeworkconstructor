@@ -1,0 +1,214 @@
+/* Constructor owns layout; controls inherit Framework primitives and tokens. */
+:root {
+  --constructor-outline-width: 224px;
+  --constructor-inspector-width: 360px;
+  --constructor-z-header: 30;
+  --constructor-z-drawer: 100;
+}
+#builder:not(.product-shell) {
+  display: grid;
+  grid-template-columns: var(--constructor-outline-width) minmax(0, 1fr);
+  background: var(--af-color-neutral-50);
+}
+#builder.has-inspector {
+  grid-template-columns: var(--constructor-outline-width) minmax(0, 1fr) var(
+      --constructor-inspector-width
+    );
+}
+#builder > .editor-header {
+  grid-column: 1/-1;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--af-space-12);
+  height: auto;
+  min-height: var(--af-space-64);
+  padding: var(--af-space-12) var(--af-space-20);
+  position: relative;
+  top: auto;
+  background: var(--af-bg-surface);
+}
+#builder .document-name {
+  flex: 1;
+  min-width: 120px;
+  max-width: 400px;
+}
+#builder .document-name input {
+  width: 100%;
+}
+#builder .header-save-state {
+  display: flex;
+  align-items: center;
+  flex: 0 0 180px;
+  min-height: var(--af-size-control-m);
+  font-size: 14px;
+  color: var(--af-text-tertiary);
+  max-width: 180px;
+}
+#builder .editor-file-actions {
+  margin-left: auto;
+  gap: var(--af-space-8);
+}
+#builder .editor-status {
+  grid-column: 1/-1;
+  position: relative;
+  top: auto;
+  padding: var(--af-space-8) var(--af-space-20);
+  background: var(--af-bg-surface);
+}
+#builder .editor-status:not(:has(.status-error, .backup-tip:not([hidden]))),
+#builder .editor-status:has(.backup-tip:not([hidden])) > #status:not(.status-error) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  padding: 0;
+  border: 0;
+}
+.backup-tip:not([hidden]) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--af-space-8) var(--af-space-16);
+  min-width: 0;
+}
+.backup-tip p {
+  margin: 0;
+}
+#builder > .editor-workspace {
+  grid-column: 2;
+  grid-row: 3;
+  min-width: 0;
+  width: 100%;
+  padding: var(--af-space-16);
+}
+#builder > .editor-outline {
+  grid-column: 1;
+  grid-row: 3;
+  padding: var(--af-space-16);
+  min-width: 0;
+  background: var(--af-color-neutral-50);
+}
+#builder .canvas-toolbar {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--af-space-12);
+  padding: var(--af-space-12);
+  margin-bottom: var(--af-space-12);
+  border: 1px solid var(--af-border-default);
+  border-radius: var(--af-radius-12);
+  background: var(--af-bg-surface);
+}
+.section-toolbar,
+.editor-more-body,
+.canvas-zoom {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--af-space-8);
+}
+#builder .page-picker {
+  display: flex;
+  align-items: center;
+  gap: var(--af-space-8);
+  min-width: 0;
+  color: var(--af-text-secondary);
+}
+#builder .page-picker select {
+  max-width: 260px;
+  min-width: 0;
+}
+#builder .editor-more {
+  display: block;
+  border-top: 1px solid var(--af-border-default);
+  padding-top: var(--af-space-8);
+}
+#builder .editor-more > summary {
+  display: none;
+}
+#builder .editor-more-body {
+  padding: 0;
+}
+#builder #slide-actions[hidden] {
+  display: none;
+}
+#builder .outline-toggle {
+  display: none;
+}
+#builder .editor-outline h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--af-space-8);
+  font-size: 20px;
+  margin: 0 0 var(--af-space-16);
+}
+#builder .outline-add {
+  margin-left: auto;
+}
+#builder .outline-close {
+  display: none;
+}
+.outline-menu {
+  position: relative;
+  margin-top: var(--af-space-8);
+}
+.outline-menu[hidden] {
+  display: none;
+}
+.outline-menu > .outline-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--af-space-4);
+  padding: var(--af-space-8);
+  margin-top: var(--af-space-12);
+}
+.outline-menu > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--af-space-8);
+  width: 100%;
+}
+.outline-menu[open] > summary > .af-icon--expand {
+  transform: rotate(180deg);
+}
+.outline-actions .af-btn {
+  width: 100%;
+  justify-content: flex-start;
+  white-space: normal;
+  text-align: left;
+}
+.outline-action-divider {
+  height: 1px;
+  border: 0;
+  background: var(--af-border-default);
+  width: 100%;
+  margin: var(--af-space-4) 0;
+}
+.command-menu {
+  display: flex;
+  flex-direction: column;
+  gap: var(--af-space-4);
+  max-height: 80dvh;
+  overflow: auto;
+}
+.command-menu > .af-btn {
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+}
+#builder .project-menu > div {
+  min-width: 260px;
+  z-index: 50;
+}
+#builder .canvas-scroll {
+  border-radius: var(--af-radius-12);
+}
+#builder .editor-canvas {
+  background: var(--af-bg-surface);
+}
+.mobile-editor-actions {
+  display: none;
+}

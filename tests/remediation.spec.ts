@@ -11,13 +11,13 @@ test('quick exit creates a deduplicated recovery point and save status is live',
 });
 
 test('preview restores the eighth slide and returns to it',async({page})=>{
- await openEditor(page);await page.locator('.project-menu summary').click();await page.locator('#demo-deck').click();await chooseOption(page.locator('#pages'),'7');const id=(await savedDocument(page)).pages[7].id;await page.locator('#preview').click();await expect(page.frameLocator('.project-preview iframe').locator('.af-slide--active')).toHaveAttribute('data-section-id',id);await page.getByRole('button',{name:'Редактировать',exact:true}).click();await expect(page.locator('#pages')).toHaveValue('7');
+ await openEditor(page);await page.locator('.project-menu summary').click();await page.locator('#demo-deck').click();await expect(page.locator('#pages option[value="7"]')).toHaveCount(1);await chooseOption(page.locator('#pages'),'7');const id=(await savedDocument(page)).pages[7].id;await page.locator('#preview').click();await expect(page.frameLocator('.project-preview iframe').locator('.af-slide--active')).toHaveAttribute('data-section-id',id);await page.getByRole('button',{name:'Редактировать',exact:true}).click();await expect(page.locator('#pages')).toHaveValue('7');
 });
 
 test('material failure leaves upload available and retry, local descriptions and search work',async({page})=>{
  await openEditor(page);const errors:string[]=[];page.on('pageerror',e=>errors.push(String(e)));let requests=0;await page.route('**/assets/brand/manifest.json',r=>++requests===1?r.fulfill({status:503,body:'Unavailable'}):r.continue());
  await page.evaluate(async()=>{const s=await import('/apps/editor/src/storage.ts' as string),a=await import('/apps/editor/src/assets.ts' as string);const canvas=document.createElement('canvas');await s.addAsset(canvas.toDataURL(),'Синий фон для отчёта');void a.chooseAsset(()=>{})});
- const dialog=page.getByRole('dialog',{name:'Библиотека материалов'});await expect(dialog).toBeVisible();await expect(dialog.getByLabel('Загрузить свой материал')).toBeVisible();await expect(dialog.getByRole('button',{name:'Повторить загрузку',exact:true})).toBeVisible();await dialog.getByRole('button',{name:'Повторить загрузку',exact:true}).click();await expect(dialog.getByRole('button',{name:'Повторить загрузку',exact:true})).toBeHidden();await chooseOption(dialog.getByLabel('Категория материалов'),'local');await dialog.getByLabel('Поиск материалов').fill('для отчёта');await expect(dialog.locator('.asset-card')).toHaveCount(1);await expect(dialog.locator('.asset-card')).toContainText('Синий фон');await dialog.getByLabel('Поиск материалов').fill('Несуществующее');await expect(dialog.locator('.asset-card')).toHaveCount(0);await dialog.getByRole('button',{name:'Закрыть',exact:true}).click();expect(errors).toEqual([]);
+ const dialog=page.getByRole('dialog',{name:'Библиотека материалов'});await expect(dialog).toBeVisible();await expect(dialog.getByLabel('Загрузить свой материал')).toBeAttached();await expect(dialog.getByRole('button',{name:'Выбрать файл',exact:true})).toBeVisible();await expect(dialog.getByRole('button',{name:'Выбрать файл',exact:true})).toBeEnabled();await expect(dialog.getByRole('button',{name:'Повторить загрузку',exact:true})).toBeVisible();await dialog.getByRole('button',{name:'Повторить загрузку',exact:true}).click();await expect(dialog.getByRole('button',{name:'Повторить загрузку',exact:true})).toBeHidden();await chooseOption(dialog.getByLabel('Категория материалов'),'local');await dialog.getByLabel('Поиск материалов').fill('для отчёта');await expect(dialog.locator('.asset-card')).toHaveCount(1);await expect(dialog.locator('.asset-card')).toContainText('Синий фон');await dialog.getByLabel('Поиск материалов').fill('Несуществующее');await expect(dialog.locator('.asset-card')).toHaveCount(0);await dialog.getByRole('button',{name:'Закрыть',exact:true}).click();expect(errors).toEqual([]);
 });
 
 test('private section labels are consistent and do not alter published content',async({page})=>{
@@ -39,6 +39,25 @@ test('first tutorial can be declined and the mobile toolbar retains usable space
 test('AI readiness errors are visible before generating and can recover',async({page})=>{
  await openEditor(page);let ready=false;await page.route('**/api/ai/readiness',r=>r.fulfill({json:ready?{ready:true}:{ready:false,error:'Модель недоступна. Выполните npm run ai:setup.'}}));await page.getByRole('button',{name:'Создать с ИИ',exact:true}).click();await expect(page.locator('.ai-readiness')).toContainText('ИИ недоступен');await expect(page.getByRole('button',{name:'Создать черновик',exact:true})).toBeDisabled();await expect(page.locator('.ai-toolbar')).toBeHidden();await expect(page.locator('.ai-readiness')).not.toContainText('npm run');ready=true;await page.getByRole('button',{name:'Повторить проверку',exact:true}).click();await expect(page.locator('.ai-readiness')).toContainText('ИИ готов');await expect(page.getByRole('button',{name:'Создать черновик',exact:true})).toBeEnabled();
 });
+
+for (const failure of ['ollama', 'legacy', 'network'] as const) {
+ test(`AI connection failure is actionable and retry recovers: ${failure}`,async({page})=>{
+  await openEditor(page);let ready=false;
+  await page.route('**/api/ai/readiness',route=>{
+   if(ready)return route.fulfill({json:{ready:true}});
+   if(failure==='network')return route.abort('failed');
+   return route.fulfill({json:{ready:false,...(failure==='ollama'?{reason:'ollama-unavailable'}:{}),error:'TypeError: fetch failed'}});
+  });
+  await page.getByRole('button',{name:'Создать с ИИ',exact:true}).click();
+  const status=page.locator('.ai-readiness');
+  await expect(status).toContainText(failure==='ollama'?'запустить Ollama':'Проверьте подключение');
+  await expect(status).not.toContainText(/TypeError|fetch failed|Failed to fetch|NetworkError|Load failed/);
+  await expect(page.getByRole('button',{name:'Создать черновик',exact:true})).toBeDisabled();
+  ready=true;await page.getByRole('button',{name:'Повторить проверку',exact:true}).click();
+  await expect(status).toContainText('ИИ готов');
+  await expect(page.getByRole('button',{name:'Создать черновик',exact:true})).toBeEnabled();
+ });
+}
 
 test('AI fields wait for materials and draft initialization before accepting changes',async({page})=>{
  await openEditor(page);let release!:()=>void;const gate=new Promise<void>(r=>release=r);await page.route('**/api/ai/readiness',r=>r.fulfill({json:{ready:true}}));await page.route('**/assets/brand/manifest.json',async r=>{await gate;await r.continue()});await page.getByRole('button',{name:'Создать с ИИ',exact:true}).click();await expect(page.locator('.ai-readiness')).toContainText('ИИ готов');await expect(page.getByRole('combobox',{name:'Результат',exact:true})).toBeDisabled();await expect(page.getByRole('button',{name:'Создать черновик',exact:true})).toBeDisabled();release();await expect(page.getByRole('combobox',{name:'Результат',exact:true})).toBeEnabled();await chooseOption(page.getByLabel('Результат',{exact:true}),'presentation');await page.getByLabel('Количество',{exact:true}).fill('6');await expect(page.locator('.ai-dialog select[name=target]')).toHaveValue('presentation');await expect(page.getByLabel('Количество',{exact:true})).toHaveValue('6');

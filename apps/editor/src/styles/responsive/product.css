@@ -1,0 +1,26 @@
+@media (max-width: 767px) {
+  .outline-close {
+    display: inline-block;
+    margin-left: var(--af-space-24);
+  }
+  .header-save-state {
+    max-width: 140px;
+    font-size: 14px;
+  }
+}
+@media print {
+  .product-header,
+  .project-intro,
+  .preview-toolbar,
+  .product-toast {
+    display: none !important;
+  }
+  .product-shell,
+  .project-main,
+  .project-preview {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: none !important;
+    background: var(--af-bg-surface) !important;
+  }
+}

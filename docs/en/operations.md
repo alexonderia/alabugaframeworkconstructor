@@ -2,7 +2,19 @@
 
 ## Launch modes
 
-`docker compose -f compose.yaml -f compose.build.yaml up --build -d` starts the built application and lightweight API without a model at `http://127.0.0.1:4176/demo/`. `docker compose -f compose.yaml -f compose.build.yaml --profile ai up --build -d` adds Ollama and one-shot initialization. Operators install Docker and GPU drivers; the application does not install them.
+Configure `ALABUGA_NPM_REGISTRY` and `ALABUGA_NPMRC_FILE` using `.env.example` before building. Editing, local projects and export work without a model at `http://127.0.0.1:4176/builder/`.
+
+| Mode | Commands |
+| --- | --- |
+| Editor without AI | `npm run docker:build`, then `docker compose up -d --no-build --wait web api` |
+| Editor with native Ollama | Start the chosen Ollama instance and configure an `AF_OLLAMA_URL` reachable from Docker, then run the web/API commands |
+| Editor with containerized Ollama | Set `AF_OLLAMA_URL=http://ollama:11434`, then run `npm run docker:build`, `docker compose --profile ai up -d --no-build --wait web api ollama` and `docker compose --profile ai run --rm model-init` |
+
+With prepared images, start with the launch command. For a fully native editor and AI, use `npm run ai` after model setup. If a Constructor API already responds on the selected port, the command prints the existing editor address. Check model readiness separately in every mode.
+
+`npm run docker:build` records the version from `package.json` and the Git SHA in the OCI labels of both images. A `-dirty` suffix means the build may include working tree changes. CI can pass `AF_REVISION` explicitly in the environment. Diagnostics reads the running build from `/build-info.json` and `/api/ai/health`.
+
+Start the independent Framework reference from its repository with `docker compose -f compose.docs.yaml up --build -d --wait`; its local address is `http://127.0.0.1:4391/`. Set `VITE_FRAMEWORK_DOCS_URL` before building web to use a different address. Constructor guides remain on the application origin at `/docs/en/start.html`.
 
 For source editing with live reload, run `docker compose -f compose.dev.yaml up --build`. Dependencies use a separate volume to avoid mixing Windows and Linux node_modules. After lockfile changes, restarting the container runs npm ci again.
 
@@ -15,6 +27,10 @@ The current registry tag differs from the project's previously accepted text-onl
 The `ollama-models` volume preserves weights across restarts. Do not use `docker compose down -v` when preserving the model. A prepared installation works offline with cached images and weights; a cold installation needs a network.
 
 ## Checks and recovery
+
+`npm run diagnose` reports the editor, API, Ollama as seen by the API, pinned model, Constructor guides and Framework reference. It runs on Node.js 24 without installed dependencies. The application port comes from `AF_WEB_PORT` or `AF_AI_PORT`, with 4176 as the default. Use `--url` for another application address or `--docs-url` for another reference site. For JSON output, run `node scripts/diagnose.mjs --json`.
+
+By default the check requires a reachable editor and matching web/API build versions when both are known. Add `--require-api` for Docker. Check a complete installation with `npm run diagnose -- --require-ai --require-docs` after model initialization and starting the reference site. Exit code 1 indicates a failed required check. Exit code 2 indicates invalid arguments.
 
 ```sh
 docker compose ps
@@ -43,9 +59,9 @@ For native Ollama, provide an AF_OLLAMA_URL reachable from the container. `host.
 
 GPU mode requires NVIDIA Container Toolkit on Linux or compatible Docker Desktop/WSL2 configuration. Verify full model placement through Ollama and total VRAM separately. Native Windows/Vulkan results do not validate Linux containers; do not claim a 4 GB configuration passes without measuring it.
 
-Before upgrading, download portable projects. Build the new image, check health/readiness, both document formats and export. Roll back using the previous image and compatible projects without removing model storage. This release does not change the document schema. Operational logs should not include full user prompts or documents.
+Before upgrading, download editable project JSON files: autosave lives in the browser, while HTML is the finished output. Build the new image, check health/readiness, both document formats and export. Roll back using the previous image and compatible projects without removing model storage. The current application supports document schemas 1–5; an older application may not open schema 4/5 features. Operational logs should not include full user prompts or documents.
 
-For a reproducible release, set `AF_WEB_IMAGE=alabuga-web:release-001` and `AF_API_IMAGE=alabuga-api:release-001` in `.env` before `docker compose -f compose.yaml -f compose.build.yaml build web api`. Keep these images until acceptance of the next release. To roll back, restore the previous tags in `.env` and run `docker compose up -d --no-build web api`; do not rebuild the old tags with new source. Keep the same port/origin and volumes. Stop an active model download before running a second initializer; retry it with the command above.
+For a reproducible release, set `AF_WEB_IMAGE=alabuga-web:release-001` and `AF_API_IMAGE=alabuga-api:release-001` in `.env` before `npm run docker:build`. Keep these images until acceptance of the next release. To roll back, restore the previous tags in `.env` and run `docker compose up -d --no-build web api`, keeping the same port, origin and volumes. Before retrying initialization, stop any active model download.
 
 ## Independent images and registry
 

@@ -1,0 +1,41 @@
+.editor-canvas .af-deck__controls {
+  display: none;
+}
+.editor-canvas .af-slide {
+  overflow: visible;
+}
+.editor-canvas .af-slide > .section-tools {
+  display: none;
+}
+.editor-canvas .af-deck {
+  overflow: hidden;
+}
+@media screen {
+  /* Reserve slide space before ResizeObserver runs. Its inline height writes
+     otherwise cause a second resize notification when the inspector opens.
+     The 900px cap matches the public runtime's unscaled 1600x900 slide. */
+  .editor-canvas .af-deck {
+    height: auto !important;
+    aspect-ratio: 16 / 9;
+    max-height: 900px;
+  }
+}
+.is-preview .canvas-toolbar,
+.is-preview #add-widget,
+.is-preview #page-settings-open,
+.is-preview #end-add {
+  display: none;
+}
+.is-preview .editor-canvas .af-deck__controls {
+  display: flex;
+}
+.is-preview .editor-canvas .af-widget {
+  overflow: hidden;
+  outline: none;
+}
+.is-preview .editor-canvas .af-slide {
+  overflow: hidden;
+}
+.is-preview .editor-canvas .af-page {
+  padding: 36px 0;
+}

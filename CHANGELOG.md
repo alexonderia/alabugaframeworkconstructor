@@ -2,6 +2,30 @@
 
 ## Unreleased
 
+Widen the initial AI request form and keep draft review and apply actions visible while editing or scrolling. Explain what blocks application and show continuation while the outline or generated content is incomplete.
+
+Keep text content and site structure open by default in the inspector. Group optional styling and slide annotations in disclosures that stay open during edits. Distinguish template previews from layout changes and group automatic fitting by slide or presentation.
+
+Place the editable JSON backup beside HTML export on desktop and pair the actions in the mobile Project menu. Explain browser storage and portable copies after the first successful autosave. Use the same backup label in the gallery and document settings.
+
+Give the demo separate actions for opening the editor, browsing samples and reading the Framework reference. Offer a compact site/presentation choice in the empty gallery and show search and sorting once projects exist. Keep sample copies, the block editing lesson and AI drafts explicit.
+
+Add a read-only service diagnostic for the editor, API, Ollama, model readiness and both documentation sites. Record the Git revision in local image builds and check the running web and API build metadata. Reuse an existing native or containerized API when launching the editor from the native command.
+
+Give editor styles one explicit entry and separate shell, canvas, inspector, dialog, responsive and shared rules while preserving cascade order. Remove hidden stylesheet imports from UI helpers and retain dedicated demo and lazy AI entries. Check stylesheet owners, duplicate imports, cycles and unreachable files during builds. Reserve the editor slide frame in CSS to prevent WebKit ResizeObserver feedback when opening the inspector, with cross-browser and Docker sizing regressions.
+
+Split IndexedDB storage into transaction primitives, project/revision/draft repositories, material preparation, cleanup and portable-file modules while retaining all existing storage exports. Separate the pure project parser and image preparation from renderer imports. Abort transactions after synchronous callback exceptions so failed material descriptions cannot leave partial image entries. Cover rollback, competing save/cleanup transactions and upload retry through browser and Docker regressions.
+
+Extract canvas rendering, inline bindings, widget tools and scroll preservation into `EditorCanvas`; move inspector drafts, validation, settings and focus into `EditorInspector`. Wire view operations through callbacks in the editor shell and dispose their resources with the session. Cover invalid drafts and repeated preview remounts in browser and Docker regressions.
+
+Extract editor document/session ownership, write versions, recovery checkpoints and teardown into an injected `EditorSession`, with conflict dialog UI in its own module. Keep queued snapshots durable on disposal and prevent stale asynchronous results from replacing a different project. Cover storage failures, copy recovery, reload, undo and project switching with session regressions.
+
+Format editor TypeScript/CSS with pinned Prettier and enforce its configuration in CI. Check workspace dependency directions, public AI exports, document module dependencies and cycles in relative imports, with negative fixtures covering the command itself. Keep existing editor behavior and document formats.
+
+Keep section/slide names as outline metadata, independent from visible text elements. Compact settings and portable JSON retain names, while canvas, thumbnails, preview, fitting and standalone HTML render only element content. Preserve empty and matching values without automatic copying or deletion. Cover independent edits, undo/redo, reload and export with regressions, including a header named "4" that must not display an extra heading. Return 400 for malformed or invalid generation requests and use localized widget names in AI draft properties.
+
+Update RU/EN guides for document schemas 1–5, IndexedDB/project envelope version 3, editable JSON backups and optional AI/documentation services. Read Framework version and minimum from package.json when building the guides.
+
 Keep one active set of block controls and render its toolbar outside clipped authored sections. Preserve its screen size at canvas zoom, use separated free space and avoid neighboring widgets when positioning handles. Make section actions a compact icon list with a 12 px trigger gap, keyboard opening, Escape/focus restoration and outside-click closing. Close before applying an action so reordering cannot leave the menu open when that action becomes disabled.
 
 Remove the collapsed grid heading margin. Center and fit composition previews inside padded Framework cards, with shared resize cleanup. Replace visible browser file controls with Framework upload actions while retaining native file events and accessible names. Use action icons for closing, copying and deleting, and retain a continuous pointer path to compact block tools.

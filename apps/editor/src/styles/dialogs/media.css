@@ -1,0 +1,92 @@
+.project-library,
+.asset-library {
+  width: min(1000px, 92vw);
+  max-height: 90vh;
+  overflow: auto;
+}
+.asset-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--af-space-16);
+  margin-top: var(--af-space-24);
+}
+.asset-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--af-space-8);
+  text-align: left;
+  padding: var(--af-space-12);
+}
+.asset-card img {
+  width: 100%;
+  height: 112px;
+  object-fit: contain;
+  background: var(--af-color-neutral-50);
+}
+.crop-frame {
+  height: 150px;
+  touch-action: none;
+  cursor: move;
+  overflow: hidden;
+  background: var(--af-color-neutral-50);
+}
+.crop-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+.crop-control {
+  border: 1px solid var(--af-border-default);
+  margin: var(--af-space-12) 0;
+  padding: var(--af-space-8);
+}
+.motion-scenarios {
+  display: grid;
+  gap: var(--af-space-8);
+  margin: var(--af-space-16) 0;
+}
+.motion-row {
+  display: flex;
+  align-items: center;
+  gap: var(--af-space-6);
+  padding: var(--af-space-8);
+  background: var(--af-color-neutral-50);
+  border-radius: var(--af-radius-6);
+}
+.motion-row > span:nth-child(2) {
+  flex: 1;
+  font-size: 12px;
+}
+.motion-row img,
+.motion-symbol {
+  width: 42px;
+  height: 30px;
+  object-fit: cover;
+}
+.motion-symbol {
+  display: grid;
+  place-items: center;
+  background: var(--af-color-brand-deep);
+  color: var(--af-bg-surface);
+  font-size: 20px;
+}
+.variant-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr));
+  gap: var(--af-space-20);
+}
+.variant-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--af-space-16);
+  min-width: 0;
+  overflow: hidden;
+}
+.variant-card > :is(p, h3) {
+  margin: 0;
+}
+.quality-issue {
+  padding: var(--af-space-16) 0;
+  border-bottom: 1px solid var(--af-border-default);
+}

@@ -1,0 +1,37 @@
+#builder > .editor-header,
+#builder > .editor-status {
+  position: relative;
+  top: auto;
+}
+.editor-canvas [data-widget-id],
+.widget-tools button {
+  scroll-margin-top: 100px;
+}
+.replay-current {
+  display: none;
+}
+.is-preview .replay-current {
+  display: inline-flex;
+}
+@media (max-width: 640px) {
+  .editor-outline {
+    top: auto;
+    max-height: 180px;
+  }
+  .editor-canvas:has(.af-flow) {
+    min-width: 0 !important;
+  }
+}
+@media (hover: none) {
+  .outline-actions button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .widget-handle {
+    min-width: var(--af-size-control-l);
+    min-height: var(--af-size-control-l);
+  }
+}
+.is-preview .document-settings-open {
+  display: none;
+}

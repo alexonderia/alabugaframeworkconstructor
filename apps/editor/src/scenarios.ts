@@ -1,13 +1,115 @@
-import {el,button} from './ui';
-import {type AFDocument,type Widget,widgetRegistry} from '@alabuga/framework/schema';
-type Commit=(edit:(doc:AFDocument)=>void)=>boolean;
-export function motionScenarios(host:HTMLElement,doc:AFDocument,index:number,commit:Commit){
- const section=doc.pages[index],wrap=el('div','motion-scenarios');wrap.append(el('h3','','Сценарий внимания'));
- const ordered=[...section.widgets].sort((a,b)=>(a.motion?.step??0)-(b.motion?.step??0));
- const set=(w:Widget,step:number,effect:NonNullable<Widget['motion']>['effect']='fade')=>{w.motion={effect,speed:'normal',intensity:'subtle',step:Math.min(20,step)}};
- for(const [id,title]of [['thesis','Акцент на тезисе'],['sequence','Последовательное раскрытие'],['image','Изображение — затем пояснение']])wrap.append(button(title,()=>commit(d=>{const widgets=d.pages[index].widgets;widgets.forEach((w,i)=>set(w,id==='thesis'?(i===0?0:1):id==='image'?(w.type==='image'||w.type==='gallery'?0:1):i,i===0?'fade':'rise'))}),'af-btn af-btn--secondary af-btn--sm'));
- wrap.append(el('p','af-help','Порядок в списке задаёт показ. Перемещайте строки или объединяйте соседние элементы в один шаг.'));
- const reorder=(from:number,to:number)=>{const ids=ordered.map(w=>w.id),[id]=ids.splice(from,1);ids.splice(to,0,id);const groups=new Map(ordered.map(w=>[w.id,w.motion?.step??0]));commit(d=>{let step=0;ids.forEach((id,i)=>{if(i&&groups.get(id)!==groups.get(ids[i-1]))step++;const w=d.pages[index].widgets.find(w=>w.id===id)!;set(w,step,w.motion?.effect??'fade')})})};
- ordered.forEach((w,i)=>{const row=el('div','motion-row');row.draggable=true;row.addEventListener('dragstart',e=>e.dataTransfer!.setData('text/plain',String(i)));row.addEventListener('dragover',e=>e.preventDefault());row.addEventListener('drop',e=>{e.preventDefault();const from=Number(e.dataTransfer!.getData('text/plain'));if(Number.isInteger(from)&&from>=0&&from<ordered.length)reorder(from,i)});if(w.type==='image'){const image=el('img');image.src=w.src;image.alt='';row.append(image)}else row.append(el('span','motion-symbol',w.type==='text'?'T':w.type==='metric'?w.value:'◈'));row.append(el('span','',`${w.motion?.step??0} · ${w.title||widgetRegistry[w.type].title}`));for(const [delta,label] of [[-1,'↑'],[1,'↓']] as const){const b=button(label,()=>reorder(i,i+delta),'context-button');b.disabled=i+delta<0||i+delta>=ordered.length;b.setAttribute('aria-label',`${label} порядок ${i+1}`);row.append(b)}if(i)row.append(button('Вместе',()=>commit(d=>{const current=d.pages[index].widgets.find(x=>x.id===w.id)!;set(current,ordered[i-1].motion?.step??0,current.motion?.effect??'fade')}),'context-button'));wrap.append(row)});
- host.append(wrap);
+import { el, button } from './ui';
+import { type AFDocument, type Widget, widgetRegistry } from '@alabuga/framework/schema';
+type Commit = (edit: (doc: AFDocument) => void) => boolean;
+export function motionScenarios(host: HTMLElement, doc: AFDocument, index: number, commit: Commit) {
+  const section = doc.pages[index],
+    wrap = el('div', 'motion-scenarios');
+  wrap.append(el('h3', '', 'Сценарий внимания'));
+  const ordered = [...section.widgets].sort(
+    (a, b) => (a.motion?.step ?? 0) - (b.motion?.step ?? 0),
+  );
+  const set = (
+    w: Widget,
+    step: number,
+    effect: NonNullable<Widget['motion']>['effect'] = 'fade',
+  ) => {
+    w.motion = { effect, speed: 'normal', intensity: 'subtle', step: Math.min(20, step) };
+  };
+  for (const [id, title] of [
+    ['thesis', 'Акцент на тезисе'],
+    ['sequence', 'Последовательное раскрытие'],
+    ['image', 'Изображение — затем пояснение'],
+  ])
+    wrap.append(
+      button(
+        title,
+        () =>
+          commit((d) => {
+            const widgets = d.pages[index].widgets;
+            widgets.forEach((w, i) =>
+              set(
+                w,
+                id === 'thesis'
+                  ? i === 0
+                    ? 0
+                    : 1
+                  : id === 'image'
+                    ? w.type === 'image' || w.type === 'gallery'
+                      ? 0
+                      : 1
+                    : i,
+                i === 0 ? 'fade' : 'rise',
+              ),
+            );
+          }),
+        'af-btn af-btn--secondary af-btn--sm',
+      ),
+    );
+  wrap.append(
+    el(
+      'p',
+      'af-help',
+      'Порядок в списке задаёт показ. Перемещайте строки или объединяйте соседние элементы в один шаг.',
+    ),
+  );
+  const reorder = (from: number, to: number) => {
+    const ids = ordered.map((w) => w.id),
+      [id] = ids.splice(from, 1);
+    ids.splice(to, 0, id);
+    const groups = new Map(ordered.map((w) => [w.id, w.motion?.step ?? 0]));
+    commit((d) => {
+      let step = 0;
+      ids.forEach((id, i) => {
+        if (i && groups.get(id) !== groups.get(ids[i - 1])) step++;
+        const w = d.pages[index].widgets.find((w) => w.id === id)!;
+        set(w, step, w.motion?.effect ?? 'fade');
+      });
+    });
+  };
+  ordered.forEach((w, i) => {
+    const row = el('div', 'motion-row');
+    row.draggable = true;
+    row.addEventListener('dragstart', (e) => e.dataTransfer!.setData('text/plain', String(i)));
+    row.addEventListener('dragover', (e) => e.preventDefault());
+    row.addEventListener('drop', (e) => {
+      e.preventDefault();
+      const from = Number(e.dataTransfer!.getData('text/plain'));
+      if (Number.isInteger(from) && from >= 0 && from < ordered.length) reorder(from, i);
+    });
+    if (w.type === 'image') {
+      const image = el('img');
+      image.src = w.src;
+      image.alt = '';
+      row.append(image);
+    } else
+      row.append(
+        el('span', 'motion-symbol', w.type === 'text' ? 'T' : w.type === 'metric' ? w.value : '◈'),
+      );
+    row.append(
+      el('span', '', `${w.motion?.step ?? 0} · ${w.title || widgetRegistry[w.type].title}`),
+    );
+    for (const [delta, label] of [
+      [-1, '↑'],
+      [1, '↓'],
+    ] as const) {
+      const b = button(label, () => reorder(i, i + delta), 'context-button');
+      b.disabled = i + delta < 0 || i + delta >= ordered.length;
+      b.setAttribute('aria-label', `${label} порядок ${i + 1}`);
+      row.append(b);
+    }
+    if (i)
+      row.append(
+        button(
+          'Вместе',
+          () =>
+            commit((d) => {
+              const current = d.pages[index].widgets.find((x) => x.id === w.id)!;
+              set(current, ordered[i - 1].motion?.step ?? 0, current.motion?.effect ?? 'fade');
+            }),
+          'context-button',
+        ),
+      );
+    wrap.append(row);
+  });
+  host.append(wrap);
 }

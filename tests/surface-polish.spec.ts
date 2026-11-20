@@ -16,14 +16,14 @@ test('polish collapsed grid leaves no reserved heading gap',async({page},info)=>
  }
 });
 test('polish composition and layout previews fit centered inside padded cards',async({page},info)=>{
- await project(page,true);for(const title of ['Выбрать композицию визуально','Изменить компоновку']){
+ await project(page,true);for(const title of ['Посмотреть шаблоны','Изменить компоновку']){
   await page.getByRole('button',{name:title,exact:true}).click();const dialog=page.locator('dialog[open]'),cards=dialog.locator('.variant-card');await expect(cards.first()).toBeVisible();
-  for(const width of [1440,390,320]){await page.setViewportSize({width,height:900});await expect(async()=>previewsFit(cards)).toPass();expect(await dialog.evaluate(n=>n.scrollWidth-n.clientWidth)).toBeLessThanOrEqual(1);await page.screenshot({path:info.outputPath(`${title.startsWith('Выбрать')?'compositions':'layouts'}-${width}.png`)})}
+  for(const width of [1440,390,320]){await page.setViewportSize({width,height:900});await expect(async()=>previewsFit(cards)).toPass();expect(await dialog.evaluate(n=>n.scrollWidth-n.clientWidth)).toBeLessThanOrEqual(1);await page.screenshot({path:info.outputPath(`${title==='Посмотреть шаблоны'?'compositions':'layouts'}-${width}.png`)})}
   const close=dialog.getByRole('button',{name:'Закрыть',exact:true});await expect(close.locator('.af-icon--close')).toBeVisible();await expect(close).toHaveAttribute('title','Закрыть');await close.click();await expect(dialog).toHaveCount(0);await page.setViewportSize({width:1440,height:900});
  }
 });
 test('polish Framework file action opens a chooser and imports a background',async({page},info)=>{
- await project(page);const input=page.getByLabel('Загрузить фон',{exact:true}),field=input.locator('xpath=ancestor::*[contains(@class,"af-field")][1]'),choose=field.getByRole('button',{name:'Выбрать файл',exact:true});await expect(choose).toHaveClass(/af-btn--secondary/);await expect(input).toBeHidden();await expect(choose.locator('.af-btn__icon')).toBeVisible();
+ await project(page);await page.locator('#design-settings details[data-setting=style] > summary').click();const input=page.getByLabel('Загрузить фон',{exact:true}),field=input.locator('xpath=ancestor::*[contains(@class,"af-field")][1]'),choose=field.getByRole('button',{name:'Выбрать файл',exact:true});await expect(choose).toHaveClass(/af-btn--secondary/);await expect(input).toBeHidden();await expect(choose.locator('.af-btn__icon')).toBeVisible();
  for(const width of [1440,320]){await page.setViewportSize({width,height:900});await choose.scrollIntoViewIfNeeded();expect(await field.evaluate(n=>n.scrollWidth-n.clientWidth)).toBeLessThanOrEqual(1);await page.locator('#inspector').screenshot({path:info.outputPath(`file-${width}.png`)})}
  const buffer=Buffer.from(await page.evaluate(()=>{const c=document.createElement('canvas');c.width=2;c.height=2;c.getContext('2d')!.fillRect(0,0,2,2);return c.toDataURL().split(',')[1]}),'base64');
  const selected=page.waitForEvent('filechooser');await choose.focus();await choose.press('Enter');await (await selected).setFiles({name:'Фирменное изображение.png',mimeType:'image/png',buffer});await expect.poll(async()=>(await savedDocument(page)).pages[0].appearance?.background).toMatch(/^asset:[a-f0-9]{64}$/);await expect(choose).toBeVisible();

@@ -1,5 +1,7 @@
+export const downloadCopyLabel = 'Скачать копию (.json)';
+
 /** Stable command groups; responsive layout moves the same controls. */
-export const editorMarkup=`
+export const editorMarkup = `
 <header class="editor-header">
  <a class="editor-brand" href="../index.html">Constructor</a>
  <label class="document-name"><span class="af-sr-only">Название проекта</span><input id="project-name" class="af-input" maxlength="200"></label>
@@ -7,11 +9,11 @@ export const editorMarkup=`
  <details class="project-menu"><summary class="af-btn af-btn--ghost af-btn--sm">Проект</summary><div class="af-card af-card--inner command-menu">
   <button id="new-page" class="af-btn af-btn--clear af-btn--sm">Новый сайт</button><button id="new-deck" class="af-btn af-btn--clear af-btn--sm">Новая презентация</button>
   <button id="demo-page" class="af-btn af-btn--clear af-btn--sm">Эталонный лендинг</button><button id="demo-deck" class="af-btn af-btn--clear af-btn--sm">Эталонная презентация</button>
-  <button id="save" class="af-btn af-btn--clear af-btn--sm">Скачать проект</button><label class="file-open af-btn af-btn--clear af-btn--sm">Открыть проект<input id="open" class="af-input" type="file" accept=".json,application/json" aria-label="Открыть проект"></label>
+  <label class="file-open af-btn af-btn--clear af-btn--sm">Открыть проект<input id="open" class="af-input" type="file" accept=".json,application/json" aria-label="Открыть проект"></label>
  </div></details>
- <div class="editor-file-actions"><button id="preview" class="af-btn af-btn--secondary af-btn--sm">Предпросмотр</button><button id="export" class="af-btn af-btn--sm">Скачать HTML</button></div>
+ <div class="editor-file-actions"><button id="preview" class="af-btn af-btn--secondary af-btn--sm">Предпросмотр</button><button id="save" class="af-btn af-btn--secondary af-btn--sm">${downloadCopyLabel}</button><button id="export" class="af-btn af-btn--sm">Скачать HTML</button></div>
 </header>
-<div class="editor-status" role="region" aria-label="Состояние проекта"><span id="status" role="status" aria-live="polite"></span><span id="save-state">Изменения сохраняются в браузере</span></div>
+<div class="editor-status" role="region" aria-label="Состояние проекта"><span id="status" role="status" aria-live="polite"></span><span id="save-state" tabindex="-1">Изменения сохраняются в браузере</span><div id="backup-tip" class="backup-tip" hidden><p class="af-help">Проект сохранён в этом браузере. Чтобы перенести его, скачайте копию (.json) и импортируйте её в другом браузере.</p><button id="dismiss-backup-tip" class="af-btn af-btn--ghost af-btn--sm">Понятно</button></div></div>
 <main class="editor-workspace"><h1 class="af-sr-only">Конструктор документов</h1>
  <div class="canvas-toolbar">
   <div class="section-toolbar" role="group" aria-label="Текущая секция"><label class="af-field page-picker"><span id="page-kind" class="af-label">Секция</span><select id="pages" class="af-select af-select--sm" aria-label="Выбрать секцию или слайд"></select></label><button id="add-widget" class="af-btn af-btn--secondary af-btn--sm">+ Блок</button><button id="page-settings-open" class="af-btn af-btn--ghost af-btn--sm">Настройки секции</button></div>

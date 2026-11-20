@@ -9,8 +9,10 @@ Use Node.js 24.19.0 and npm 11.17.0. Configure the private scoped registry and a
 | Command | Result |
 | --- | --- |
 | `npm run typecheck` | Packages, applications, scripts and test types |
-| `npm run check:boundaries` | Forbidden cross-package imports |
-| `npm run check:ui` | Token bindings and absence of local control visual overrides |
+| `npm run format` | Format editor TypeScript/CSS and boundary tooling |
+| `npm run check:format` | Check formatting without changing files; also runs in CI |
+| `npm run check:boundaries` | Public exports, dependency directions, document module boundaries and import cycles |
+| `npm run check:ui` | Tokens and controls; CSS entry owners, cycles, duplicates and unreachable files |
 | `npm run build:ai` | Generation package |
 | `npm run build:editor` | Editor and demonstration |
 | `npm run build:docs` | Reference and RU/EN manuals |
@@ -22,7 +24,17 @@ Use Node.js 24.19.0 and npm 11.17.0. Configure the private scoped registry and a
 
 Builds read JS/CSS and assets from the installed package. They do not build a neighboring Framework checkout or start a model. Run npm test, npm run test:ai, npm run test:bootstrap, npm run check:docs and npm run test:compatibility. Release smoke checks built output, offline HTML, PDF and screenshots. Font and brand regeneration and requirements-assets.txt belong only to Framework.
 
+`prettier.config.mjs` defines formatting, with the Prettier version pinned in the lock file. The command covers `apps/editor/src`, import boundary scripts and their tests. Embedded string templates are left intact so mechanical formatting does not change markup. Keep formatting separate from behavior changes before moving modules.
+
+`tests/editor-session.test.ts` exercises the session through injected storage operations without a browser: versions, coalesced writes, undo/redo, copy and revision failures, stale responses and disposal with pending snapshots. Both root `npm test` and editor workspace tests include it. Browser checks for transitions, conflicts and AI application still verify the UI integration.
+
+When changing `editor-canvas.ts` or `editor-inspector.ts`, run `tests/editor-views.spec.ts` alongside layout/followup/responsive, properties, transition and recovery checks. The new public UI scenarios also run in Docker acceptance: invalid drafts survive blocked navigation, remounts do not duplicate controls, and copy/undo applies once. Controllers receive operations through callbacks; boundary checks forbid direct imports of data owners or each other.
+
+Storage lives in `apps/editor/src/storage/`, with the `storage.ts` facade retained for existing consumers. Add internal dependencies to the boundary check's `storageImports` matrix; never import the facade from its modules. `tests/storage-atomicity.spec.ts` exercises real IndexedDB transactions: rollback after synchronous exceptions, rejected saves without partial records, and both transaction orders in a save/cleanup race. It and `storage-contract` use dev modules; `storage-ui.spec.ts` covers upload failure and retry through the public UI, including Docker. The pure file parser also runs in `npm test`.
+
 ## Framework interface and styles
+
+The editor has one style entry, `apps/editor/src/styles/editor.ts`, which orders shared geometry, public Framework CSS and `editor.css`, with shell, canvas, inspector, dialogs, responsive and shared owners. Demo uses `apps/editor/demo/styles.ts`; AI lazily loads `styles/dialogs/ai.css`. Keeping Framework CSS as a separate module lets release builds reuse it and its embedded fonts across the editor and demo. `ui.ts` has no CSS side effects. Import precedence and exceptions are documented in `apps/editor/src/styles/README.md`; do not sort imports or move all media queries last without checking the cascade. `tests/editor-styles.spec.ts` checks slide sizing and ResizeObserver errors through inspector, viewport and gallery transitions, including Docker.
 
 FR-UI-01 applies to generated sites and presentations and to Constructor itself: the editor, gallery, trash, libraries, history, AI, dialogs, demo and both documentation locales. Use public components, classes and tokens from the installed Framework. Create shared buttons and dialogs through `apps/editor/src/ui.ts` and fields through `ui-fields.ts`.
 
@@ -84,4 +96,4 @@ The optional scripts/validation-report.py PDF report uses PyMuPDF: python -m pip
 
 ## Responsive sizes and accessibility
 
-Constructor pins Framework 1.2.0 in every workspace and the lockfile. `widget.responsive.tablet/mobile` is a public library contract; Framework source is never copied into the app. `editor-responsive.spec.ts` covers independent sizing, validation, screen switching, undo, save, reopen and offline HTML. Native Chrome zoom requires a separate OS keyboard run; canvas CSS zoom and a reduced viewport are different checks. NVDA runs as an actual Windows process with captured speech logs. Touch emulation does not establish physical phone or on-screen keyboard acceptance.
+Constructor pins Framework {{FRAMEWORK_VERSION}} in every workspace and the lockfile. `widget.responsive.tablet/mobile` is a public library contract; Framework source is never copied into the app. `editor-responsive.spec.ts` covers independent sizing, validation, screen switching, undo, save, reopen and offline HTML. Native Chrome zoom requires a separate OS keyboard run; canvas CSS zoom and a reduced viewport are different checks. NVDA runs as an actual Windows process with captured speech logs. Touch emulation does not establish physical phone or on-screen keyboard acceptance.

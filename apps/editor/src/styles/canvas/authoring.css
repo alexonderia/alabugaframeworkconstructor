@@ -1,0 +1,186 @@
+.editor-canvas {
+  max-width: 1200px;
+  margin: auto;
+  padding: 0 var(--af-space-32);
+  background: var(--af-bg-surface);
+  min-height: 360px;
+}
+.editor-canvas .af-page {
+  position: relative;
+  padding: 36px 0;
+  scroll-margin-top: 160px;
+}
+.editor-canvas .af-heading {
+  margin-bottom: 28px;
+}
+.editor-canvas .af-panel {
+  position: relative;
+  grid-template-columns: repeat(var(--af-columns), minmax(0, 1fr)) !important;
+  grid-auto-rows: var(--af-row-height) !important;
+}
+.editor-canvas .af-widget {
+  position: relative;
+  overflow: visible;
+  outline: 1px solid transparent;
+  outline-offset: 4px;
+}
+.editor-canvas .af-widget__content {
+  overflow: auto;
+  border-radius: var(--af-radius-4);
+}
+.editor-canvas .af-widget:hover,
+.editor-canvas .af-widget:focus-within {
+  outline-color: var(--af-border-default);
+  z-index: 3;
+}
+.editor-canvas .af-widget.is-selected {
+  outline: 2px solid var(--af-color-brand-blue);
+  z-index: 4;
+}
+.editor-canvas .af-widget.invalid-position {
+  outline-color: var(--af-feedback-danger-text);
+  background: var(--af-feedback-danger-bg);
+}
+.inline-editable {
+  cursor: text;
+  white-space: pre-wrap;
+  border-radius: var(--af-radius-2);
+  min-width: 1em;
+  min-height: 1em;
+  outline: 1px solid transparent !important;
+  outline-offset: 3px !important;
+}
+.inline-editable:hover {
+  outline-color: var(--af-border-default) !important;
+}
+.inline-editable:focus {
+  outline-color: var(--af-color-brand-blue) !important;
+  background: var(--af-color-neutral-50);
+}
+.inline-editable:empty::before {
+  content: 'Введите текст';
+  color: var(--af-text-secondary);
+  pointer-events: none;
+}
+.widget-tools {
+  position: absolute;
+  right: 0;
+  top: -33px;
+  display: flex;
+  gap: var(--af-space-2);
+  padding: var(--af-space-3);
+  border: 1px solid var(--af-border-default);
+  border-radius: 7px;
+  background: var(--af-bg-surface);
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--af-color-brand-deep) 5.1%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 8;
+  white-space: nowrap;
+}
+.af-widget:hover > .widget-tools,
+.af-widget:has(:focus-visible) > .widget-tools {
+  opacity: 1;
+  pointer-events: auto;
+}
+.section-tools {
+  display: flex;
+  align-items: center;
+  gap: var(--af-space-4);
+  position: absolute;
+  top: 2px;
+  right: 0;
+  opacity: 0;
+  z-index: 12;
+  background: var(--af-bg-surface);
+  border: 1px solid var(--af-border-default);
+  border-radius: var(--af-radius-6);
+  padding: var(--af-space-2);
+}
+.af-page:hover > .section-tools,
+.af-page:has(:focus-visible) > .section-tools,
+.af-slide:hover > .section-tools,
+.af-slide:has(:focus-visible) > .section-tools {
+  opacity: 1;
+}
+.section-number {
+  font: 11px/1.4 monospace;
+  color: var(--af-text-secondary);
+  padding: 0 var(--af-space-8);
+}
+.section-insert {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 38px;
+  margin: var(--af-space-8) 0;
+}
+.section-insert::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: var(--af-color-neutral-50);
+}
+.insert-button {
+  z-index: 1;
+}
+#end-add {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--af-space-32) 70px;
+}
+.widget-handle {
+  position: absolute;
+  z-index: 10;
+  cursor: grab;
+  touch-action: none;
+}
+.move-handle {
+  bottom: 0;
+  left: 50%;
+  transform: translate(-50%, 50%);
+}
+.resize-handle {
+  bottom: 0;
+  right: 0;
+  transform: translate(50%, 50%);
+  cursor: nwse-resize;
+}
+.image-change {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+}
+.af-widget--image:hover > .image-change,
+.af-widget--image:focus-within > .image-change {
+  opacity: 1;
+}
+.canvas-empty {
+  grid-column: 1/-1;
+  min-height: 240px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border: 1px dashed var(--af-border-default);
+  border-radius: 10px;
+  background: var(--af-color-neutral-50);
+  gap: var(--af-space-12);
+  color: var(--af-text-secondary);
+}
+.canvas-empty h2 {
+  font: 700 24px/1.2 var(--af-font-heading);
+  color: var(--af-text-secondary);
+  margin: 0;
+}
+.canvas-empty p {
+  font-size: 14px;
+  margin: 0;
+}

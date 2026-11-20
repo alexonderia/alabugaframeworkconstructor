@@ -11,6 +11,7 @@ async function headingGap(disclosure:Locator){
 for(const spaced of [false,true])test(`disclosure spacing includes field captions${spaced?' with expanded text spacing':''}`,async({page},info)=>{
  await page.goto('/builder/');await page.locator('.product-header input[type=file]').setInputFiles({name:'spacing.json',mimeType:'application/json',buffer:await readFile(new URL('./fixtures/audit-links.json',import.meta.url))});await expect(page.locator('#project-name')).toBeVisible();
  const box=page.locator('#canvas [data-widget-id=audit-text-a]');await box.focus();await box.press('Enter');
+ await page.locator('#properties details[data-setting=behavior] > summary').click();
  if(spaced)await page.addStyleTag({content:'*{line-height:1.5!important;letter-spacing:.12em!important;word-spacing:.16em!important}p{margin-bottom:2em!important}'});
  const summary=page.locator('#inspector summary').filter({hasText:'Дополнительно: движение'}),disclosure=summary.locator('..');
  for(const width of [1440,390,320]){

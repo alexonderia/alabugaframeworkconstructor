@@ -1,0 +1,22 @@
+.template-header,
+.template-footer {
+  flex-direction: row;
+  align-items: center;
+}
+.template-header i:first-child,
+.template-footer i:first-child {
+  flex: 2;
+  background: var(--af-color-brand-blue);
+  height: 35px;
+}
+.template-header i,
+.template-footer i {
+  height: 8px;
+}
+.template-footer {
+  background: var(--af-color-neutral-50);
+  align-items: flex-end;
+}
+.template-footer i {
+  height: 45px;
+}

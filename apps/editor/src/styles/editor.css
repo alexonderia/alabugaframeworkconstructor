@@ -1,0 +1,27 @@
+/* Explicit cascade order. See README.md before moving an import. */
+@import './shell/base.css';
+@import './canvas/authoring.css';
+@import './inspector/forms.css';
+@import './dialogs/catalog.css';
+@import './canvas/modes.css';
+@import './responsive/authoring.css';
+@import './canvas/positioning.css';
+@import './dialogs/catalog-templates.css';
+@import './inspector/ranges.css';
+@import './responsive/authoring-touch.css';
+@import './canvas/compositions.css';
+@import './dialogs/composition-preview.css';
+@import './inspector/design.css';
+@import './canvas/composition-editing.css';
+@import './inspector/slides.css';
+@import './shell/panels.css';
+@import './dialogs/media.css';
+@import './shell/panel-modes.css';
+@import './dialogs/slide-fit.css';
+@import './product.css';
+@import './shell/workspace.css';
+@import './dialogs/storage.css';
+@import './canvas/device.css';
+@import './responsive/workspace.css';
+@import './inspector/layout.css';
+@import './canvas/controls.css';

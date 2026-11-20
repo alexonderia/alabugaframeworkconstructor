@@ -19,7 +19,10 @@ CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173", "--strict
 
 FROM dependencies AS build
 ARG VITE_FRAMEWORK_DOCS_URL=http://127.0.0.1:4391/
+ARG APP_VERSION
+ARG VCS_REF
 ENV VITE_FRAMEWORK_DOCS_URL=$VITE_FRAMEWORK_DOCS_URL
+ENV AF_APP_VERSION=$APP_VERSION AF_REVISION=$VCS_REF
 COPY . .
 RUN npm run build
 
@@ -41,6 +44,7 @@ COPY --from=build /app/apps/ai-server/dist ./
 RUN mkdir /state && chown node:node /state
 USER node
 ENV AF_AI_HOST=0.0.0.0 AF_AI_PORT=4176 AF_AI_STATE_DIR=/state AF_AI_ARTIFACT_DIR=/state AF_AI_ENFORCE_LOCK=1
+ENV AF_APP_VERSION=$APP_VERSION AF_REVISION=$VCS_REF
 EXPOSE 4176
 HEALTHCHECK --interval=15s --timeout=5s CMD node -e "fetch('http://127.0.0.1:4176/api/ai/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 CMD ["node", "ai-server.js"]

@@ -2,6 +2,15 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {EditorModel,emptyDocument,createWidget,findSpace,checked,copySection} from '../apps/editor/src/model';
 import {makeSection} from '../apps/editor/src/sections';
+import {documentContent} from '../apps/editor/src/document-content';
+
+test('visible document content excludes section names without changing the editable project',()=>{
+ for(const kind of ['page','presentation'] as const){
+  const document=emptyDocument(kind);document.pages[0].title='4';document.pages[0].widgets.push(createWidget('text',document,0));
+  const before=structuredClone(document),content=documentContent(document);
+  assert.equal(content.pages[0].title,'');assert.equal(content.title,document.title);assert.equal(content.pages[0].id,document.pages[0].id);assert.deepEqual(content.pages[0].widgets,document.pages[0].widgets);assert.deepEqual(document,before);
+ }
+});
 
 test('header and footer templates validate alongside older sections',()=>{const doc=emptyDocument();doc.pages.push(makeSection('header'),makeSection('footer'));const result=checked(doc);assert.equal(result.pages[1].role,'header');assert.equal(result.pages[2].role,'footer');assert.equal(result.pages[1].widgets[1].align,'right');assert.equal(result.pages[0].role,undefined)});
 test('sections retain independent grids and typing is one undo step',()=>{const doc=emptyDocument();doc.pages.push(makeSection('split'));assert.doesNotThrow(()=>checked(doc));const model=new EditorModel(doc);model.change(d=>d.title='A','typing');model.change(d=>d.title='AB','typing');model.change(d=>d.title='ABC','typing');model.undo();assert.equal(model.document.title,doc.title);model.redo();assert.equal(model.document.title,'ABC')});

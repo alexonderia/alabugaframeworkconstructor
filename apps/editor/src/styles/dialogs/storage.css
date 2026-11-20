@@ -1,0 +1,38 @@
+.asset-card {
+  width: 100%;
+  height: 100%;
+}
+.asset-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--af-space-12);
+  min-width: 0;
+}
+.asset-item .asset-card {
+  flex: 1;
+}
+.storage-asset {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--af-space-12);
+  margin: var(--af-space-16) 0;
+}
+.storage-asset input {
+  flex-shrink: 0;
+  margin-top: var(--af-space-4);
+}
+.field-error {
+  display: block;
+  margin-top: var(--af-space-8);
+  color: var(--af-feedback-danger-text);
+}
+.save-conflict-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--af-space-12);
+  margin-top: var(--af-space-20);
+}
+.fit-dialog > .fit-actions {
+  flex: none;
+  gap: var(--af-space-12);
+}

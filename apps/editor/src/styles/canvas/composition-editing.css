@@ -1,0 +1,18 @@
+.editor-canvas .af-composition .af-widget--button [contenteditable] {
+  min-width: 5em;
+}
+.editor-canvas .af-composition .af-widget--button button {
+  cursor: text;
+}
+.editor-canvas .af-composition .af-feature {
+  color: inherit;
+}
+.editor-canvas .af-composition .inline-editable:focus {
+  color: var(--af-text-primary);
+}
+.editor-canvas .af-composition.af-page {
+  overflow: clip;
+}
+.editor-canvas .af-composition.af-spacing--compact {
+  padding-top: var(--af-space-80);
+}

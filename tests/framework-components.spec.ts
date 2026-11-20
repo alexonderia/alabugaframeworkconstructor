@@ -69,7 +69,7 @@ test('AI upload, material selection and storage cleanup share Framework fields a
 test('presentation fitting options use Framework checkboxes and disclosures',async({page},info)=>{
  await page.goto('/builder/');await page.getByRole('button',{name:'Создать презентацию',exact:false}).click();
  await page.getByRole('radio',{name:'Из образца',exact:false}).check();await page.getByRole('dialog').getByRole('button',{name:'Продолжить',exact:true}).click();await expect(page.locator('#project-name')).toBeVisible();
- await page.locator('#page-settings-open').click();await page.getByRole('button',{name:'Подобрать оформление',exact:true}).click();
+ await page.locator('#page-settings-open').click();await page.getByRole('tab',{name:'Оформление',exact:true}).click();await page.getByRole('button',{name:'Подобрать фон и размещение',exact:true}).click();
  const dialog=page.locator('.fit-dialog');await expect(dialog.locator('.af-check>.af-checkbox')).toHaveCount(3);await expectFrameworkControls(page);
  await dialog.getByRole('checkbox',{name:'Сохранить фон',exact:true}).check();await expect(dialog.getByRole('status')).toHaveText('Настройки изменены. Запустите подбор.');
  await capture(page,'slide-fitting',info.project.name);await dialog.getByRole('button',{name:'Закрыть',exact:true}).click();await expect(dialog).toHaveCount(0);

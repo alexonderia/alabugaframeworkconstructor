@@ -9,6 +9,8 @@
 5. Update corresponding RU/EN pages. Add a usage example and negative case for new public APIs.
 6. Describe the problem, resulting behaviour, compatibility and evidence limits in the PR. Do not describe mocked generation as real inference.
 
+Run `npm run format` for editor sources; CI enforces `npm run check:format`. Keep mechanical formatting separate from behavior changes. `npm run check:boundaries` checks workspace dependency directions, public Framework/AI exports, document module dependencies and cycles, including literal dynamic imports.
+
 ## Before the first push
 
 Choose the private organization and repository name, enable Git LFS, required review and Quality checks. Protect main from direct pushes and assign actual teams in CODEOWNERS. Inspect staged files for secrets and large artifacts. No npm package publication is needed.

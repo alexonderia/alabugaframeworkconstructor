@@ -1,0 +1,36 @@
+.slide-settings-tabs {
+  display: flex;
+  gap: var(--af-space-4);
+  border-bottom: 1px solid var(--af-border-default);
+  padding-bottom: var(--af-space-8);
+}
+.slide-settings-tab {
+  flex: 1;
+}
+.slide-settings-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--af-space-16);
+}
+.slide-settings-panel[hidden] {
+  display: none;
+}
+.slide-grid summary {
+  cursor: pointer;
+  padding: var(--af-space-12) 0;
+}
+.slide-element {
+  display: flex;
+  flex-direction: column;
+  gap: var(--af-space-4);
+  padding: var(--af-space-8) 0;
+  border-bottom: 1px solid var(--af-border-default);
+}
+.slide-element button {
+  text-align: left;
+  white-space: normal;
+}
+.slide-grid .af-stack {
+  padding-top: var(--af-space-12);
+}
+/* Workspace panels participate in layout; the canvas remains interactive. */

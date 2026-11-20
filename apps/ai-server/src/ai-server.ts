@@ -14,12 +14,25 @@ const run=promisify(execFile),root=resolve(process.env.AF_STATIC_ROOT||'dist/sit
 async function preparation(){try{return JSON.parse(await readFile(resolve(process.env.AF_AI_STATE_DIR||'artifacts/ai','bootstrap.json'),'utf8')) as {stage:string;message:string;upstream?:string}}catch{return undefined}}
 function preparing(value:Awaited<ReturnType<typeof preparation>>){return !!value&&(!value.upstream||value.upstream===upstream)&&value.stage!=='ready'}
 async function ollama(path:string,init?:RequestInit){const r=await fetch(upstream+path,{...init,signal:init?.signal??AbortSignal.timeout(5000)});if(!r.ok)throw new Error(await r.text());return r.json()}
-async function status(){
- const [version,tags,loaded]=await Promise.all([ollama('/api/version'),ollama('/api/tags'),ollama('/api/ps')]);
- const found=tags.models?.find((m:{name:string})=>m.name===model);if(!found)throw new Error('Модель отсутствует. Выполните npm run ai:setup.');
- if(process.env.AF_AI_ENFORCE_LOCK!=='0'&&(found.digest!==lock.digest||version.version!==lock.ollama))throw new Error('Model or Ollama version mismatch; generation disabled.');
- return {model,version:version.version,digest:found.digest,context,loaded:loaded.models};
+class ModelStatusError extends Error {
+ constructor(readonly code: 'model-missing' | 'pin-mismatch', message: string) { super(message) }
 }
+async function ollamaVersion(): Promise<string> {
+ const data = await ollama('/api/version');
+ if(typeof data?.version!=='string'||!data.version.trim())throw new Error('Invalid Ollama version response');
+ return data.version;
+}
+async function status(versionRequest = ollamaVersion()){
+ const [version,tags,loaded]=await Promise.all([versionRequest,ollama('/api/tags'),ollama('/api/ps')]);
+ const found=tags.models?.find((m:{name:string})=>m.name===model);
+ if(!found)throw new ModelStatusError('model-missing','Модель отсутствует. Выполните npm run ai:setup.');
+ if(process.env.AF_AI_ENFORCE_LOCK!=='0'&&(found.digest!==lock.digest||version!==lock.ollama))
+  throw new ModelStatusError('pin-mismatch','Model or Ollama version mismatch; generation disabled.');
+ return {model,version,digest:found.digest,context,loaded:loaded.models};
+}
+const build = process.env.AF_APP_VERSION && process.env.AF_REVISION
+ ? {version:process.env.AF_APP_VERSION,revision:process.env.AF_REVISION}
+ : undefined;
 const types:Record<string,string>={'.html':'text/html; charset=utf-8','.js':'text/javascript','.css':'text/css','.json':'application/json','.svg':'image/svg+xml','.webp':'image/webp','.png':'image/png','.woff2':'font/woff2'};
 const server=createServer(async(req,res)=>{
  const json=(code:number,data:unknown)=>{if(!res.destroyed){res.writeHead(code,{'content-type':'application/json; charset=utf-8','cache-control':'no-store'});res.end(JSON.stringify(data))}};
@@ -28,10 +41,26 @@ const server=createServer(async(req,res)=>{
   if(bind==='127.0.0.1'&&!/^127\.0\.0\.1:\d+$|^localhost:\d+$/.test(req.headers.host??'')){json(403,{error:'Недопустимый Host'});return}
   if(req.headers.origin&&!allowedOrigins.includes(req.headers.origin)&&!/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(req.headers.origin)){json(403,{error:'Недопустимый Origin'});return}
   const path=new URL(req.url!,'http://localhost').pathname;
-  if(path==='/api/ai/health'){json(200,{status:'ok'});return}
+  if(path==='/api/ai/health'){json(200,{status:'ok',build});return}
   if(path==='/api/ai/readiness'){
-   const state=await preparation();
-   try{const info=await status();json(200,{ready:!preparing(state)&&info.digest===lock.digest&&info.version===lock.ollama,preparation:state,...info})}catch(e){json(200,{ready:false,preparation:state,error:String(e)})}return;
+   const versionRequest=ollamaVersion();
+   const [state,version,result]=await Promise.all([
+    preparation(), versionRequest.catch(()=>undefined),
+    status(versionRequest).then(info=>({info} as const), (error:unknown)=>({error} as const)),
+   ]);
+   const runtime=version?{reachable:true,version}:{reachable:false};
+   const activePreparation=preparing(state)?state?.stage:undefined;
+   if('error' in result){
+    const error=result.error;
+    const reason=!version?'ollama-unavailable':error instanceof ModelStatusError?error.code:'status-unavailable';
+    json(200,{ready:false,model,preparation:state,activePreparation,ollama:runtime,reason,error:reason==='ollama-unavailable'?'Ollama недоступна. Запустите локальную Ollama и повторите проверку.':String(error)});
+   }else{
+    const pinned=result.info.digest===lock.digest&&result.info.version===lock.ollama;
+    const ready=!activePreparation&&pinned;
+    const reason=ready?undefined:!pinned?'pin-mismatch':'preparation';
+    json(200,{ready,preparation:state,activePreparation,ollama:runtime,reason,...result.info});
+   }
+   return;
   }
   if(path==='/api/ai/status'&&req.method==='GET'){json(200,await status());return}
   if(path==='/api/ai/diagnostics'&&req.method==='GET'){
@@ -42,7 +71,9 @@ const server=createServer(async(req,res)=>{
    if(busy){json(409,{error:'Модель занята. Дождитесь завершения текущего запроса.'});return}
    if(!req.headers['content-type']?.startsWith('application/json')){json(415,{error:'Требуется JSON'});return}
    let body='';for await(const data of req){body+=data;if(Buffer.byteLength(body)>64000){json(413,{error:'Слишком большой запрос'});return}}
-   const input=JSON.parse(body);if(typeof input.system!=='string'||typeof input.prompt!=='string'||!input.format||typeof input.format!=='object'||Object.keys(input).some(k=>!['system','prompt','format'].includes(k))){json(400,{error:'Некорректный запрос'});return}
+   let input;
+   try{input=JSON.parse(body)}catch{json(400,{error:'Некорректный запрос'});return}
+   if(!input||typeof input!=='object'||Array.isArray(input)||typeof input.system!=='string'||typeof input.prompt!=='string'||!input.format||typeof input.format!=='object'||Array.isArray(input.format)||Object.keys(input).some(k=>!['system','prompt','format'].includes(k))){json(400,{error:'Некорректный запрос'});return}
    // Conservative estimate: Cyrillic/non-ASCII characters each receive a token budget.
    const text=input.system+input.prompt+JSON.stringify(input.format),nonAscii=(text.match(/[^\x00-\x7f]/g)??[]).length;
    const estimate=Math.ceil((text.length-nonAscii)/3+nonAscii)+128,output=1024;

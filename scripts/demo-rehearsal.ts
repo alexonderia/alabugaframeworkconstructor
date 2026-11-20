@@ -21,7 +21,7 @@ try{
  expect(report.diagnosticsStatus).toContain('Техническая репетиция пройдена');
  await page.screenshot({path:resolve(out,'diagnostics.png'),fullPage:true});await page.getByRole('button',{name:'Закрыть',exact:true}).click();
  for(const kind of ['page','presentation'] as const){
-  await page.goto(base+'/demo/');await chooseOption(page.getByRole('combobox',{name:'Формат проекта'}),kind);await page.getByRole('button',{name:'Собрать из шаблона',exact:true}).click();await expect(page.locator('#save-state')).toHaveText('Сохранено в браузере');
+  await page.goto(base+'/demo/');await page.getByRole('button',{name:kind==='page'?'Редактировать образец сайта':'Редактировать образец презентации',exact:true}).click();await expect(page.locator('#save-state')).toHaveText('Сохранено в браузере');
   const id=(await page.evaluate(()=>location.hash)).split('/').at(-1)!,before=(await record(page,'projects',id)).document;
   await page.getByRole('button',{name:'Создать с ИИ',exact:true}).click();await chooseOption(page.getByRole('combobox',{name:'Результат',exact:true}),kind==='page'?'section':'slide');
   const prompt=`Покажи три возможности ${kind==='page'?'в секции сайта':'на одном слайде'}: изображения, хранение проектов, автономный экспорт.`;

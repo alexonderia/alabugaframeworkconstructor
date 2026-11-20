@@ -1,0 +1,11 @@
+#canvas[data-device='mobile'] .af-page:not(.af-flow) > .af-panel {
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-auto-rows: auto !important;
+}
+#canvas[data-device='mobile'] .af-page:not(.af-flow) > .af-panel > .af-widget {
+  grid-column: 1 !important;
+  grid-row: auto !important;
+  height: calc(
+    var(--af-widget-rows) * var(--af-row-height) + (var(--af-widget-rows) - 1) * var(--af-panel-gap)
+  );
+}

@@ -15,6 +15,7 @@ test('source-backed outline retains long facts in an editable multiline field',a
 async function generate(page:Page,target='section',count=1){await chooseOption(page.getByLabel('Результат',{exact:true}),target);if(count>1)await page.getByLabel('Количество',{exact:true}).fill(String(count));await page.getByLabel('Запрос',{exact:true}).fill('Расскажи о визуальном конструкторе сайтов и презентаций');await page.getByRole('button',{name:'Создать черновик',exact:true}).click();if(count>1){await expect(page.locator('.ai-outline')).toBeVisible();await page.locator('[data-resume]').click();}await expect(page.locator('.ai-progress')).toContainText('Черновик готов',{timeout:30000});}
 test('AI properties opened from the demo retain shared settings group spacing',async({page})=>{
  await mockAI(page);await page.goto('/demo/');await page.getByRole('button',{name:'Создать с ИИ',exact:true}).click();await generate(page);
+ await expect(page.locator('.ai-elements button').first()).toHaveText('Свойства: Текст');
  await page.locator('.ai-elements button').first().click();const body=page.locator('.ai-properties .settings-group-body').first();await expect(body).toBeVisible();await expect(body).toHaveCSS('row-gap','16px');await expect(body).toHaveCSS('padding-top','16px');
 });
 test('AI draft is isolated, editable, restored, applied once and undone',async({page},info)=>{
@@ -71,7 +72,7 @@ test('overflow after a manual heading edit is visible and draft fitting preserve
  });
  await open(page);const before=await savedDocument(page);await generate(page,'slide');
  const text='Изображения, проекты и экспорт в одном визуальном конструкторе';await page.locator('.ai-preview [contenteditable]').first().fill(text);await page.locator('.ai-preview [contenteditable]').first().blur();
- await page.locator('.ai-dialog [data-check]').click();await expect(page.locator('.ai-progress')).toContainText('Исправьте замечания');await expect(page.getByRole('region',{name:'Замечания к черновику'})).toBeFocused();await expect(page.locator('[data-apply]')).toBeDisabled();
+ await page.locator('.ai-dialog [data-check]').click();await expect(page.locator('.ai-progress')).toContainText('Исправьте замечания');await expect(page.getByRole('region',{name:'Замечания к черновику'})).toBeFocused();await expect(page.locator('[data-apply]')).toBeDisabled();await expect(page.locator('#ai-apply-reason')).toContainText('Исправьте замечания');
  await page.locator('.ai-dialog [data-fit]').click();await expect(page.locator('.ai-progress')).toContainText('Оформление подобрано',{timeout:30000});await expect(page.locator('.ai-preview')).toContainText(text);expect(await savedDocument(page)).toEqual(before);
- await page.getByLabel('Содержание и замечания проверены').check();await expect(page.locator('[data-apply]')).toBeEnabled();
+ await page.getByLabel('Содержание и замечания проверены').check();await expect(page.locator('[data-apply]')).toBeDisabled();await expect(page.locator('#ai-apply-reason')).toContainText('Откройте проект подходящего формата');
 });

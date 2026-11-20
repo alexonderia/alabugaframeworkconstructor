@@ -36,7 +36,7 @@ The first command starts the application without a model. The second also prepar
 
 ## Your first result
 
-In the project gallery choose «Создать сайт» or «Создать презентацию». Select a sample, replace its heading, preview it, then download a portable project and HTML. Projects remain editable; HTML is for presenting the result. See the [Author guide](author.md). The application UI currently remains Russian; this manual names actual controls.
+On the demo page choose «Открыть редактор» (Open editor), then create a site or presentation. Choose to start from scratch, from a sample, or with AI. To browse finished work first, follow «Посмотреть образцы» (View samples). The edit action on a sample opens your own copy. Replace a heading, open the preview and download the portable project and HTML. See the [Author guide](author.md).
 
 Authors must verify AI-generated claims. A technically valid draft is not a guarantee of factual accuracy.
 
@@ -44,4 +44,4 @@ Authors must verify AI-generated claims. A technically valid draft is not a guar
 
 Configure the scoped registry and a read token in your user npm config before installation. Never commit tokens. The prepared local registry is http://127.0.0.1:4873/; NPM_CONFIG_USERCONFIG can point to its read config. Only installation and builds require registry access; the built application does not.
 
-Documentation opens the independently deployed [interactive Framework reference]({{FRAMEWORK_DOCS_URL}}). Set VITE_FRAMEWORK_DOCS_URL when building Constructor. Application guides remain here: [AI](ai.md), [projects and assets](projects.md), [slide fitting](slide-fit.md).
+«Справочник Framework» opens the independently deployed [interactive Framework reference]({{FRAMEWORK_DOCS_URL}}). Set `VITE_FRAMEWORK_DOCS_URL` when building Constructor. See the application guides for [AI](ai.md), [projects and assets](projects.md) and [slide fitting](slide-fit.md).

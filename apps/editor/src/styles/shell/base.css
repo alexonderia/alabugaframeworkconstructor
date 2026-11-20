@@ -1,0 +1,134 @@
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--af-bg-surface);
+}
+.editor-header {
+  height: 72px;
+  display: flex;
+  align-items: center;
+  gap: var(--af-space-16);
+  padding: 0 var(--af-space-24);
+  background: var(--af-bg-surface);
+  border-bottom: 1px solid var(--af-border-default);
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+.editor-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--af-space-8);
+  color: var(--af-color-brand-blue);
+  text-decoration: none;
+  font: 800 38px/1 var(--af-font-heading);
+}
+.editor-brand > span {
+  font: 800 18px/1 var(--af-font-heading);
+  color: var(--af-text-primary);
+}
+.editor-brand small {
+  display: block;
+  font: 400 8px/1.8 var(--af-font-body);
+  letter-spacing: 2px;
+  margin-top: var(--af-space-4);
+}
+.document-name {
+  flex: 1;
+  max-width: 250px;
+}
+.editor-history,
+.editor-file-actions {
+  display: flex;
+  gap: var(--af-space-8);
+  align-items: center;
+}
+.editor-file-actions {
+  margin-left: auto;
+}
+.editor-status {
+  min-height: 32px;
+  padding: var(--af-space-8) var(--af-space-24);
+  font-size: 11px;
+  background: var(--af-bg-surface);
+  display: flex;
+  gap: var(--af-space-24);
+  justify-content: space-between;
+  border-bottom: 1px solid var(--af-border-default);
+  position: sticky;
+  top: 72px;
+  z-index: 29;
+}
+.editor-status #save-state {
+  color: var(--af-text-secondary);
+  flex-shrink: 0;
+}
+.status-error {
+  color: var(--af-feedback-danger-text);
+}
+.project-menu {
+  position: relative;
+  font-size: 13px;
+}
+.project-menu summary {
+  cursor: pointer;
+}
+.project-menu > div {
+  position: absolute;
+  top: calc(100% + var(--af-space-8));
+  left: 0;
+  width: 220px;
+}
+.project-menu button,
+.file-open {
+  display: block;
+  width: 100%;
+  text-align: left;
+}
+.file-open {
+  position: relative;
+  overflow: hidden;
+}
+.file-open input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+}
+.file-open:focus-within {
+  outline: 2px solid var(--af-color-brand-blue);
+}
+.editor-workspace {
+  min-width: 0;
+}
+.canvas-toolbar {
+  padding: 14px var(--af-space-32);
+  display: flex;
+  gap: var(--af-space-12);
+  align-items: center;
+  background: var(--af-color-neutral-50);
+  border-bottom: 1px solid var(--af-border-default);
+  flex-wrap: wrap;
+}
+.page-picker {
+  display: flex;
+  align-items: center;
+  gap: var(--af-space-8);
+  flex-direction: row;
+}
+.page-picker select {
+  max-width: 300px;
+}
+.canvas-mode {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: var(--af-text-secondary);
+  margin-left: auto;
+}
+.canvas-scroll {
+  overflow-x: auto;
+  overflow-y: clip;
+}

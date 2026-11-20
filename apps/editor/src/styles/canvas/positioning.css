@@ -1,0 +1,28 @@
+.canvas-empty {
+  grid-row: 1 / span 4;
+}
+.editor-canvas .af-page {
+  padding-top: 68px;
+}
+.is-preview .editor-canvas .af-page {
+  padding-top: 36px;
+}
+.widget-handle {
+  opacity: 0;
+  pointer-events: none;
+}
+.af-widget:hover > .widget-handle,
+.af-widget:has(:focus-visible) > .widget-handle {
+  opacity: 1;
+  pointer-events: auto;
+}
+.widget-handle:active {
+  opacity: 1;
+}
+.editor-canvas .af-panel.is-positioning {
+  background-image:
+    linear-gradient(to right, var(--af-color-neutral-300) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--af-color-neutral-50) 1px, transparent 1px);
+  background-size: calc((100% + var(--af-panel-gap)) / var(--af-columns))
+    calc(var(--af-row-height) + var(--af-panel-gap));
+}

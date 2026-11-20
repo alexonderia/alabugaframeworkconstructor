@@ -93,8 +93,8 @@ test('startup errors remain visible while gallery undo notices never carry into 
 });
 
 test('composition chooser keeps closing accessible and applies a compatible change with undo',async({page},info)=>{
- await project(page,true);const before=await savedDocument(page);await page.locator('#page-settings-open').click();const opener=page.getByRole('button',{name:'Выбрать композицию визуально',exact:true});await opener.click();
- const dialog=page.getByRole('dialog',{name:'Композиции и совместимость',exact:true});await layout(page,dialog,'compositions',info.project.name);
+ await project(page,true);const before=await savedDocument(page);await page.locator('#page-settings-open').click();const opener=page.getByRole('button',{name:'Посмотреть шаблоны',exact:true});await opener.click();
+ const dialog=page.getByRole('dialog',{name:'Шаблоны и совместимость',exact:true});await layout(page,dialog,'compositions',info.project.name);
  await expect(dialog.getByRole('button',{name:'Шапка',exact:true})).toBeDisabled();await dialog.getByRole('button',{name:'Призыв к действию',exact:true}).click();await expect(dialog).toHaveCount(0);await expect(opener).toBeFocused();
  const after=await savedDocument(page);expect(after.pages[0].composition).toBe('cta');expect(after.pages[0].widgets.map((w:any)=>w.id)).toEqual(before.pages[0].widgets.map((w:any)=>w.id));
  await page.locator('#close-inspector').click();await page.locator('#undo').click();expect((await savedDocument(page)).pages[0]).toEqual(before.pages[0]);

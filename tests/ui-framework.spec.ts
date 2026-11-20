@@ -18,8 +18,21 @@ async function expectSameVisuals(actual:Locator,reference:Locator,properties=['f
  await expect(async()=>expect(await actual.evaluate(read,properties)).toEqual(await reference.evaluate(read,properties))).toPass({timeout:5000});
 }
 
+test('document controller retains section names while rendering only element content',async({page})=>{
+ await openEditor(page);
+ const result=await page.evaluate(async()=>{
+  const {renderDocument}=await import('/apps/editor/src/framework-adapter.ts' as string),host=document.createElement('div');document.body.append(host);
+  const fixture={schemaVersion:3,kind:'page',title:'Проект',pages:[{id:'named-section',title:'4',grid:{columns:12,rowHeight:64,gap:16},widgets:[]}]};
+  const controller=renderDocument(host,fixture,{editing:true}),initial=controller.getDocument().pages[0].title;
+  fixture.pages[0].title='5';controller.update(fixture);const updated=controller.getDocument().pages[0].title;
+  fixture.pages[0].title='6';controller.synchronize(fixture);const copy=controller.getDocument();copy.pages[0].title='Чужая правка';
+  const answer={initial,updated,synchronized:controller.getDocument().pages[0].title,visibleTitles:host.querySelectorAll('.af-heading,.af-slide__title').length};controller.destroy();host.remove();return answer;
+ });
+ expect(result).toEqual({initial:'4',updated:'5',synchronized:'6',visibleTitles:0});
+});
+
 test('menu buttons keep Framework hover, disabled, busy and keyboard focus states',async({page})=>{
- await openEditor(page);await page.locator('.project-menu>summary').click();const control=page.locator('#save'),reference=await frameworkReference(page,control);
+ await openEditor(page);await page.locator('.project-menu>summary').click();const control=page.locator('#new-page'),reference=await frameworkReference(page,control);
  await page.mouse.move(1,1);await expectSameVisuals(control,reference);
  await control.hover();await control.evaluate(async n=>{await Promise.all(n.getAnimations().map(a=>a.finished))});const hovered=await control.evaluate(n=>({background:getComputedStyle(n).backgroundColor,border:getComputedStyle(n).borderColor}));
  await reference.hover();await expect.poll(()=>reference.evaluate(n=>({background:getComputedStyle(n).backgroundColor,border:getComputedStyle(n).borderColor}))).toEqual(hovered);
@@ -75,8 +88,10 @@ test('project commands and view controls have separate owners',async({page})=>{
  await expect(page.locator('#play-motion,.replay-current')).toHaveCount(0);await expect(page.locator('#preview')).toHaveCount(1);
  await expect(page.locator('.editor-more-body #device')).toBeVisible();await page.locator('#page-settings-open').click();
  await expect(page.getByRole('button',{name:'Обновить секцию',exact:true})).toHaveCount(0);
+ const originalWidgets=(await savedDocument(page)).pages[0].widgets;
  await page.getByLabel('Заголовок секции',{exact:true}).fill('Автоматическое применение');await page.getByLabel('Заголовок секции',{exact:true}).blur();
  await expect.poll(async()=>(await savedDocument(page)).pages[0].title).toBe('Автоматическое применение');
+ expect((await savedDocument(page)).pages[0].widgets).toEqual(originalWidgets);
 });
 
 test('inspector returns focus to its actual block trigger',async({page})=>{

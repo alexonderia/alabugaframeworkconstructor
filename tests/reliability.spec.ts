@@ -36,7 +36,7 @@ test('a stalled status request times out and the user can retry',async({page})=>
 });
 
 test('button labels are editable without nested controls and export retains actions',async({page},info)=>{
- await page.goto('/demo/');await page.getByRole('button',{name:'Настроить элементы',exact:true}).click();await expect(page.locator('#project-name')).toBeVisible();
+ await page.goto('/demo/');await page.getByRole('button',{name:'Урок по настройке блока',exact:true}).click();await expect(page.locator('#project-name')).toBeVisible();
  const initial=await savedDocument(page),widget=initial.pages.flatMap((p:any)=>p.widgets).find((w:any)=>w.type==='button'&&w.action.type==='section');
  const box=page.locator(`[data-widget-id="${widget.id}"]`).filter({has:page.locator('.inline-editable')});
  const label=box.getByRole('textbox',{name:'Кнопка на странице',exact:true});await label.fill('Посмотреть возможности');await label.press('Enter');

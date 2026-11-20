@@ -1,0 +1,23 @@
+.author-tutorial {
+  grid-column: 1/-1;
+  margin: 0 0 var(--af-space-16);
+}
+.author-tutorial summary {
+  cursor: pointer;
+}
+.author-tutorial ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--af-space-12);
+  padding: 0;
+  list-style: none;
+}
+.author-tutorial li {
+  display: flex;
+  align-items: center;
+  gap: var(--af-space-8);
+}
+.author-tutorial p {
+  font-size: 14px;
+  color: var(--af-text-secondary);
+}

@@ -15,5 +15,5 @@ try{
   else{for(const width of [390,768,1440]){await preview.setViewportSize({width,height:1000});await preview.screenshot({path:`${dir}/site-${width}.png`,fullPage:true})}}
   await preview.close();
  }
- await page.getByRole('button',{name:'Настроить элементы',exact:true}).click();await page.locator('#project-name').waitFor();await page.screenshot({path:dir+'/editor.png',fullPage:true});
+ await page.getByRole('button',{name:'Урок по настройке блока',exact:true}).click();await page.locator('#project-name').waitFor();await page.screenshot({path:dir+'/editor.png',fullPage:true});
 }finally{await browser.close()}

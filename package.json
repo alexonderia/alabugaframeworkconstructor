@@ -12,6 +12,8 @@
     "ai": "npm run build && tsx scripts/start-ai.ts",
     "demo": "npm run build && tsx scripts/start-ai.ts --demo",
     "demo:rehearse": "tsx scripts/demo-rehearsal.ts",
+    "diagnose": "node scripts/diagnose.mjs",
+    "docker:build": "node scripts/build-images.mjs",
     "ai:server": "tsx apps/ai-server/src/ai-server.ts",
     "test:ai": "tsx --test tests/ai.test.ts tests/ai-server.test.ts tests/ai-content.test.ts tests/ai-reliability.test.ts",
     "ai:acceptance": "node scripts/ai-live.mjs",
@@ -21,17 +23,19 @@
     "predev": "tsx scripts/build-docs.ts",
     "dev": "vite --host 127.0.0.1",
     "build": "npm run typecheck && npm run check:boundaries && npm run check:ui && tsx scripts/build.ts",
-    "test": "tsx --test tests/editor.test.ts tests/editor-save.test.ts tests/project-import.test.ts",
+    "test": "tsx --test tests/editor.test.ts tests/editor-save.test.ts tests/editor-session.test.ts tests/project-import.test.ts tests/project-format.test.ts tests/import-boundaries.test.mjs tests/style-entries.test.mjs",
     "test:browser": "playwright test",
     "preview": "vite preview --outDir dist/site --host 127.0.0.1",
     "typecheck": "tsc --noEmit",
     "check:boundaries": "node scripts/check-boundaries.mjs",
-    "check:ui": "node scripts/check-ui-styles.mjs",
+    "format": "prettier --write apps/editor/src scripts/check-boundaries.mjs scripts/import-boundaries.mjs scripts/style-entries.mjs scripts/check-style-entries.mjs tests/import-boundaries.test.mjs tests/style-entries.test.mjs prettier.config.mjs",
+    "check:format": "prettier --check apps/editor/src scripts/check-boundaries.mjs scripts/import-boundaries.mjs scripts/style-entries.mjs scripts/check-style-entries.mjs tests/import-boundaries.test.mjs tests/style-entries.test.mjs prettier.config.mjs",
+    "check:ui": "node scripts/check-ui-styles.mjs && node scripts/check-style-entries.mjs",
     "build:editor": "npm run build -w @alabuga/editor",
     "build:docs": "tsx scripts/build-docs.ts",
     "build:ai": "npm run build -w @alabuga/ai",
     "build:server": "npm run build -w @alabuga/ai-server",
-    "test:bootstrap": "tsx --test tests/bootstrap.test.ts tests/pinned-model.test.ts",
+    "test:bootstrap": "tsx --test tests/bootstrap.test.ts tests/pinned-model.test.ts tests/diagnose.test.mjs",
     "test:model": "tsx scripts/run-model-check.ts",
     "check:docs": "tsx scripts/check-docs.ts",
     "test:release": "node scripts/release-smoke.mjs",
@@ -40,8 +44,8 @@
     "test:docker": "playwright test --config=playwright.docker.config.ts"
   },
   "dependencies": {
-    "zod": "^4.5.4",
-    "@alabuga/framework": "1.3.1"
+    "@alabuga/framework": "1.3.1",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
@@ -50,6 +54,7 @@
     "esbuild": "0.28.2",
     "marked": "17.0.5",
     "postcss": "8.5.28",
+    "prettier": "3.10.1",
     "tsx": "^4.23.13",
     "typescript": "^5.9.2",
     "vite": "^7.3.6"

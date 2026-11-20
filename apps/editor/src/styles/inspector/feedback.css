@@ -1,0 +1,12 @@
+.property-actions > button[type='submit'],
+.property-feedback {
+  width: 100%;
+}
+.property-feedback {
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+}
+.property-feedback:empty {
+  display: none;
+}

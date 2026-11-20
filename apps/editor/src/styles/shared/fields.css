@@ -1,0 +1,34 @@
+.canvas-toolbar .page-picker > .af-label {
+  margin: 0;
+}
+.constructor-file-picker {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--af-space-12);
+  min-width: 0;
+}
+.constructor-file-native[hidden] {
+  display: none;
+}
+.constructor-file-picker > .af-btn {
+  flex: none;
+}
+.constructor-file-name {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 767px) {
+  .af-dialog[open]:not(.ai-dialog) {
+    max-width: calc(100vw - 24px);
+    max-height: calc(100dvh - 24px);
+  }
+  .fit-dialog > .fit-actions > .af-btn {
+    flex: 1 0 100%;
+  }
+  .product-dialog > .section-name-actions > .af-btn {
+    flex: 1 0 100%;
+  }
+}

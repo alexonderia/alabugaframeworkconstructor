@@ -2,6 +2,8 @@
 
 Before generation, the interface shows checking, preparation, ready or unavailable state. Generation requires confirmed readiness; failed checks can be retried. Result commands appear when a draft exists. On phones, «К результату и замечаниям» jumps to progress and issues. Current errors are brought into view; installation commands belong to administrator help.
 
+«Продолжить» appears while the outline awaits confirmation or generation is incomplete. Once the first section or slide is available, the review panel stays visible while you scroll through the draft. Use «Проверить черновик» to refresh the list of issues, then confirm that you reviewed the content and apply the draft. If applying is unavailable, the panel explains what is still needed.
+
 Detailed material moved from the former reference chapter. Measurements dated October 2, 2026 below are historical. On October 26 a separate technical rehearsal exercised Docker → pinned Ollama 0.35.0 / Qwen3.5-2B Q8_0 → Vulkan on RTX 5060 Laptop 8 GB. The model stayed entirely on GPU at context 4096. Generation, isolated editing, application, reopening and offline HTML passed for a section and slide; warmed generation took 3.401 and 3.919 s. The cold section probe including model loading took 25.238 s; its subsequent slide probe took 3.710 s. Peak total GPU use was 4938 of 8151 MiB across 166 samples. Evidence: `artifacts/ai/diagnostics/real-model/report.json` and the adjacent `gpu-summary.json`. This checks two tasks on a different device; acceptance on the target RTX 3050 Ti 4 GB remains open; the subsequent 20-task content evaluation is reported below.
 
 ## Continued content evaluation — October 26, 2026

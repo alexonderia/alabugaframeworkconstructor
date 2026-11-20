@@ -1,0 +1,31 @@
+/* Shared surface geometry. Framework supplies the controls and their states. */
+#builder .author-tutorial > summary {
+  margin-bottom: var(--af-space-8);
+}
+#builder .author-tutorial ol {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  grid-auto-rows: 1fr;
+  gap: var(--af-space-12);
+  margin: 0;
+  padding: 0;
+}
+#builder .author-tutorial li {
+  display: grid;
+  grid-template-columns: var(--af-space-20) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--af-space-8);
+  min-width: 0;
+}
+#builder .author-tutorial li > .af-btn {
+  height: 100%;
+  white-space: normal;
+  text-align: left;
+  justify-content: flex-start;
+}
+#builder .author-tutorial p:empty {
+  display: none;
+}
+#builder .author-tutorial .tutorial-dismiss {
+  align-self: flex-start;
+}

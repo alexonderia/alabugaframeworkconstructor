@@ -62,7 +62,7 @@ test('inspector header never covers fields and settings groups have consistent s
 });
 
 test('selected flow blocks retain usable handles in narrow canvases and at different zooms',async({page},info)=>{
- await page.goto('/demo/');await page.getByRole('button',{name:'Собрать из шаблона',exact:true}).click();await expect(page.locator('#project-name')).toBeVisible();
+ await page.goto('/demo/');await page.getByRole('button',{name:'Редактировать образец сайта',exact:true}).click();await expect(page.locator('#project-name')).toBeVisible();
  if(await page.locator('#inspector').isVisible())await page.locator('#close-inspector').click();
  const box=page.locator('#canvas .af-widget--cards').first();
  for(const width of [1536,1366,1024,768,390]){

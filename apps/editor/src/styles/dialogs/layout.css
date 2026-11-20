@@ -1,0 +1,127 @@
+.af-dialog[open]:not(.ai-dialog) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--af-space-16);
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+}
+.af-dialog[open] > .af-dialog__header {
+  flex: none;
+  align-items: center;
+  gap: var(--af-space-16);
+  margin: 0;
+}
+.af-dialog__header > .af-dialog__title {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.af-dialog__header > .af-btn {
+  flex-shrink: 0;
+}
+.af-dialog[open] > :is(p, form, fieldset, .af-field, .af-row, .af-dialog__actions) {
+  margin-block: 0;
+}
+.af-dialog[open] > .af-dialog__actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.library-dialog[open] {
+  overflow: hidden;
+}
+.library-dialog-body {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--af-space-16);
+  overflow: auto;
+  overflow-wrap: anywhere;
+  scroll-padding: var(--af-space-8);
+}
+.library-dialog-body > * {
+  flex-shrink: 0;
+  min-width: 0;
+  margin-block: 0;
+}
+.library-dialog-body > :is([role='status'], [role='alert']):empty {
+  display: none;
+}
+.library-dialog-actions {
+  flex: none;
+  display: flex;
+  gap: var(--af-space-12);
+}
+.product-form-actions > .af-btn {
+  flex: 1;
+}
+.library-dialog-body .product-error:empty {
+  display: none;
+}
+.library-dialog .storage-asset > span {
+  min-width: 0;
+}
+.library-dialog .asset-card,
+.project-library-list > .af-btn {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  height: auto;
+  min-height: var(--af-size-control-m);
+}
+.variant-card > .af-btn {
+  max-width: 100%;
+  white-space: normal;
+  height: auto;
+  min-height: var(--af-size-control-m);
+}
+.save-conflict > .save-conflict-actions > .af-btn {
+  flex: 1 0 100%;
+  max-width: 100%;
+  white-space: normal;
+  height: auto;
+  min-height: var(--af-size-control-m);
+}
+.fit-dialog[open] {
+  overflow: hidden;
+}
+.fit-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--af-space-16);
+  overflow: auto;
+  scroll-padding: var(--af-space-8);
+}
+.fit-body > :is(p, ul, .fit-preview) {
+  margin-block: 0;
+}
+.fit-body > ul:empty {
+  display: none;
+}
+.fit-backgrounds > .af-btn {
+  flex-direction: column;
+  gap: var(--af-space-6);
+  min-width: 0;
+  height: auto;
+  overflow-wrap: anywhere;
+}
+.fit-dialog > .fit-actions > .af-btn {
+  flex: 0 0 auto;
+  max-width: 100%;
+}
+.ai-dialog[open] {
+  display: flex;
+  flex-direction: column;
+  overflow: clip;
+}
+.ai-dialog > .ai-header,
+.ai-dialog > .ai-readiness {
+  flex: none;
+}
+.ai-dialog > .ai-workspace {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+}

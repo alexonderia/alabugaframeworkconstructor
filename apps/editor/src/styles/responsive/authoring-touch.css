@@ -1,0 +1,10 @@
+@media (hover: none) {
+  .af-widget.is-selected > .widget-tools,
+  .af-widget.is-selected > .widget-handle {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .section-tools {
+    opacity: 1;
+  }
+}

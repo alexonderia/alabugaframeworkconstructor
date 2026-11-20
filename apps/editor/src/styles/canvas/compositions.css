@@ -1,0 +1,66 @@
+.editor-canvas {
+  max-width: 1440px;
+}
+.editor-canvas[data-device='tablet'] {
+  width: 820px;
+  max-width: none;
+  min-width: 0 !important;
+}
+.editor-canvas[data-device='mobile'] {
+  width: 390px;
+  max-width: none;
+  min-width: 0 !important;
+  padding: 0;
+}
+.editor-canvas .af-composition.af-page {
+  padding: var(--af-space-80) var(--af-space-40);
+  overflow: visible;
+}
+.editor-canvas .af-composition.af-spacing--compact {
+  padding-top: 56px;
+  padding-bottom: 28px;
+}
+.editor-canvas .af-composition .af-widget__content {
+  border-radius: 0;
+}
+.editor-canvas .af-flow .af-widget__content {
+  overflow: visible;
+}
+.editor-canvas .af-flow > .af-panel {
+  grid-auto-rows: minmax(24px, auto) !important;
+}
+.editor-canvas .af-composition > .section-tools {
+  color: var(--af-text-secondary);
+  right: 12px;
+  top: 8px;
+}
+.editor-canvas .af-composition .widget-tools {
+  color: var(--af-text-secondary);
+}
+.editor-canvas .af-composition .af-widget.is-selected {
+  outline-offset: 6px;
+}
+.editor-canvas[data-device='mobile'] .af-composition.af-page {
+  padding: 56px var(--af-space-20);
+}
+.editor-canvas[data-device='mobile'] .af-cards,
+.editor-canvas[data-device='mobile'] .af-gallery {
+  grid-template-columns: 1fr;
+}
+.editor-canvas[data-device='mobile'] .af-widget {
+  order: var(--af-mobile-order);
+}
+.editor-canvas[data-device='tablet'] .af-widget {
+  order: var(--af-tablet-order);
+}
+.editor-canvas .af-composition .af-section-background {
+  border-radius: 0;
+}
+.is-preview .editor-canvas .af-composition.af-page {
+  padding-top: var(--af-space-96);
+  padding-bottom: var(--af-space-96);
+}
+.is-preview .editor-canvas .af-composition.af-spacing--compact {
+  padding-top: 28px;
+  padding-bottom: 28px;
+}

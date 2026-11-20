@@ -1,0 +1,56 @@
+.product-eyebrow {
+  color: var(--af-color-brand-deep);
+}
+#builder .drawer-header,
+#builder .editor-inspector legend {
+  font-size: 14px;
+}
+.header-save-state {
+  font-size: 14px;
+  color: var(--af-text-secondary);
+  max-width: 180px;
+}
+.retry-save {
+  display: none !important;
+}
+.save-failed .retry-save {
+  display: inline-flex !important;
+}
+.outline-close {
+  display: none;
+}
+.editor-header .editor-file-actions {
+  margin-left: auto;
+}
+.advanced-grid > summary {
+  cursor: pointer;
+}
+.editor-outline h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--af-space-8);
+}
+.outline-add {
+  margin-left: auto;
+}
+#builder .outline-close {
+  margin-left: 0;
+}
+#builder .canvas-toolbar .canvas-zoom {
+  margin-left: auto;
+}
+#builder .header-save-state {
+  line-height: 1.3;
+}
+#builder > .editor-header {
+  height: auto;
+}
+.ai-save,
+.ai-issues,
+.ai-header small {
+  font-size: 14px;
+}
+.ai-save,
+.ai-issues {
+  color: var(--af-text-secondary);
+}
