@@ -17,7 +17,7 @@
   .editor-canvas .af-deck {
     height: auto !important;
     aspect-ratio: 16 / 9;
-    max-height: 900px;
+    max-height: var(--af-slide-height, 900px);
   }
 }
 .is-preview .canvas-toolbar,

@@ -1,6 +1,15 @@
 import { el } from '@alabuga/framework/dom';
 export type ActionIcon =
-  'close' | 'copy' | 'delete' | 'settings' | 'upload' | 'rename' | 'up' | 'down';
+  | 'close'
+  | 'copy'
+  | 'delete'
+  | 'settings'
+  | 'upload'
+  | 'rename'
+  | 'up'
+  | 'down'
+  | 'info'
+  | 'chevron';
 /** Application actions use the public Framework button icon slot. */
 export function actionIcon(name: ActionIcon) {
   if (name === 'close') {
@@ -9,6 +18,8 @@ export function actionIcon(name: ActionIcon) {
     return icon;
   }
   const paths = {
+    info: ['M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18', 'M12 11v6', 'M12 7v.5'],
+    chevron: ['M6 9l6 6 6-6'],
     copy: ['M9 9h11v12H9z', 'M5 16H3V3h12v2'],
     delete: ['M3 6h18', 'M8 6V3h8v3', 'M5 6l1 15h12l1-15', 'M10 10v7', 'M14 10v7'],
     settings: [

@@ -1,0 +1,13 @@
+/* Framework applies widget alignment as inline text-align. Navigation uses flex. */
+.af-layout-grid.af-composition > .af-panel {
+  max-width: none;
+}
+.af-section--header .af-widget[style*='text-align: left'] nav .af-prose {
+  justify-content: flex-start;
+}
+.af-section--header .af-widget[style*='text-align: center'] nav .af-prose {
+  justify-content: center;
+}
+.af-section--header .af-widget[style*='text-align: right'] nav .af-prose {
+  justify-content: flex-end;
+}

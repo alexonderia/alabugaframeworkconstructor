@@ -63,7 +63,6 @@ export function canvasAffordances(canvas: HTMLElement, signal: AbortSignal) {
         : innerHeight;
     const top = Math.max(0, bounds.top) + 4,
       bottom = Math.min(innerHeight, bounds.bottom, footerTop) - 4;
-    const zoom = Number(canvas.style.zoom) || 1;
     for (const [box, bar] of bars)
       if (!canvas.contains(box)) {
         bar.remove();
@@ -82,7 +81,7 @@ export function canvasAffordances(canvas: HTMLElement, signal: AbortSignal) {
     }
     const focus = document.activeElement instanceof Element ? document.activeElement : null,
       focused =
-        focus?.closest<HTMLElement>('.af-widget:has(:focus-visible)') ??
+        focus?.closest<HTMLElement>('.af-widget:is(:focus-visible,:has(:focus-visible))') ??
         boxes.find(
           (box) =>
             box.dataset.widgetId ===
@@ -108,16 +107,11 @@ export function canvasAffordances(canvas: HTMLElement, signal: AbortSignal) {
         continue;
       }
       const mode = widgetLayout(box),
-        resizeControl = box.querySelector<HTMLButtonElement>(':scope>.resize-handle'),
-        moveControl = box.querySelector<HTMLButtonElement>(':scope>.move-handle');
+        resizeControl = box.querySelector<HTMLButtonElement>(':scope>.resize-handle');
       box.dataset.editorLayout = mode;
       if (resizeControl) {
         resizeControl.disabled = mode === 'auto';
         resizeControl.title = mode === 'grid' ? 'Изменить ширину и высоту блока' : layoutNote(mode);
-      }
-      if (moveControl) {
-        moveControl.disabled = mode === 'auto';
-        moveControl.title = mode === 'grid' ? 'Переместить блок по сетке' : layoutNote(mode);
       }
       const visibleLeft = Math.max(left, rect.left + 4),
         visibleRight = Math.min(right, rect.right - 4);
@@ -129,68 +123,9 @@ export function canvasAffordances(canvas: HTMLElement, signal: AbortSignal) {
           control.tabIndex = bar.hidden ? -1 : 0;
       }
       for (const control of box.querySelectorAll<HTMLButtonElement>(':scope>.widget-handle'))
-        control.tabIndex = box === owner && !clipped ? 0 : -1;
+        control.tabIndex = -1;
       box.toggleAttribute('data-controls-clipped', clipped);
       if (clipped) continue;
-      const move = box.querySelector<HTMLElement>(':scope>.move-handle'),
-        resize = box.querySelector<HTMLElement>(':scope>.resize-handle');
-      for (const handle of [move, resize])
-        if (handle) {
-          if (rect.bottom < top || rect.top > bottom) handle.style.removeProperty('bottom');
-          else {
-            const size = handle.offsetHeight,
-              target = Math.max(top + size, Math.min(rect.bottom + size / 2, bottom));
-            handle.style.bottom = (rect.bottom - target) / zoom + 'px';
-          }
-        }
-      if (move) move.style.left = ((visibleLeft + visibleRight) / 2 - rect.left) / zoom + 'px';
-      if (resize) resize.style.right = Math.max(4, (rect.right - visibleRight) / zoom) + 'px';
-      if (box === owner) {
-        const neighbors = boxes
-            .filter((other) => other !== box)
-            .map((other) => other.getBoundingClientRect())
-            .filter((r) => r.width && r.height),
-          placed: { left: number; right: number; top: number; bottom: number }[] = [];
-        for (const handle of [move, resize])
-          if (handle) {
-            const current = handle.getBoundingClientRect(),
-              size = handle.offsetHeight,
-              options = [
-                { x: current.left, y: current.top },
-                { x: rect.left - size - 12, y: rect.bottom - size },
-                { x: rect.right + 12, y: rect.bottom - size },
-                { x: current.left, y: rect.bottom - size - 4 },
-              ];
-            const target =
-              options.find(
-                (p) =>
-                  p.x >= left &&
-                  p.x + size <= right &&
-                  p.y >= top &&
-                  p.y + size <= bottom &&
-                  ![...neighbors, ...placed].some(
-                    (r) =>
-                      p.x < r.right + 4 &&
-                      p.x + size > r.left - 4 &&
-                      p.y < r.bottom + 4 &&
-                      p.y + size > r.top - 4,
-                  ),
-              ) ?? options[3];
-            handle.style.bottom = (rect.bottom - target.y - size) / zoom + 'px';
-            if (handle === move)
-              handle.style.left = (target.x + size / 2 - rect.left) / zoom + 'px';
-            else {
-              handle.style.left = 'auto';
-              handle.style.right = (rect.right - target.x - size) / zoom + 'px';
-            }
-            placed.push({
-              left: target.x,
-              right: target.x + size,
-              top: target.y,
-              bottom: target.y + size,
-            });
-          }
-      }
       if (bar) {
         if (box !== owner) continue;
         const areaLeft = left,
@@ -203,7 +138,7 @@ export function canvasAffordances(canvas: HTMLElement, signal: AbortSignal) {
           gap = 20,
           clampX = (x: number) => Math.max(areaLeft, Math.min(x, areaRight - width)),
           x = clampX(rect.left),
-          after = rect.bottom + (move?.offsetHeight ?? 40) / 2 + gap;
+          after = rect.bottom + gap;
         const candidates = [
           { x, y: rect.top - height - gap },
           { x, y: after },

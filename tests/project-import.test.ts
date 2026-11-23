@@ -32,7 +32,7 @@ test('schema 5 slide annotations survive the version 3 portable envelope',()=>{
 });
 test('unknown versions, invalid formats and missing assets fail before storage',()=>{
  assert.throws(()=>importProject({format:'alabuga-project',version:4,document:doc}),/версия/);
- assert.throws(()=>importProject({...doc,schemaVersion:6}));
+ assert.throws(()=>importProject({...doc,schemaVersion:8}));
  assert.throws(()=>importProject({format:'other',document:doc}),/формат/);
  const image={id:'photo',type:'image',title:'',position:{col:1,row:1,width:4,height:4},src:'asset:'+'a'.repeat(64),alt:'Photo',fit:'contain',caption:''};
  assert.throws(()=>importProject({format:'alabuga-project',version:3,document:{...doc,pages:[{...doc.pages[0],widgets:[image]}]},assets:[]}),/материал/);

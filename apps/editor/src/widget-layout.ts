@@ -3,6 +3,10 @@ export type WidgetLayout = 'grid' | 'tablet' | 'stack' | 'auto';
 /** Use the rendered layout, including container queries and simulated devices. */
 export function widgetLayout(box: HTMLElement): WidgetLayout {
   if (box.closest('.af-slide')) return 'grid';
+  if (box.closest('.af-layout-grid.af-page')) {
+    const width = box.closest<HTMLElement>('.af-document--page')!.clientWidth;
+    return width < 640 ? 'stack' : width < 1024 ? 'tablet' : 'grid';
+  }
   const panel = box.parentElement!,
     style = getComputedStyle(panel);
   if (style.display === 'flex')
@@ -19,12 +23,16 @@ export const layoutNote = (mode: WidgetLayout) =>
       ? 'На узком экране фиксированная секция располагает блоки автоматически. Для отдельных адаптивных размеров выберите в настройках секции высоту «По содержимому». Поля ниже меняют базовую сетку компьютера.'
       : `${mode === 'tablet' ? 'Планшет' : 'Телефон'}: ширина в процентах и минимальная высота задаются отдельно. Высота растёт вместе с содержимым; ручка перемещения меняет порядок.`;
 export const responsiveKey = (mode: WidgetLayout) => (mode === 'stack' ? 'mobile' : 'tablet');
-export function responsiveSize(widget: Widget, mode: WidgetLayout): Required<ResponsiveSize> {
+export function responsiveSize(
+  widget: Widget,
+  mode: WidgetLayout,
+  columns = 12,
+): Required<ResponsiveSize> {
   const device = responsiveKey(mode);
   return {
     width:
       widget.responsive?.[device]?.width ??
-      (device === 'tablet' && widget.position.width <= 6 ? 50 : 100),
+      (device === 'tablet' && widget.position.width <= columns / 2 ? 50 : 100),
     minHeight: widget.responsive?.[device]?.minHeight ?? 0,
   };
 }

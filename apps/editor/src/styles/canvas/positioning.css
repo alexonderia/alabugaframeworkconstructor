@@ -19,7 +19,7 @@
 .widget-handle:active {
   opacity: 1;
 }
-.editor-canvas .af-panel.is-positioning {
+#canvas:not([data-snap-mode='off']) .af-panel.is-positioning {
   background-image:
     linear-gradient(to right, var(--af-color-neutral-300) 1px, transparent 1px),
     linear-gradient(to bottom, var(--af-color-neutral-50) 1px, transparent 1px);

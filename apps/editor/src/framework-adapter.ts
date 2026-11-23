@@ -8,6 +8,7 @@ export { assetsBaseUrl, embedLocalImage } from './framework-assets';
 import { fitSlide as fit, type FitSlideOptions } from '@alabuga/framework/slide-fit';
 import { validateDocument } from '@alabuga/framework/schema';
 import { documentContent } from './document-content';
+import { frameworkDocument, type EditorDocument } from './template-metadata';
 export type { DocumentController, AFDocument };
 export const frameworkDom = Object.freeze({
   panel: '.af-panel',
@@ -37,7 +38,11 @@ export const frameworkDom = Object.freeze({
   tableRows: 'tbody tr',
 });
 function readDocument(input: unknown) {
-  const result = validateDocument(input);
+  const source =
+    input && typeof input === 'object' && Object.hasOwn(input, 'templateInfo')
+      ? frameworkDocument(input as EditorDocument)
+      : input;
+  const result = validateDocument(source);
   if (!result.success) throw new Error(result.issues.map((issue) => issue.message).join('; '));
   return result.data;
 }

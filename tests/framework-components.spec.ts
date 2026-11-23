@@ -33,8 +33,8 @@ test('project cards, menus, badges and creation choices use public components',a
  await page.locator('.card-menu>summary').click();await expect(page.locator('.card-menu>div')).toHaveClass(/af-card/);await expectFrameworkControls(page);
  await page.locator('.card-menu>summary').click();await capture(page,'gallery',info.project.name);
  await page.getByRole('button',{name:'Создать сайт',exact:false}).click();
- const choices=page.locator('.creation-methods');await expect(choices.locator('.af-check>.af-radio')).toHaveCount(3);
- await choices.getByRole('radio').first().focus();await page.keyboard.press('ArrowDown');await expect(choices.locator('[value=example]')).toBeChecked();
+ const choices=page.locator('.creation-methods');await expect(choices.locator('.af-check>.af-radio')).toHaveCount(5);
+ await choices.getByRole('radio').first().focus();await page.keyboard.press('ArrowDown');await expect(choices.locator('[value=corporate]')).toBeChecked();
  await expectFrameworkControls(page);await page.getByRole('dialog').getByRole('button',{name:'Закрыть',exact:true}).click();
  await expect(card).toHaveCount(1);
 });
@@ -54,7 +54,7 @@ test('editor disclosures, dynamic select options and tutorial keep Framework sty
 
 test('AI upload, material selection and storage cleanup share Framework fields and checks',async({page},info)=>{
  await page.route('**/api/ai/readiness',route=>route.fulfill({json:{ready:false,stage:'unavailable',message:'Нет модели'}}));
- await openProject(page);await page.locator('.project-menu>summary').click();await page.getByRole('button',{name:'Создать с ИИ',exact:true}).click();
+ await openProject(page);await page.getByRole('button',{name:'Создать с ИИ',exact:true}).click();
  const dialog=page.locator('.ai-dialog');await dialog.locator('summary').click();await expect(dialog.locator('input[type=file]')).toHaveClass(/af-input/);
  const png=await page.evaluate(()=>{const canvas=document.createElement('canvas');canvas.width=2;canvas.height=2;canvas.getContext('2d')!.fillRect(0,0,2,2);return canvas.toDataURL('image/png').split(',')[1]});
  const upload=dialog.locator('input[type=file]');await expect(upload).toBeEnabled();await upload.setInputFiles({name:'framework-check.png',mimeType:'image/png',buffer:Buffer.from(png,'base64')});

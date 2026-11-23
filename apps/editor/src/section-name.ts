@@ -1,5 +1,5 @@
 import type { AFDocument, Section } from '@alabuga/framework/schema';
-import { compositionCatalog } from '@alabuga/framework/compositions';
+import { sectionTemplates } from './templates';
 export function sectionDisplayName(section: Section, kind: AFDocument['kind'], index: number) {
   const heading = section.widgets
     .flatMap((w) => (w.type === 'text' ? w.content : []))
@@ -8,7 +8,7 @@ export function sectionDisplayName(section: Section, kind: AFDocument['kind'], i
     section.title.trim() ||
     (heading && 'text' in heading ? heading.text : '') ||
     section.widgets.find((w) => w.title.trim())?.title ||
-    compositionCatalog(kind).find(([id]) => id === section.composition)?.[1] ||
+    sectionTemplates(kind).find(({ key }) => key === section.composition)?.title ||
     `${kind === 'page' ? 'Секция' : 'Слайд'} ${index + 1}`
   )
     .replace(/\s+/g, ' ')

@@ -1,7 +1,11 @@
+import { gridFrame } from '@alabuga/framework/grid';
 import { showDialog, libraryDialog, el, button } from './ui';
 import { frameworkDom as dom } from './framework-adapter';
 import type { AFDocument } from '@alabuga/framework/schema';
 import { documentSurface } from './document-surface';
+import { siteViewports } from './layout/site';
+import { slideViewport } from './layout/presentation';
+import { templateInfo } from './template-metadata';
 export type QualityIssue = {
   section: number;
   widget?: string;
@@ -157,13 +161,16 @@ export async function preflightDocument(doc: AFDocument): Promise<QualityIssue[]
     found = new Map<string, QualityIssue>();
   try {
     await surface.ready;
-    const screens: readonly [string, number][] =
+    const width = Math.max(...doc.pages.map((page) => gridFrame(page.grid).width));
+    const screens =
       doc.kind === 'presentation'
-        ? [['Слайд', 1600]]
+        ? [[slideViewport[0], width] as const]
         : [
-            ['Компьютер', 1440],
-            ['Планшет', 768],
-            ['Телефон', 390],
+            [
+              siteViewports[0][0],
+              doc.pages.some((page) => !!page.grid.frame) ? width : siteViewports[0][1],
+            ] as const,
+            ...siteViewports.slice(1),
           ];
     for (const [screen, width] of screens) {
       await surface.setWidth(width);
@@ -186,6 +193,14 @@ export async function preflightDocument(doc: AFDocument): Promise<QualityIssue[]
         else found.set(key, { ...issue, screens: [screen] });
       }
     }
+    const unplaced = templateInfo(doc)?.unplaced;
+    if (unplaced?.length)
+      found.set('unplaced', {
+        section: 0,
+        message: `Неразмещённых блоков: ${unplaced.reduce((total, section) => total + section.widgets.length, 0)}.`,
+        fix: 'Разместите сохранённые блоки через настройки секции или слайда, чтобы включить их в HTML.',
+        blocking: false,
+      });
     return [...found.values()];
   } finally {
     surface.destroy();
@@ -216,7 +231,9 @@ export function qualityDialog(
           el(
             'h3',
             '',
-            `Секция ${issue.section + 1} · ${issue.screens?.join(', ')}: ${issue.message}`,
+            issue.screens?.length
+              ? `${doc.kind === 'page' ? 'Секция' : 'Слайд'} ${issue.section + 1} · ${issue.screens.join(', ')}: ${issue.message}`
+              : issue.message,
           ),
           el('p', '', issue.fix),
           button('Перейти к настройкам', () => {

@@ -1,5 +1,6 @@
 import { showDialog, libraryDialog, el, button } from './ui';
-import { layoutVariants, applyLayoutVariant } from '@alabuga/framework/layout-variants';
+import { layoutVariants, type LayoutVariant } from '@alabuga/framework/layout-variants';
+import { sectionVariant } from './layout/placement';
 import { compositionPreview } from './composition-preview';
 
 import type { AFDocument, Section } from '@alabuga/framework/schema';
@@ -7,7 +8,8 @@ export function layoutChooser(
   host: HTMLElement,
   page: Section,
   kind: AFDocument['kind'],
-  apply: (page: Section) => void,
+  apply: (variant: LayoutVariant) => boolean,
+  signal: AbortSignal,
 ) {
   host.append(
     button(
@@ -28,7 +30,7 @@ export function layoutChooser(
           card.append(visual, el('h3', '', title), status);
           grid.append(card);
           try {
-            const next = applyLayoutVariant(page, variant, kind),
+            const next = sectionVariant(kind, page, variant),
               isolated = structuredClone(next);
             isolated.widgets.forEach((w) => {
               if (w.type === 'button') w.action = { type: 'link', href: '#' };
@@ -43,8 +45,8 @@ export function layoutChooser(
             const b = button(
               'Применить: ' + title,
               () => {
-                apply(next);
-                dialog.close();
+                if (apply(variant)) dialog.close();
+                else status.textContent = 'Компоновку не удалось применить к текущему содержимому.';
               },
               'af-btn af-btn--secondary',
             );
@@ -66,7 +68,10 @@ export function layoutChooser(
             status.textContent = (e as Error).message;
           }
         }
+        const abort = () => dialog.close();
+        signal.addEventListener('abort', abort, { once: true });
         dialog.addEventListener('close', () => {
+          signal.removeEventListener('abort', abort);
           closed = true;
           controllers.forEach((c) => c.destroy());
           dialog.remove();

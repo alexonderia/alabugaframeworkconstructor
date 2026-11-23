@@ -64,7 +64,7 @@ test('repeated preview remounts keep one canvas tool layer and one copy/undo ope
     ).toContainText('Перемонтирование ' + round);
     await page.getByRole('button', { name: 'Редактировать', exact: true }).click();
     await expect(page.locator('.canvas-widget-tools')).toHaveCount(1);
-    await expect(page.locator('#canvas [data-widget-id=audit-text-a]>.move-handle')).toHaveCount(1);
+    await expect(page.locator('#canvas [data-widget-id=audit-text-a]>.move-handle')).toHaveCount(0);
     await expect(page.locator('#canvas [data-widget-id=audit-text-a]>.resize-handle')).toHaveCount(
       1,
     );

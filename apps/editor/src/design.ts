@@ -1,7 +1,10 @@
 import { elementDesign } from './element-design';
 import { layoutChooser } from './layout-chooser';
+import { sectionVariant } from './layout/placement';
 import { motionScenarios } from './scenarios';
-import { compositionChooser } from './variants';
+import { compositionChooser, requestComposition } from './variants';
+import { replaceComposition } from './sections';
+import { getSectionTemplate, sectionTemplates, stylePresets } from './templates';
 import { settingsGroup, el, button } from './ui';
 import {
   inputField,
@@ -16,14 +19,20 @@ import {
   type Widget,
   type Section,
 } from '@alabuga/framework/schema';
-import {
-  makeComposition,
-  changeComposition,
-  compositionCatalog,
-} from '@alabuga/framework/compositions';
+import { makeComposition } from '@alabuga/framework/compositions';
 import { chooseAsset, cropControl } from './assets';
 import { readImage } from './export';
+import {
+  applyStandardGrid,
+  gridFrameFields,
+  gridScopeControl,
+  standardGridButton,
+} from './grid-settings';
+import { applyInheritedGrid } from './document-grid';
 type Change = () => void;
+const themes = Object.fromEntries(
+  stylePresets.flatMap((preset) => ('theme' in preset ? [[preset.theme, preset.title]] : [])),
+);
 function input(
   host: HTMLElement,
   label: string,
@@ -79,6 +88,7 @@ export function widgetDesign(
     const i = input(host, title, String(w[key] ?? 0), (v) =>
       update(() => (w[key] = Number(v))),
     ) as HTMLInputElement;
+    (i.closest('label') as HTMLElement).dataset.propertyGroup = 'geometry';
     i.type = 'number';
     i.min = '0';
     i.max = '100';
@@ -156,6 +166,7 @@ export function widgetDesign(
         'af-btn af-btn--secondary',
       ),
     );
+    (host.lastElementChild as HTMLElement).dataset.propertyGroup = 'content';
     const crops = el('div');
     host.append(crops);
     const points = {
@@ -221,11 +232,15 @@ export function widgetDesign(
       (v) => update(() => (w.variant = v === 'legacy' ? undefined : (v as typeof w.variant))),
     );
   if (w.type === 'quote') {
-    input(host, 'Цитата', w.text, (v) => update(() => (w.text = v)), true);
-    input(host, 'Автор', w.author, (v) => update(() => (w.author = v)));
+    for (const control of [
+      input(host, 'Цитата', w.text, (v) => update(() => (w.text = v)), true),
+      input(host, 'Автор', w.author, (v) => update(() => (w.author = v))),
+    ])
+      (control.closest('label') as HTMLElement).dataset.propertyGroup = 'content';
   }
   if (w.type === 'button') {
-    input(host, 'Текст кнопки', w.label, (v) => update(() => (w.label = v)));
+    const label = input(host, 'Текст кнопки', w.label, (v) => update(() => (w.label = v)));
+    (label.closest('label') as HTMLElement).dataset.propertyGroup = 'content';
     select(
       host,
       'Вариант кнопки',
@@ -272,8 +287,8 @@ export function widgetDesign(
         changed();
       },
     );
-    (host.lastElementChild as HTMLElement).dataset.propertyGroup = 'behavior';
-    targets.dataset.propertyGroup = 'behavior';
+    (host.lastElementChild as HTMLElement).dataset.propertyGroup = 'content';
+    targets.dataset.propertyGroup = 'content';
     host.append(targets);
     draw();
   }
@@ -339,13 +354,19 @@ type SlideTools = {
   preview: () => void;
   fit?: () => void;
   fitAll?: () => void;
+  saveComposition: () => void;
+  unplaced: (host: HTMLElement) => void;
+  warning: (message: string) => void;
+  notice?: (message: string) => void;
+  gridScope?: (edit: (doc: AFDocument) => void, local: boolean) => boolean;
+  signal: AbortSignal;
 };
 export function sectionDesign(
   host: HTMLElement,
   doc: AFDocument,
   index: number,
   commit: (edit: (d: AFDocument) => void) => boolean,
-  tools?: SlideTools,
+  tools: SlideTools,
 ) {
   const page = doc.pages[index];
   const opened = new Map<string, boolean>();
@@ -353,14 +374,15 @@ export function sectionDesign(
     for (const group of host.querySelectorAll<HTMLDetailsElement>('details[data-setting]'))
       opened.set(group.dataset.setting!, group.open);
   host.dataset.designSection = page.id;
-  if (doc.kind === 'presentation' && tools) {
+  if (doc.kind === 'presentation') {
     slideDesign(host, doc, index, commit, tools, opened);
     return;
   }
   host.replaceChildren();
   const structure = designGroup(host, 'structure', 'Структура', opened, true),
     style = designGroup(host, 'style', 'Оформление', opened),
-    behavior = designGroup(host, 'behavior', 'Поведение', opened);
+    behavior = designGroup(host, 'behavior', 'Дополнительно', opened);
+  (behavior.closest('details') as HTMLElement).dataset.advancedSetting = '';
   motionScenarios(behavior, doc, index, commit);
   const appearance = structuredClone(
     page.appearance ?? makeComposition('blank', doc.kind).appearance!,
@@ -388,19 +410,13 @@ export function sectionDesign(
       'Кадр фона на телефоне',
     );
   }
-  select(
-    style,
-    'Фирменная тема',
-    page.appearance?.theme ?? 'light',
-    { light: 'Светлая', contrast: 'Контрастная', accent: 'Акцентная', image: 'С изображением' },
-    (v) => {
-      appearance.theme = v as typeof appearance.theme;
-      if (appearance.backgroundPlacement)
-        appearance.backgroundPlacement = v === 'image' ? 'full' : 'none';
-      apply();
-    },
-  );
-  select(
+  select(style, 'Фирменная тема', page.appearance?.theme ?? 'light', themes, (v) => {
+    appearance.theme = v as typeof appearance.theme;
+    if (appearance.backgroundPlacement)
+      appearance.backgroundPlacement = v === 'image' ? 'full' : 'none';
+    apply();
+  });
+  const height = select(
     structure,
     'Высота секции',
     page.appearance?.layout ?? 'fixed',
@@ -410,6 +426,7 @@ export function sectionDesign(
       apply();
     },
   );
+  (height.closest('label') as HTMLElement).dataset.advancedSetting = '';
   select(
     structure,
     'Расстояния между элементами',
@@ -478,29 +495,63 @@ export function sectionDesign(
     appearance.shade = v as typeof appearance.shade;
     apply();
   });
-  select(
-    structure,
-    'Шаблон секции',
-    page.composition ?? 'blank',
-    Object.fromEntries(compositionCatalog(doc.kind).map(([id, title]) => [id, title])),
-    (v) =>
-      commit((d) => {
-        d.pages[index] = changeComposition(d.pages[index], v, d.kind);
-      }),
-  );
-  compositionChooser(structure, page, doc.kind, (name) =>
-    commit((d) => (d.pages[index] = changeComposition(d.pages[index], name, d.kind))),
-  );
-  layoutChooser(structure, page, doc.kind, (next) => commit((d) => (d.pages[index] = next)));
-  if (doc.kind === 'presentation')
-    select(
-      behavior,
-      'Переход слайда',
-      page.transition ?? 'none',
-      { none: 'Без эффекта', fade: 'Растворение', slide: 'Сдвиг' },
-      (v) => commit((d) => (d.pages[index].transition = v as Section['transition'])),
-    );
+  sectionTemplatesControls(structure, page, doc.kind, commit, tools);
   modalSettings(behavior, doc, commit);
+}
+
+function sectionTemplatesControls(
+  host: HTMLElement,
+  page: Section,
+  kind: AFDocument['kind'],
+  commit: (edit: (doc: AFDocument) => void) => boolean,
+  tools: SlideTools,
+) {
+  const initial = page.composition ?? 'blank';
+  const options = Object.fromEntries(
+    sectionTemplates(kind).map((entry) => [entry.key, entry.title]),
+  );
+  if (!Object.hasOwn(options, initial)) options[initial] = 'Текущая композиция';
+  const apply = (template: ReturnType<typeof getSectionTemplate>, park?: boolean) =>
+    commit((doc) => replaceComposition(doc, page.id, template, park));
+  const selector = select(
+    host,
+    kind === 'page' ? 'Шаблон секции' : 'Шаблон слайда',
+    initial,
+    options,
+    (key) => {
+      if (key === initial) return;
+      requestComposition(
+        page,
+        getSectionTemplate(kind, key),
+        apply,
+        tools.warning,
+        tools.signal,
+        () => {
+          selector.value = initial;
+          selector.dispatchEvent(new Event('change', { bubbles: true }));
+        },
+      );
+    },
+  );
+  (selector.closest('label') as HTMLElement).dataset.advancedSetting = '';
+  compositionChooser(host, page, kind, apply, tools.warning, tools.signal);
+  layoutChooser(
+    host,
+    page,
+    kind,
+    (variant) =>
+      commit((doc) => {
+        const index = doc.pages.findIndex(({ id }) => id === page.id);
+        if (index < 0) throw new Error('Раздел уже удалён.');
+        doc.pages[index] = sectionVariant(kind, doc.pages[index], variant);
+      }),
+    tools.signal,
+  );
+  if (page.widgets.length)
+    host.append(
+      button('Сохранить как композицию', tools.saveComposition, 'af-btn af-btn--ghost af-btn--sm'),
+    );
+  tools.unplaced(host);
 }
 
 function designGroup(
@@ -582,8 +633,11 @@ function slideDesign(
   tools: SlideTools,
   opened: ReadonlyMap<string, boolean>,
 ) {
-  const page = doc.pages[index],
-    active = host.dataset.slideTab ?? 'structure';
+  const page = doc.pages[index];
+  const active =
+    host.closest('[data-editor-mode="standard"]') && host.dataset.slideTab === 'behavior'
+      ? 'structure'
+      : (host.dataset.slideTab ?? 'structure');
   host.replaceChildren();
   host.append(el('h2', 'af-title inspector-heading', `Слайд ${index + 1}`));
   const nav = el('div', 'slide-settings-tabs');
@@ -621,7 +675,9 @@ function slideDesign(
     tab.addEventListener('keydown', (e) => {
       if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
       e.preventDefault();
-      const keys = [...tabs.keys()],
+      const keys = [...tabs.keys()].filter(
+          (key) => key !== 'behavior' || !host.closest('[data-editor-mode="standard"]'),
+        ),
         current = keys.indexOf(id),
         next =
           e.key === 'Home'
@@ -638,35 +694,39 @@ function slideDesign(
     background = panels.get('background')!,
     behavior = panels.get('behavior')!;
   slideHeadingSettings(structure, page, index, commit);
-  select(
-    structure,
-    'Шаблон слайда',
-    page.composition ?? 'blank',
-    Object.fromEntries(compositionCatalog('presentation').map(([id, name]) => [id, name])),
-    (v) => commit((d) => (d.pages[index] = changeComposition(d.pages[index], v, d.kind))),
-  );
-  structure.append(
-    el(
-      'p',
-      'af-help',
-      'Выберите совместимый шаблон или переставьте существующие элементы с помощью компоновки.',
-    ),
-  );
-  compositionChooser(structure, page, doc.kind, (name) =>
-    commit((d) => (d.pages[index] = changeComposition(d.pages[index], name, d.kind))),
-  );
-  layoutChooser(structure, page, doc.kind, (next) => commit((d) => (d.pages[index] = next)));
+  sectionTemplatesControls(structure, page, doc.kind, commit, tools);
   structure.append(
     button('Добавить слайд по шаблону', tools.addTemplate, 'af-btn af-btn--secondary af-btn--sm'),
   );
   const grid = el('details', 'slide-grid settings-disclosure');
   grid.dataset.setting = 'slide-grid';
+  grid.dataset.advancedSetting = '';
+  nav.querySelector<HTMLElement>('#slide-tab-behavior')!.dataset.advancedSetting = '';
+  behavior.dataset.advancedSetting = '';
   grid.open = opened.get('slide-grid') ?? false;
   grid.append(el('summary', 'af-btn af-btn--clear af-btn--sm', 'Сетка и размеры'));
   const form = el('form', 'af-stack');
   form.dataset.gridDraft = 'true';
-  form.addEventListener('input', () => (form.dataset.dirty = 'true'));
-  const draft = { ...page.grid };
+  const feedback = el('p', 'af-help');
+  feedback.setAttribute('role', 'status');
+  feedback.setAttribute('aria-live', 'polite');
+  form.addEventListener('input', () => {
+    form.dataset.dirty = 'true';
+    feedback.classList.remove('af-error');
+    feedback.textContent = 'Изменения сетки ещё не применены.';
+  });
+  form.addEventListener(
+    'invalid',
+    (event) => {
+      const field = event.target as HTMLInputElement;
+      feedback.classList.add('af-error');
+      feedback.textContent =
+        (field.closest('label')?.textContent ?? 'Поле') + ': ' + field.validationMessage;
+    },
+    true,
+  );
+  const draft = structuredClone(page.grid);
+  gridScopeControl(form, doc, index, tools.gridScope ?? commit);
   for (const [key, label, min, max] of [
     ['columns', 'Колонки', 1, 24],
     ['rowHeight', 'Строка, px', 32, 160],
@@ -683,30 +743,74 @@ function slideDesign(
     field.max = String(max);
     field.required = true;
   }
+  gridFrameFields(form, draft, doc.kind);
+  const originalValues = Array.from(form.querySelectorAll<HTMLInputElement>('input'), (field) => ({
+    field,
+    value: field.value,
+  }));
+  form.append(
+    el(
+      'p',
+      'af-help',
+      'Измените нужные параметры и нажмите «Применить сетку». Положение и размеры блоков будут пересчитаны.',
+    ),
+  );
   const save = el('button', 'af-btn af-btn--ghost af-btn--sm', 'Применить сетку');
   save.type = 'submit';
   form.append(save);
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    form.dataset.applied = String(commit((d) => (d.pages[index].grid = draft)));
+    let issue = '';
+    const applied = commit((d) => {
+      try {
+        applyInheritedGrid(d, index, draft);
+      } catch (error) {
+        issue = (error as Error).message;
+        throw error;
+      }
+    });
+    form.dataset.applied = String(applied);
+    if (!applied) {
+      feedback.classList.add('af-error');
+      feedback.textContent =
+        issue || 'Сетка не применена. Проверьте параметры и повторите действие.';
+    }
   });
+  form.append(
+    button('Отменить изменения сетки', () => {
+      Object.assign(draft, structuredClone(page.grid));
+      for (const { field, value } of originalValues) field.value = value;
+      form.dataset.dirty = 'false';
+      feedback.classList.remove('af-error');
+      feedback.textContent = 'Изменения сетки отменены.';
+      tools.notice?.('Изменения сетки отменены.');
+    }),
+    feedback,
+  );
   grid.append(form);
+  grid.append(
+    standardGridButton(() => {
+      commit((d) => applyStandardGrid(d, index));
+    }),
+  );
   structure.append(grid, el('h3', '', 'Элементы слайда'));
   if (!page.widgets.length)
     structure.append(el('p', 'af-help', 'Слайд пока пуст. Выберите шаблон или добавьте блок.'));
   page.widgets.forEach((w, i) => {
     const row = el('div', 'slide-element');
+    const size = el(
+      'span',
+      'af-help',
+      `${w.position.width}×${w.position.height} · колонка ${w.position.col}, строка ${w.position.row}`,
+    );
+    size.dataset.advancedSetting = '';
     row.append(
       button(
         `${i + 1}. ${w.title || widgetRegistry[w.type].title}`,
         () => tools.editWidget(w.id),
         'af-btn af-btn--ghost af-btn--sm',
       ),
-      el(
-        'span',
-        'af-help',
-        `${w.position.width}×${w.position.height} · колонка ${w.position.col}, строка ${w.position.row}`,
-      ),
+      size,
     );
     structure.append(row);
   });

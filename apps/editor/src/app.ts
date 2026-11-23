@@ -6,8 +6,8 @@ import { storageDialog } from './storage-dialog';
 import { renderDocument } from './framework-adapter';
 import { type DocumentController, type AFDocument } from '@alabuga/framework';
 import { brandAssets } from '@alabuga/framework/brand';
-import { demoDocument } from '@alabuga/framework/demo-documents';
-import { emptyDocument } from './model';
+import { createDocumentFromTemplate, documentTemplates } from './templates';
+import { compositionPreview } from './composition-preview';
 import { mountEditor } from './main';
 import { downloadCopyLabel } from './editor-shell';
 import * as storage from './storage';
@@ -151,10 +151,13 @@ async function create(kind: AFDocument['kind']) {
   name.required = true;
   name.maxLength = 200;
   name.value = kind === 'page' ? 'Новый сайт' : 'Новая презентация';
-  const methods = el('div', 'creation-methods');
+  const methods = el('div', 'creation-methods'),
+    visual = el('div', 'composition-thumbnail');
+  const available = documentTemplates(kind);
+  let thumbnail: ReturnType<typeof compositionPreview> | undefined;
+  visual.hidden = true;
   for (const [value, title, detail] of [
-    ['blank', 'С нуля', kind === 'page' ? 'Пустой сайт' : 'Пустая презентация'],
-    ['example', 'Из образца', 'Редактируемая копия готового проекта'],
+    ...available.map((entry) => [entry.key, entry.title, entry.description]),
     ['ai', 'С помощью ИИ', 'Сначала черновик, затем применение'],
   ]) {
     const l = el('label', 'af-check'),
@@ -168,6 +171,25 @@ async function create(kind: AFDocument['kind']) {
     l.append(radio, text);
     methods.append(l);
   }
+  methods.addEventListener('change', (event) => {
+    thumbnail?.destroy();
+    visual.replaceChildren();
+    const method = (event.target as HTMLInputElement).value;
+    visual.hidden = method === 'blank' || method === 'ai';
+    if (visual.hidden) return;
+    const doc = createDocumentFromTemplate(kind, `document/${kind}/${method}`);
+    const section = doc.pages.find((page) => page.role !== 'header') ?? doc.pages[0];
+    section.widgets.forEach((widget) => {
+      if (widget.type === 'button') widget.action = { type: 'link', href: '#' };
+    });
+    thumbnail = compositionPreview(visual, {
+      schemaVersion: doc.schemaVersion,
+      kind,
+      title: doc.title,
+      pages: [section],
+    });
+  });
+  d.addEventListener('close', () => thumbnail?.destroy(), { once: true });
   const message = el('p', 'product-error');
   message.setAttribute('role', 'alert');
   const submit = el('button', 'af-btn', 'Продолжить');
@@ -176,7 +198,7 @@ async function create(kind: AFDocument['kind']) {
   submit.setAttribute('form', form.id);
   const actions = el('div', 'af-dialog__actions library-dialog-actions product-form-actions');
   actions.append(submit);
-  form.append(methods, message);
+  form.append(methods, visual, message);
   body.append(form);
   d.append(actions);
   name.select();
@@ -205,7 +227,7 @@ async function create(kind: AFDocument['kind']) {
           );
           return;
         }
-        const doc = method === 'example' ? demoDocument(kind) : emptyDocument(kind);
+        const doc = createDocumentFromTemplate(kind, `document/${kind}/${method}`);
         doc.title = title;
         const id = crypto.randomUUID();
         await storage.saveProject(id, doc);

@@ -18,6 +18,10 @@ const allowedWorkspaces = { editor: ['ai'], ai: [], 'ai-server': [] };
 // These modules operate on documents or injected services, without UI or persistence.
 export const documentModules = new Set([
   'apps/editor/src/model.ts',
+  'apps/editor/src/block-geometry.ts',
+  'apps/editor/src/snap-geometry.ts',
+  'apps/editor/src/grid-change.ts',
+  'apps/editor/src/document-grid.ts',
   'apps/editor/src/editor-save.ts',
   'apps/editor/src/editor-session.ts',
   'apps/editor/src/property-patch.ts',
@@ -25,11 +29,22 @@ export const documentModules = new Set([
   'apps/editor/src/sections.ts',
   'apps/editor/src/document-content.ts',
   'apps/editor/src/document-validation.ts',
+  'apps/editor/src/template-metadata.ts',
+  'apps/editor/src/templates.ts',
+  'apps/editor/src/composition-file.ts',
+  'apps/editor/src/layout/grid-space.ts',
+  'apps/editor/src/layout/site.ts',
+  'apps/editor/src/layout/presentation.ts',
+  'apps/editor/src/layout/placement.ts',
   'apps/editor/src/project-file/format.ts',
 ]);
 const documentFrameworkEntries = new Set([
+  '@alabuga/framework/grid',
   '@alabuga/framework/schema',
   '@alabuga/framework/compositions',
+  '@alabuga/framework/demo-documents',
+  '@alabuga/framework/layout-variants',
+  'zod',
 ]);
 const viewModules = new Set([
   'apps/editor/src/editor-canvas.ts',
@@ -48,7 +63,8 @@ const storageImports = {
   'db.ts': ['types'],
   'project-state.ts': [],
   'settings.ts': ['db'],
-  'images.ts': [],
+  'compositions.ts': ['db', 'settings', '../templates', '../model'],
+  'images.ts': ['../template-metadata'],
   'assets.ts': [
     'types',
     'db',

@@ -1,6 +1,8 @@
 import type { AFDocument } from '@alabuga/framework/schema';
 import { EditorModel, checked } from './model';
 import { EditorSaveQueue, type SaveServices } from './editor-save';
+import type { EditorDocument } from './template-metadata';
+import { prepareDocumentGrid } from './document-grid';
 
 export interface SessionProject {
   id: string;
@@ -28,7 +30,7 @@ export class EditorSession {
     project: SessionProject,
     private readonly services: SessionServices,
   ) {
-    this.model = new EditorModel(project.document);
+    this.model = new EditorModel(prepareDocumentGrid(project.document));
     this.id = project.id;
     this.storedVersion = project.version;
     this.autosave = new EditorSaveQueue({
@@ -85,13 +87,15 @@ export class EditorSession {
   }
   change(edit: (document: AFDocument) => void, group?: string) {
     if (this.signal.aborted) return false;
-    this.model.change(edit, group);
+    const next = this.document;
+    edit(next);
+    this.model.replace(prepareDocumentGrid(next), group);
     this.save();
     return true;
   }
   replace(document: AFDocument) {
     if (this.signal.aborted) return false;
-    this.model.replace(document);
+    this.model.replace(prepareDocumentGrid(document));
     this.save();
     return true;
   }
@@ -120,7 +124,7 @@ export class EditorSession {
     this.assertCurrent(generation);
   }
   async startProject(document: AFDocument, failureMessage: string) {
-    const model = new EditorModel(document),
+    const model = new EditorModel(prepareDocumentGrid(document)),
       generation = this.generation;
     await this.checkpoint(failureMessage);
     this.assertCurrent(generation);
@@ -131,8 +135,8 @@ export class EditorSession {
   }
   openProject(id: string, document: AFDocument, version: number) {
     this.assertActive();
-    if (id === this.id) this.model.replace(document);
-    else this.model = new EditorModel(document);
+    if (id === this.id) this.model.replace(prepareDocumentGrid(document));
+    else this.model = new EditorModel(prepareDocumentGrid(document));
     this.id = id;
     this.storedVersion = version;
     this.generation++;
@@ -165,14 +169,14 @@ export class EditorSession {
     this.assertCurrent(generation);
     if (project.deletedAt)
       throw new Error('Проект в корзине. Сначала восстановите его или сохраните свою копию.');
-    this.model = new EditorModel(project.document);
+    this.model = new EditorModel(prepareDocumentGrid(project.document));
     this.storedVersion = project.version;
     this.generation++;
     this.autosave.acknowledge();
   }
-  async applyDocument(document: AFDocument) {
+  async applyDocument(document: EditorDocument) {
     this.assertActive();
-    const next = checked(document),
+    const next = checked(prepareDocumentGrid(document)),
       generation = this.generation,
       id = this.id;
     await this.queue;

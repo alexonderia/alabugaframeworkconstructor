@@ -92,7 +92,7 @@ test('long history scrolls below its heading and restores a revision with undo',
 });
 
 test('material library fits long descriptions and preserves selection and inspector focus',async({page},info)=>{
- await openProject(page);const {total}=await seedMaterials(page);await page.locator('#page-settings-open').click();
+ await openProject(page);const {total}=await seedMaterials(page);await page.locator('#page-settings-open').click();await page.locator('#design-settings details[data-setting=style] > summary').click();
  const trigger=page.getByRole('button',{name:'Выбрать из библиотеки',exact:true});await trigger.click();
  const dialog=page.getByRole('dialog',{name:'Библиотека материалов',exact:true});await expect(dialog.getByRole('status')).toHaveText('Материалы загружены.');
  await chooseOption(dialog.getByLabel('Категория материалов',{exact:true}),'local');await expect(dialog.locator('.asset-card')).toHaveCount(total);
@@ -101,7 +101,7 @@ test('material library fits long descriptions and preserves selection and inspec
  const description=dialog.getByRole('textbox',{name:/Описание ОченьДлинноеНазвание/});await description.fill('Фон для приёмки');await description.blur();await expect(dialog.getByRole('status')).toHaveText('Описание сохранено.');
  await search.fill('Фон для приёмки');await expect(dialog.locator('.asset-card')).toHaveCount(1);await dialog.locator('.asset-card').click();
  await expect(dialog).toHaveCount(0);await expect(trigger).toBeFocused();expect((await savedDocument(page)).pages[0].appearance.background).toMatch(/^asset:/);
- await page.reload();await page.locator('#page-settings-open').click();await page.getByRole('button',{name:'Выбрать из библиотеки',exact:true}).click();
+ await page.reload();await page.locator('#page-settings-open').click();await page.locator('#design-settings details[data-setting=style] > summary').click();await page.getByRole('button',{name:'Выбрать из библиотеки',exact:true}).click();
  const reopened=page.getByRole('dialog',{name:'Библиотека материалов',exact:true});await chooseOption(reopened.getByLabel('Категория материалов',{exact:true}),'local');await reopened.getByRole('searchbox').fill('Фон для приёмки');await expect(reopened.locator('.asset-card')).toHaveCount(1);
 });
 

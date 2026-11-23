@@ -4,7 +4,8 @@ export function createZoomControls(canvas: HTMLElement, status: HTMLElement) {
   let zoom = 1,
     baseWidth = 0,
     fitting = false,
-    resizeFrame = 0;
+    resizeFrame = 0,
+    screen = '';
   const bar = el('div', 'canvas-zoom'),
     label = button('100%', () => reset(), 'af-btn af-btn--ghost af-btn--sm');
   bar.setAttribute('role', 'group');
@@ -70,6 +71,16 @@ export function createZoomControls(canvas: HTMLElement, status: HTMLElement) {
     bar,
     reset,
     fit,
+    sync() {
+      const fixedSite =
+        canvas.hasAttribute('data-standard-grid') && !!canvas.querySelector('.af-document--page');
+      const current = `${fixedSite}:${canvas.dataset.device}:${canvas.style.getPropertyValue('--constructor-document-width')}`;
+      if (current === screen) return;
+      const previousFixedSite = screen.startsWith('true:');
+      screen = current;
+      if (fixedSite && canvas.dataset.device === 'desktop') fit();
+      else if (previousFixedSite && !fixedSite) reset();
+    },
     destroy() {
       cancelAnimationFrame(resizeFrame);
       observer.disconnect();
@@ -93,7 +104,7 @@ export function bindEditorShortcuts(
         e.key === 'Escape' &&
         (document.querySelector('dialog[open]') ||
           (e.target as HTMLElement).closest(
-            '.outline-menu[open],.project-menu[open],.editor-more[open]',
+            '.outline-menu[open],.project-menu[open],.editor-more[open],.block-controls[open]',
           ))
       )
         return;

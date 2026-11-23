@@ -1,3 +1,4 @@
+import {remapSectionGrid} from '@alabuga/framework/grid';
 import {z} from 'zod';
 import {compositionCatalog,makeComposition} from '@alabuga/framework/compositions';
 import {validateDocument,isSafeUrl,type AFDocument,type Section} from '@alabuga/framework/schema';
@@ -73,5 +74,5 @@ export function executeCommands(input:unknown,kind:AFDocument['kind'],expected:s
 }
 export function insertDraft(doc:AFDocument,sections:Section[],anchor:string,kind:AFDocument['kind']):AFDocument{
  if(doc.kind!==kind)throw new Error('Тип текущего документа изменился.');const index=doc.pages.findIndex(p=>p.id===anchor);if(index<0)throw new Error('Секция для вставки удалена. Откройте помощника заново из нужной секции.');
- const next=structuredClone(doc),added=structuredClone(sections);for(const p of added){p.id='section-'+crypto.randomUUID();p.widgets.forEach(w=>w.id='block-'+crypto.randomUUID())}next.pages.splice(index+1,0,...added);const result=validateDocument(next);if(!result.success)throw new Error(result.issues.map(i=>i.message).join('; '));return result.data;
+ const next=structuredClone(doc),added=sections.map(section=>doc.pages[index].grid.frame?remapSectionGrid(section,doc.pages[index].grid,kind):structuredClone(section));for(const p of added){p.id='section-'+crypto.randomUUID();p.widgets.forEach(w=>w.id='block-'+crypto.randomUUID())}next.pages.splice(index+1,0,...added);const result=validateDocument(next);if(!result.success)throw new Error(result.issues.map(i=>i.message).join('; '));return result.data;
 }

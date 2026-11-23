@@ -1,30 +1,33 @@
-import {
-  validateDocument,
-  widgetRegistry,
-  type AFDocument,
-  type Widget,
-} from '@alabuga/framework/schema';
-export function checked(input: unknown): AFDocument {
-  const result = validateDocument(input);
-  if (!result.success)
-    throw new Error(
-      result.issues
-        .map((i) => i.message)
-        .slice(0, 3)
-        .join('. '),
-    );
-  return result.data;
-}
-export function emptyDocument(kind: AFDocument['kind'] = 'page'): AFDocument {
+import { widgetRegistry, type AFDocument, type Widget } from '@alabuga/framework/schema';
+import { checked } from './document-validation';
+import type { EditorDocument } from './template-metadata';
+import { sectionPlacement } from './layout/placement';
+import { standardGrid, gridRows } from '@alabuga/framework/grid';
+export { checked } from './document-validation';
+export function emptyDocument(kind: AFDocument['kind'] = 'page'): EditorDocument {
   return {
-    schemaVersion: 3,
+    schemaVersion: 6,
     kind,
     title: kind === 'page' ? 'Новый сайт' : 'Новая презентация',
+    templateInfo: { documentGrid: standardGrid() },
     pages: [
       {
         id: uid('page'),
         title: 'Начните с главного',
-        grid: { columns: 12, rowHeight: 64, gap: 16 },
+        grid: standardGrid(),
+        ...(kind === 'page'
+          ? {
+              appearance: {
+                theme: 'light' as const,
+                spacing: 'normal' as const,
+                width: 'wide' as const,
+                layout: 'flow' as const,
+                decoration: 'none' as const,
+                focal: 'center' as const,
+                shade: 'strong' as const,
+              },
+            }
+          : {}),
         widgets: [],
       },
     ],
@@ -34,26 +37,31 @@ export function uid(prefix = 'widget') {
   return prefix + '-' + crypto.randomUUID();
 }
 export function copySection(source: AFDocument['pages'][number]) {
-  const copy = structuredClone(source),
-    original = copy.id;
-  copy.id = uid('page');
-  for (const w of copy.widgets) {
-    w.id = uid();
+  const copy = structuredClone(source);
+  retargetSection(copy, uid('page'));
+  for (const widget of copy.widgets) widget.id = uid();
+  return copy;
+}
+export function retargetSection(section: AFDocument['pages'][number], id: string) {
+  const original = section.id;
+  section.id = id;
+  for (const w of section.widgets) {
+    if (w.type === 'button' && w.action.type === 'link' && w.action.href === '#' + original)
+      w.action.href = '#' + id;
     if (
       w.type === 'button' &&
       'target' in w.action &&
       w.action.type !== 'modal' &&
       w.action.target === original
     )
-      w.action.target = copy.id;
+      w.action.target = id;
     if (w.type === 'text')
       for (const block of w.content)
-        if (block.type === 'link' && block.href === '#' + original) block.href = '#' + copy.id;
+        if (block.type === 'link' && block.href === '#' + original) block.href = '#' + id;
   }
-  return copy;
 }
 export class EditorModel {
-  private value: AFDocument;
+  private value: EditorDocument;
   private past: string[] = [];
   private future: string[] = [];
   private group: string | undefined;
@@ -120,26 +128,7 @@ export function findSpace(
   width: number,
   height: number,
 ): Widget['position'] {
-  const page = doc.pages[pageIndex],
-    g = page.grid;
-  const last =
-    doc.kind === 'presentation' ? Math.floor((688 + g.gap) / (g.rowHeight + g.gap)) : 1000;
-  for (let row = 1; row <= last - height + 1; row++)
-    for (let col = 1; col <= g.columns - width + 1; col++) {
-      if (
-        !page.widgets.some((w) => {
-          const p = w.position;
-          return (
-            col < p.col + p.width &&
-            col + width > p.col &&
-            row < p.row + p.height &&
-            row + height > p.row
-          );
-        })
-      )
-        return { col, row, width, height };
-    }
-  throw new Error('Нет свободного места для блока. Уменьшите другие блоки или добавьте слайд.');
+  return sectionPlacement(doc.kind, doc.pages[pageIndex], width, height);
 }
 export function createWidget(type: Widget['type'], doc: AFDocument, pageIndex: number): Widget {
   const sizes: Record<Widget['type'], [number, number]> = {
@@ -153,8 +142,14 @@ export function createWidget(type: Widget['type'], doc: AFDocument, pageIndex: n
     cards: [12, 4],
     gallery: [12, 4],
   };
-  const [wanted, height] = sizes[type],
-    width = Math.min(wanted, doc.pages[pageIndex].grid.columns);
+  const grid = doc.pages[pageIndex].grid,
+    [baseWidth, baseHeight] = sizes[type],
+    wanted = Math.round(baseWidth * (grid.frame ? grid.columns / 12 : 1)),
+    height = Math.max(
+      widgetRegistry[type].minHeight,
+      Math.round(baseHeight * (grid.frame && doc.kind === 'presentation' ? gridRows(grid) / 8 : 1)),
+    ),
+    width = Math.min(wanted, grid.columns);
   if (width < widgetRegistry[type].minWidth)
     throw new Error('В сетке недостаточно колонок для этого виджета.');
   const base = {

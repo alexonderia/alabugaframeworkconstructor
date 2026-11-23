@@ -1,9 +1,13 @@
 import { type AFDocument, type Widget, widgetRegistry } from '@alabuga/framework/schema';
 import { type DocumentController, renderDocument, frameworkDom as dom } from './framework-adapter';
 import { canvasAffordances } from './canvas-affordances';
+import { installCanvasCursors } from './canvas-cursors';
 import { bindWidgetHandle } from './widget-handles';
 import { bindInline, type InlineCommit } from './inline';
 import { el, button, iconButton } from './ui';
+import { geometryLocked } from './templates';
+import { blockControls } from './block-controls';
+import type { ResizeDirection } from './block-geometry';
 
 interface CanvasActions {
   document: () => AFDocument;
@@ -20,6 +24,7 @@ interface CanvasActions {
   removeWidget: (id: string, index: number) => void;
   status: (message: string) => void;
   fit: () => void;
+  grid: () => void;
 }
 interface CanvasElements {
   canvas: HTMLElement;
@@ -37,12 +42,16 @@ export class EditorCanvas {
   private viewportFrame = 0;
   private fitHintTimer: ReturnType<typeof setTimeout> | undefined;
   private readonly fitHint: HTMLButtonElement;
+  private readonly controls: ReturnType<typeof blockControls>;
   constructor(
     private readonly elements: CanvasElements,
     private readonly actions: CanvasActions,
     signal: AbortSignal,
   ) {
+    installCanvasCursors(elements.canvas);
     canvasAffordances(elements.canvas, this.lifetime.signal);
+    this.controls = blockControls(elements.canvas, actions.grid, this.lifetime.signal);
+    elements.toolbar.querySelector('.editor-more-body')!.append(this.controls.element);
     this.fitHint = button('Текст не помещается — подобрать оформление', actions.fit);
     this.fitHint.hidden = true;
     elements.toolbar.append(this.fitHint);
@@ -60,6 +69,14 @@ export class EditorCanvas {
     const { selected, preview } = state,
       pageIndex = state.section;
     this.preview = preview;
+    this.elements.canvas.toggleAttribute(
+      'data-standard-grid',
+      doc.pages.some((page) => !!page.grid.frame),
+    );
+    this.elements.canvas.style.setProperty(
+      '--constructor-document-width',
+      Math.max(...doc.pages.map((page) => page.grid.frame?.width ?? 1440)) + 'px',
+    );
     this.suggestFit();
     this.elements.canvas.inert = false;
     const signature = JSON.stringify(doc);
@@ -72,6 +89,23 @@ export class EditorCanvas {
     }
     this.renderedSignature = signature;
     if (doc.kind === 'presentation') this.controller.goToSlide(pageIndex);
+    if (doc.kind === 'page') {
+      for (const section of doc.pages) {
+        if (!section.grid.frame) continue;
+        const shell = this.elements.canvas.querySelector<HTMLElement>(dom.sectionById(section.id));
+        for (const widget of section.widgets) {
+          const box = shell?.querySelector<HTMLElement>(dom.widgetById(widget.id));
+          box?.style.setProperty(
+            '--constructor-widget-column',
+            `${widget.position.col} / span ${widget.position.width}`,
+          );
+          box?.style.setProperty(
+            '--constructor-widget-row',
+            `${widget.position.row} / span ${widget.position.height}`,
+          );
+        }
+      }
+    }
     this.elements.endAdd.replaceChildren();
     if (!preview && doc.kind === 'page')
       this.elements.endAdd.append(this.insertion(doc.pages.length));
@@ -84,6 +118,31 @@ export class EditorCanvas {
         const index = doc.pages.findIndex((p) => p.id === shell.dataset.sectionId),
           page = doc.pages[index],
           panel = shell.querySelector<HTMLElement>(dom.panel)!;
+        shell.toggleAttribute('data-template-geometry', geometryLocked(doc, page.id));
+        shell.querySelector(':scope > .canvas-grid-guides')?.remove();
+        if (page.grid.frame) {
+          const guides = el('div', 'canvas-grid-guides');
+          guides.setAttribute('aria-hidden', 'true');
+          guides.style.setProperty('--constructor-grid-columns', String(page.grid.columns));
+          guides.style.setProperty(
+            '--constructor-grid-tablet-columns',
+            String(Math.min(page.grid.columns, page.grid.responsive?.tabletColumns ?? 12)),
+          );
+          guides.style.setProperty(
+            '--constructor-grid-mobile-columns',
+            String(
+              Math.min(
+                page.grid.columns,
+                page.grid.responsive?.tabletColumns ?? 12,
+                page.grid.responsive?.mobileColumns ?? 4,
+              ),
+            ),
+          );
+          guides.style.setProperty('--constructor-grid-gap', page.grid.gap + 'px');
+          guides.style.setProperty('--constructor-grid-row', page.grid.rowHeight + 'px');
+          guides.append(el('div', 'canvas-grid-columns'), el('div', 'canvas-grid-rows'));
+          shell.append(guides);
+        }
         if (doc.kind === 'page') shell.before(this.insertion(index));
         const tools = el('div', 'section-tools');
         tools.setAttribute('aria-label', 'Действия секции ' + (index + 1));
@@ -155,21 +214,61 @@ export class EditorCanvas {
             }
           });
           {
-            const move = button(
-                '↕',
-                () => {},
-                'af-btn af-btn--secondary af-btn--icon widget-handle move-handle',
-              ),
-              resize = button(
-                '↘',
-                () => {},
-                'af-btn af-btn--secondary af-btn--icon widget-handle resize-handle',
-              );
-            move.setAttribute('aria-label', 'Переместить блок');
+            const resize = button('', () => {}, 'widget-handle resize-handle boundary-handle');
+            resize.dataset.resizeDirection = 'se';
             resize.setAttribute('aria-label', 'Изменить размер блока');
-            box.append(move, resize);
-            this.attachHandle(move, w, false, panel, index);
+            box.append(resize);
             this.attachHandle(resize, w, true, panel, index);
+            bindWidgetHandle(box, w.id, index, false, {
+              canvas: this.elements.canvas,
+              signal: this.lifetime.signal,
+              document: this.actions.document,
+              flush: this.actions.flush,
+              select: this.actions.select,
+              change: this.actions.change,
+              status: this.actions.status,
+              direction: 'se',
+              step: this.controls.step,
+              surface: true,
+            });
+            box.addEventListener('dblclick', (event) => {
+              const field = (event.target as HTMLElement).closest<HTMLElement>('[contenteditable]');
+              if (!field) return;
+              box.dataset.textEditing = 'true';
+              field.focus({ preventScroll: true });
+            });
+            box.addEventListener('focusout', (event) => {
+              if (!(event.relatedTarget instanceof Node) || !box.contains(event.relatedTarget))
+                delete box.dataset.textEditing;
+            });
+            box.addEventListener(
+              'keydown',
+              (event) => {
+                if (event.key === 'Escape' && box.dataset.textEditing) {
+                  delete box.dataset.textEditing;
+                  box.focus({ preventScroll: true });
+                }
+              },
+              { capture: true },
+            );
+            for (const [direction, label] of [
+              ['n', 'Верхний край'],
+              ['s', 'Нижний край'],
+              ['w', 'Левый край'],
+              ['e', 'Правый край'],
+              ['nw', 'Верхний левый угол'],
+              ['ne', 'Верхний правый угол'],
+              ['sw', 'Нижний левый угол'],
+            ] as const) {
+              const edge = button('', () => {}, 'widget-handle edge-handle boundary-handle');
+              edge.dataset.resizeDirection = direction;
+              edge.setAttribute(
+                'aria-label',
+                'Изменить размер блока — ' + label.toLocaleLowerCase(),
+              );
+              box.append(edge);
+              this.attachHandle(edge, w, true, panel, index, direction);
+            }
           }
         }
         if (!page.widgets.length) {
@@ -222,6 +321,7 @@ export class EditorCanvas {
     resizing: boolean,
     _panel: HTMLElement,
     index: number,
+    direction: ResizeDirection = 'se',
   ) {
     bindWidgetHandle(handle, widget.id, index, resizing, {
       canvas: this.elements.canvas,
@@ -231,6 +331,8 @@ export class EditorCanvas {
       select: this.actions.select,
       change: this.actions.change,
       status: this.actions.status,
+      direction,
+      step: this.controls.step,
     });
   }
   preserveViewport(work: () => void) {

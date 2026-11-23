@@ -1,0 +1,24 @@
+.control-hint {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(288px, calc(100vw - 24px));
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--af-color-brand-white) 15%, transparent);
+  border-radius: 10px;
+  background: var(--af-color-brand-deep);
+  color: var(--af-text-inverse);
+  font: 400 13px/1.5 var(--af-font-body);
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--af-color-brand-deep) 15%, transparent);
+}
+.control-hint:not(:popover-open) {
+  display: none;
+}
+.control-hint:popover-open {
+  display: block;
+}

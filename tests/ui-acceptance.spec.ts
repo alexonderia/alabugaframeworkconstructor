@@ -79,7 +79,8 @@ test('catalog and material descriptions inherit readable button states',async({p
  for(const type of ['text','cards','gallery']){await page.locator(`[data-add=${type}]`).hover();await expectAccessible(page)}
  await page.keyboard.press('Escape');await expect(page.locator('#add-widget')).toBeFocused();
  await page.setViewportSize({width:1440,height:1000});await page.locator('#page-settings-open').click();
- await page.getByRole('button',{name:'Выбрать из библиотеки',exact:true}).first().click();
+ await page.locator('#add-widget').click();
+ await page.locator('#catalog').getByRole('button',{name:'Материалы',exact:true}).click();
  await page.locator('.asset-card').first().hover();await expectAccessible(page);
  await page.keyboard.press('Escape');await expect(page.locator('#inspector')).toBeVisible();
 });

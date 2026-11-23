@@ -9,7 +9,21 @@ test('quality checks explain broken images targets and overflow and open the rel
 });
 
 test('touch crop and keyboard focal adjustments retain their focus',async({page,browserName})=>{
- await openEditor(page);await page.locator('.project-menu summary').click();await page.locator('#demo-deck').click();await page.locator('#page-settings-open').click();await page.getByRole('tab',{name:'Оформление',exact:true}).click();await page.getByRole('button',{name:'Выбрать из библиотеки',exact:true}).click();await page.locator('.asset-card').first().click();const crop=page.getByRole('slider',{name:'Кадр фона',exact:true});await crop.focus();await page.keyboard.press('ArrowRight');await expect(crop).toBeFocused();await page.keyboard.press('ArrowRight');await expect(crop).toHaveAttribute('aria-valuenow','60');const bounds=await crop.boundingBox();
- if(browserName==='chromium'){const cdp=await page.context().newCDPSession(page);await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:bounds!.x+40,y:bounds!.y+40}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:bounds!.x+100,y:bounds!.y+70}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await cdp.detach()}else{await page.touchscreen.tap(bounds!.x+40,bounds!.y+40);await page.mouse.move(bounds!.x+80,bounds!.y+70);await page.mouse.down();await page.mouse.move(bounds!.x+120,bounds!.y+70,{steps:4});await page.mouse.up()}
+ await openEditor(page);await page.locator('.project-menu summary').click();await page.locator('#demo-deck').click();await page.locator('#page-settings-open').click();await page.getByRole('tab',{name:'Оформление',exact:true}).click();await page.getByRole('button',{name:'Выбрать из библиотеки',exact:true}).click();await page.locator('.asset-card').first().click();const crop=page.getByRole('slider',{name:'Кадр фона',exact:true});await crop.focus();await page.keyboard.press('ArrowRight');await expect(crop).toBeFocused();await page.keyboard.press('ArrowRight');await expect(crop).toHaveAttribute('aria-valuenow','60');await crop.scrollIntoViewIfNeeded();
+ const start = {x:30,y:40}, bounds = (await crop.boundingBox())!, y = bounds.y + start.y;
+ if(browserName==='chromium'){
+  const cdp=await page.context().newCDPSession(page);
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:bounds.x+start.x,y}]});
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:bounds.x+100,y}]});
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  await cdp.detach();
+ }else{
+  await crop.tap({position:start});
+  await crop.hover({position:start});
+  await page.mouse.down();
+  const current=(await crop.boundingBox())!;
+  await page.mouse.move(current.x+100,current.y+start.y,{steps:4});
+  await page.mouse.up();
+ }
  await expect(crop).not.toHaveAttribute('aria-valuenow','60');
 });

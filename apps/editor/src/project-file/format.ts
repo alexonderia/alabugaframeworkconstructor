@@ -1,4 +1,5 @@
 import { checked } from '../document-validation';
+import { documentSections } from '../template-metadata';
 export type Asset = { id: string; data: string; description?: string };
 
 export function importProject(input: unknown) {
@@ -19,7 +20,7 @@ export function importProject(input: unknown) {
     if (!asset || typeof asset.data !== 'string') throw new Error('Отсутствует материал ' + src);
     return asset.data;
   };
-  for (const p of doc.pages) {
+  for (const p of documentSections(doc)) {
     if (p.appearance?.background) p.appearance.background = resolve(p.appearance.background);
     for (const w of p.widgets) {
       if (w.type === 'image') w.src = resolve(w.src);

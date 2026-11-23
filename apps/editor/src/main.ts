@@ -1,5 +1,5 @@
 import { showDialog, el, button, invocationTarget } from './ui';
-import { compositionPreview } from './composition-preview';
+import { editorCatalog } from './catalog';
 import { editorMarkup } from './editor-shell';
 import { editorCommands, labelEditorCommands } from './editor-commands';
 import { EditorCanvas } from './editor-canvas';
@@ -19,22 +19,19 @@ import { captureFocus } from './focus';
 import { responsiveDrawer } from './responsive-drawer';
 import { readProjectFile } from './project-file';
 import { readViewState, writeViewState, type ViewState } from './view-state';
+import { frameworkDocument, templateInfo } from './template-metadata';
 const openAI: typeof import('./ai/panel').openAI = (...args) =>
   import('./ai/panel').then((m) => m.openAI(...args));
 import { insertDraft } from '@alabuga/ai/commands';
 import { draftDocument } from '@alabuga/ai/contracts';
 import { qualityDialog } from './quality';
-import {
-  type DocumentController,
-  type AFDocument,
-  type Widget,
-  widgetRegistry,
-} from '@alabuga/framework';
-import { emptyDocument, createWidget, findSpace, uid, copySection } from './model';
+import { type AFDocument, type Widget } from '@alabuga/framework';
+import { findSpace, uid } from './model';
 import { sectionDisplayName } from './section-name';
 import { download, projectFilename } from './export';
 import type { InlineCommit } from './inline';
-import { compositionCatalog, makeComposition, showcase } from '@alabuga/framework/compositions';
+import { createDocumentFromTemplate } from './templates';
+import { duplicateSection } from './sections';
 import {
   saveProject,
   saveRevision,
@@ -113,9 +110,7 @@ export async function mountEditor(
     ),
     selected = '',
     preview = false,
-    documentMode = false,
-    catalogMode: 'section' | 'widget' = 'widget',
-    insertAt = 0;
+    documentMode = false;
 
   // Keep the outgoing surface intact through all asynchronous preparation.
   beforeMount();
@@ -150,6 +145,7 @@ export async function mountEditor(
       removeWidget,
       status: (text) => message(text),
       fit: () => fitCurrent(false),
+      grid: () => inspectorView.openGrid(pageIndex),
     },
     session.signal,
   );
@@ -192,7 +188,7 @@ export async function mountEditor(
     },
     session.signal,
   );
-  const flush = () => inspectorView.flush();
+  const flush = () => inspectorView.flushPendingForms() && inspectorView.flushSectionSettings();
   function flushDocumentChanges() {
     if (!inspectorView.flushPendingForms()) return false;
     const title = get<HTMLInputElement>('project-name').value;
@@ -330,21 +326,25 @@ export async function mountEditor(
   function closeInspector() {
     inspectorView.close();
   }
+  const showCatalog = editorCatalog(
+    catalog,
+    {
+      document: () => session.document,
+      change: commit,
+      inserted: (index, widgetId) => {
+        pageIndex = index;
+        selected = widgetId;
+        documentMode = false;
+        draw();
+        scrollSection();
+      },
+      error: (text) => message(text, true),
+    },
+    session.signal,
+  );
   function openCatalog(mode: 'section' | 'widget', index: number) {
-    if (!flush()) return;
-    catalogMode = mode;
-    insertAt = index;
-    get('catalog-theme-field').hidden = mode !== 'section';
-    if (mode === 'section') drawCatalog();
-    if (mode === 'widget') pageIndex = index;
-    get('templates').hidden = mode !== 'section';
-    get('palette').hidden = mode !== 'widget';
-    get('catalog-title').textContent = mode === 'section' ? 'Добавить секцию' : 'Добавить блок';
-    get('catalog-description').textContent =
-      mode === 'section'
-        ? 'Выберите композицию. Всё содержимое можно изменить прямо на странице.'
-        : 'Блок займёт свободное место в сетке выбранной секции.';
-    showDialog(catalog);
+    if (inspectorView.flushPendingForms() && inspectorView.flushSectionSettings())
+      showCatalog(mode, index, pageIndex);
   }
   function scrollSection(index = pageIndex) {
     const id = session.document.pages[index]?.id;
@@ -397,8 +397,7 @@ export async function mountEditor(
     if (action === 'delete' && d.pages.length === 1) return;
     let next = index;
     if (action === 'copy') {
-      const p = copySection(d.pages[index]);
-      d.pages.splice(index + 1, 0, p);
+      duplicateSection(d, index);
       next = index + 1;
     } else if (action === 'delete') {
       d.pages.splice(index, 1);
@@ -421,92 +420,6 @@ export async function mountEditor(
   }
   const commands = editorCommands(root, session.signal, (text) => message(text, true));
   const run = commands.bind;
-  const symbols: Record<Widget['type'], string> = {
-    text: 'T',
-    image: '▧',
-    metric: '24',
-    calendar: '▦',
-    table: '☷',
-    button: '↗',
-    quote: '❞',
-    cards: '▥',
-    gallery: '▧',
-  };
-  for (const type of Object.keys(widgetRegistry) as Widget['type'][]) {
-    const b = button(
-      '',
-      () => {
-        try {
-          const w = createWidget(type, session.document, pageIndex);
-          selected = w.id;
-          if (
-            commit(
-              (d) => d.pages[pageIndex].widgets.push(w),
-              'Блок добавлен. Нажмите на текст, чтобы изменить его.',
-            )
-          ) {
-            catalog.close();
-            scrollSection();
-          }
-        } catch (e) {
-          message((e as Error).message, true);
-          get('catalog-description').textContent = (e as Error).message;
-        }
-      },
-      'palette-button',
-    );
-    b.dataset.add = type;
-    const icon = el('span', 'palette-icon', symbols[type]);
-    icon.setAttribute('aria-hidden', 'true');
-    b.append(
-      icon,
-      el('strong', '', widgetRegistry[type].title),
-      el('span', '', 'Добавить в секцию'),
-    );
-    get('palette').append(b);
-  }
-  function drawCatalog() {
-    thumbnailControllers.splice(0).forEach((c) => c.destroy());
-    get('templates').replaceChildren();
-    for (const [type, title, description] of compositionCatalog(session.document.kind)) {
-      const b = button(
-        '',
-        () => {
-          const section = catalogComposition(type);
-          if (commit((d) => d.pages.splice(insertAt, 0, section), 'Композиция добавлена.')) {
-            pageIndex = insertAt;
-            selected = '';
-            catalog.close();
-            draw();
-            scrollSection();
-          }
-        },
-        'template-card',
-      );
-      b.dataset.template = type;
-      const visual = el('div', 'composition-thumbnail');
-      const c = compositionPreview(visual, {
-        schemaVersion: 2,
-        kind: session.document.kind,
-        title,
-        pages: [catalogComposition(type)],
-      });
-      thumbnailControllers.push(c);
-      b.append(visual, el('strong', '', title), el('span', '', description));
-      get('templates').append(b);
-    }
-  }
-  const thumbnailControllers: DocumentController[] = [];
-  function catalogComposition(type: string) {
-    const section = makeComposition(type, session.document.kind),
-      theme = get<HTMLSelectElement>('catalog-theme').value;
-    if (theme !== 'default') {
-      section.appearance!.theme = theme as NonNullable<typeof section.appearance>['theme'];
-      if (theme === 'image') section.appearance!.background = '../assets/brand-landscape.svg';
-    }
-    return section;
-  }
-  get('catalog-theme').addEventListener('change', drawCatalog);
   function draw(keepProperties = false) {
     const doc = session.document;
     pageIndex = Math.max(0, Math.min(pageIndex, doc.pages.length - 1));
@@ -536,6 +449,7 @@ export async function mountEditor(
     canvasView.render(doc, { section: pageIndex, selected, preview });
     inspectorView.render(doc, active, keepProperties, true);
     inspectorView.sync();
+    zoomControls.sync();
   }
 
   run('undo', () => {
@@ -558,22 +472,13 @@ export async function mountEditor(
   );
   run('close-inspector', closeInspector);
   run('close-catalog', () => catalog.close());
-  catalog.addEventListener(
-    'close',
-    () => {
-      thumbnailControllers.splice(0).forEach((c) => c.destroy());
-      get('templates').replaceChildren();
-      get('add-widget').focus({ preventScroll: true });
-    },
-    { signal: session.signal },
-  );
   for (const [id, kind] of [
     ['new-page', 'page'],
     ['new-deck', 'presentation'],
   ] as const)
     run(id, async () => {
       if (!flush()) return;
-      await startProject(emptyDocument(kind));
+      await startProject(createDocumentFromTemplate(kind, `document/${kind}/blank`));
       pageIndex = 0;
       selected = '';
       preview = false;
@@ -645,8 +550,13 @@ export async function mountEditor(
     control.disabled = true;
     message('Подготовка HTML…');
     try {
-      await downloadEditorHTML(session.document);
-      message('HTML скачан. Внешние изображения по HTTP(S) требуют сети.');
+      const document = session.document;
+      await downloadEditorHTML(document);
+      message(
+        templateInfo(document)?.unplaced?.length
+          ? 'HTML скачан. Неразмещённые блоки доступны в проекте.'
+          : 'HTML скачан. Внешние изображения по HTTP(S) требуют сети.',
+      );
     } catch (e) {
       message((e as Error).message, true);
     } finally {
@@ -677,7 +587,7 @@ export async function mountEditor(
   ] as const)
     run(id, async () => {
       if (!flush()) return;
-      await startProject(showcase(kind));
+      await startProject(createDocumentFromTemplate(kind, `document/${kind}/showcase`));
       pageIndex = 0;
       selected = '';
       preview = false;
@@ -700,6 +610,7 @@ export async function mountEditor(
     }
     canvas.dataset.device = select.value;
     zoomControls.reset();
+    zoomControls.sync();
     if (selected && !drawer.hidden) {
       const doc = session.document;
       inspectorView.render(doc, doc.pages[pageIndex]);
@@ -852,13 +763,16 @@ export async function mountEditor(
                 if (session.projectId !== draft.projectId)
                   throw new Error('Текущий проект изменился. Выберите место вставки заново.');
                 await session.queue;
+                const document = session.document;
                 const next = insertDraft(
-                  session.document,
+                  frameworkDocument(document),
                   draftDocument(draft).pages,
                   draft.anchorId,
                   draft.request.kind,
                 );
-                await session.applyDocument(next);
+                await session.applyDocument(
+                  document.templateInfo ? { ...next, templateInfo: document.templateInfo } : next,
+                );
                 pageIndex = next.pages.findIndex((p) => p.id === draft.anchorId) + 1;
                 selected = '';
                 lastSaveStatus = 'Сохранено в браузере';
@@ -933,12 +847,6 @@ export async function mountEditor(
 
   get('save-state').classList.add('header-save-state');
   root.querySelector('.document-name')!.after(get('save-state'));
-  const gridDetails = el('details', 'advanced-grid settings-disclosure');
-  gridDetails.append(
-    el('summary', 'af-btn af-btn--clear af-btn--sm', 'Дополнительно: сетка'),
-    get('settings').querySelector('.settings-grid')!,
-  );
-  get('settings').append(gridDetails);
   const openBlockStyle = () => {
     const style = drawer.querySelector<HTMLDetailsElement>(
       '#properties details[data-setting="style"]',
@@ -1030,7 +938,6 @@ export async function mountEditor(
       session.destroy();
       canvasView.destroy();
       inspectorView.destroy();
-      thumbnailControllers.forEach((c) => c.destroy());
       updateOutline.destroy();
       document.querySelectorAll<HTMLDialogElement>('dialog').forEach((d) => {
         d.close();

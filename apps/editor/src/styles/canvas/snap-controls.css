@@ -1,0 +1,132 @@
+.block-controls {
+  position: relative;
+}
+.block-controls-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  list-style: none;
+}
+.block-controls-trigger::-webkit-details-marker {
+  display: none;
+}
+.block-controls-trigger::marker {
+  content: '';
+}
+.block-controls-trigger > svg {
+  width: 16px;
+  height: 16px;
+  transition: rotate 150ms ease;
+}
+.block-controls[open] > .block-controls-trigger {
+  background: var(--af-state-selected-bg);
+  border-color: var(--af-border-focus);
+  color: var(--af-text-link);
+}
+.block-controls[open] > .block-controls-trigger > svg {
+  rotate: 180deg;
+}
+.block-controls-body {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  box-sizing: border-box;
+  width: min(320px, calc(100vw - 24px));
+  padding: 20px;
+  gap: 20px;
+  border: 1px solid var(--af-border-default);
+  border-radius: 16px;
+  background: var(--af-bg-surface);
+  color: var(--af-text-primary);
+  box-shadow: 0 12px 40px color-mix(in srgb, var(--af-color-brand-deep) 12%, transparent);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.block-controls-body:not(:popover-open) {
+  display: none;
+}
+.block-controls-body:popover-open {
+  display: grid;
+  animation: snap-controls-enter 120ms ease-out;
+}
+.block-controls-header,
+.block-controls-actions,
+.block-controls-step-label,
+.block-controls-body .af-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.block-controls-header h3 {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.4;
+  font-weight: 600;
+}
+.block-controls-actions {
+  flex: none;
+  gap: 2px;
+}
+.block-controls-actions > .af-btn,
+.block-controls-body .snap-info {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  min-height: 28px;
+  padding: 5px;
+}
+.block-controls-body .af-label > .snap-info {
+  margin-block: -5px;
+}
+.block-controls-body .af-field {
+  margin: 0;
+}
+.block-controls-steps {
+  display: grid;
+  gap: 12px;
+}
+.block-controls-mode {
+  display: grid;
+  gap: 8px;
+}
+.block-controls-steps[hidden] {
+  display: none;
+}
+.block-controls-step-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.block-controls-visibility {
+  padding-block: 4px;
+}
+.block-controls-visibility .af-check {
+  margin: 0;
+}
+.block-controls-footer {
+  padding-top: 16px;
+  border-top: 1px solid var(--af-border-subtle);
+}
+.block-controls-footer > .af-btn {
+  width: 100%;
+  justify-content: center;
+}
+@keyframes snap-controls-enter {
+  from {
+    opacity: 0;
+    translate: 0 -4px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .block-controls-trigger > svg {
+    transition: none;
+  }
+  .block-controls-body:popover-open {
+    animation: none;
+  }
+}

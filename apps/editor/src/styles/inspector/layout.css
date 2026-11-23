@@ -136,3 +136,11 @@
     padding: var(--af-space-16);
   }
 }
+[data-editor-mode='standard'] .editor-inspector [data-advanced-setting],
+[data-editor-mode='standard'] #canvas [data-template-geometry] .widget-handle {
+  display: none;
+}
+
+#editor-mode-field {
+  margin-block-end: var(--af-space-8);
+}

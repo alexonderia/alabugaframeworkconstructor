@@ -10,7 +10,6 @@
 @import './inspector/ranges.css';
 @import './responsive/authoring-touch.css';
 @import './canvas/compositions.css';
-@import './dialogs/composition-preview.css';
 @import './inspector/design.css';
 @import './canvas/composition-editing.css';
 @import './inspector/slides.css';
@@ -25,3 +24,5 @@
 @import './responsive/workspace.css';
 @import './inspector/layout.css';
 @import './canvas/controls.css';
+@import './canvas/snap-controls.css';
+@import './shared/control-hints.css';

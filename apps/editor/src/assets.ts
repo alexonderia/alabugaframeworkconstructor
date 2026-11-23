@@ -3,7 +3,8 @@ import { readImage } from './export';
 import { loadBrandManifest } from './brand-manifest';
 import { listAssets, describeAsset, addAsset } from './storage';
 
-export async function chooseAsset(apply: (src: string) => void) {
+export async function chooseAsset(apply: (src: string) => void, signal?: AbortSignal) {
+  if (signal?.aborted) return;
   const { dialog, body } = libraryDialog('Библиотека материалов', 'asset-library'),
     grid = el('div', 'asset-grid'),
     filter = el('select', 'af-select'),
@@ -177,11 +178,14 @@ export async function chooseAsset(apply: (src: string) => void) {
   uploadField.append(el('span', 'af-label', 'Или загрузите своё изображение'), upload);
   body.append(filter, search, sort, uploadField, status, error, retry, grid);
   document.body.append(dialog);
+  const abort = () => dialog.close();
+  signal?.addEventListener('abort', abort, { once: true });
   dialog.addEventListener(
     'close',
     () => {
       closed = true;
       request++;
+      signal?.removeEventListener('abort', abort);
       dialog.remove();
     },
     { once: true },
@@ -288,7 +292,7 @@ export function cropControl(
       'pointerup',
       () => {
         abort.abort();
-        change(p);
+        if (p.x !== origin.p.x || p.y !== origin.p.y) change(p);
       },
       { once: true, signal: abort.signal },
     );

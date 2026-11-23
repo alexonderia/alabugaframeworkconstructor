@@ -30,43 +30,261 @@
   opacity: 0;
   pointer-events: none;
 }
-/* Geometry uses individual transforms: Framework disables button animation
-   transforms for reduced motion, which must not shrink these hit targets. */
-.move-handle {
-  bottom: calc(-1 * var(--constructor-handle-half) * var(--constructor-ui-scale, 1));
+/* Transparent hit areas cover the selected object's edges and corners. */
+#canvas .boundary-handle {
+  --boundary-size: calc(var(--af-space-12) * var(--constructor-ui-scale, 1));
+  position: absolute;
+  width: var(--boundary-size);
+  height: var(--boundary-size);
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  outline: none;
   transform: none;
-  translate: -50% 0;
-  scale: var(--constructor-ui-scale, 1);
-  transform-origin: bottom center;
+  translate: none;
+  scale: none;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 10;
 }
-.resize-handle {
-  bottom: calc(-1 * var(--constructor-handle-half) * var(--constructor-ui-scale, 1));
-  transform: none;
-  scale: var(--constructor-ui-scale, 1);
-  transform-origin: bottom right;
+#canvas .af-widget.is-selected {
+  outline-offset: -2px;
 }
-#canvas .af-widget[data-controls-active] > .widget-handle {
+#canvas .af-widget.is-selected:not([data-text-editing]) {
+  cursor: var(--block-cursor-move, move);
+}
+#canvas .af-widget.is-selected > .boundary-handle {
   opacity: 1;
   pointer-events: auto;
 }
-.af-widget[data-controls-clipped] > .widget-handle,
-.af-widget[data-controls-clipped] > .widget-tools {
-  visibility: hidden;
+#canvas .boundary-handle[data-resize-direction='n'],
+#canvas .boundary-handle[data-resize-direction='s'] {
+  left: var(--boundary-size);
+  right: var(--boundary-size);
+  width: auto;
+  cursor: var(--block-cursor-ns, ns-resize);
 }
-@media (pointer: coarse) {
-  .widget-tools {
-    gap: var(--af-space-8);
-  }
+#canvas .boundary-handle[data-resize-direction='w'],
+#canvas .boundary-handle[data-resize-direction='e'] {
+  top: var(--boundary-size);
+  bottom: var(--boundary-size);
+  height: auto;
+  cursor: var(--block-cursor-ew, ew-resize);
 }
-.widget-handle {
-  --constructor-handle-half: calc(var(--af-size-control-m)/2);
+#canvas
+  .boundary-handle:is(
+    [data-resize-direction='n'],
+    [data-resize-direction='nw'],
+    [data-resize-direction='ne']
+  ) {
+  top: 0;
+  bottom: auto;
 }
+#canvas
+  .boundary-handle:is(
+    [data-resize-direction='s'],
+    [data-resize-direction='sw'],
+    [data-resize-direction='se']
+  ) {
+  bottom: 0;
+  top: auto;
+}
+#canvas
+  .boundary-handle:is(
+    [data-resize-direction='w'],
+    [data-resize-direction='nw'],
+    [data-resize-direction='sw']
+  ) {
+  left: 0;
+  right: auto;
+}
+#canvas
+  .boundary-handle:is(
+    [data-resize-direction='e'],
+    [data-resize-direction='ne'],
+    [data-resize-direction='se']
+  ) {
+  right: 0;
+  left: auto;
+}
+#canvas .boundary-handle:is([data-resize-direction='nw'], [data-resize-direction='se']) {
+  cursor: var(--block-cursor-nwse, nwse-resize);
+}
+#canvas .boundary-handle:is([data-resize-direction='ne'], [data-resize-direction='sw']) {
+  cursor: var(--block-cursor-nesw, nesw-resize);
+}
+#canvas .af-widget:not(.is-selected) > .boundary-handle,
+#canvas .af-widget[data-editor-layout='auto'] > .boundary-handle,
+#canvas
+  .af-widget:not([data-editor-layout='grid'])
+  > .boundary-handle:is(
+    [data-resize-direction='n'],
+    [data-resize-direction='w'],
+    [data-resize-direction='nw'],
+    [data-resize-direction='ne'],
+    [data-resize-direction='sw']
+  ) {
+  display: none;
+}
+#canvas .af-widget.is-selected:not([data-text-editing]) .af-widget__content,
+#canvas .af-widget.is-selected:not([data-text-editing]) [contenteditable] {
+  cursor: var(--block-cursor-move, move);
+}
+#canvas .af-widget[data-text-editing] [contenteditable] {
+  cursor: text;
+}
+
+/* Pointer capture must retain its cursor over all page elements until release. */
+html[data-block-cursor],
+html[data-block-cursor] * {
+  cursor: var(--block-drag-cursor) !important;
+}
+
+#canvas[data-show-grid] .af-panel {
+  background-image:
+    linear-gradient(to right, var(--af-border-subtle) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--af-border-subtle) 1px, transparent 1px);
+  background-size: calc(
+      (100% + var(--af-panel-gap)) / var(--af-grid-active-columns, var(--af-columns))
+    )
+    calc(var(--af-row-height) + var(--af-panel-gap));
+}
+
+#canvas[data-show-grid] .af-flow > .af-panel {
+  background-image: linear-gradient(to right, var(--af-border-subtle) 1px, transparent 1px);
+}
+
 .editor-canvas .af-deck,
 .editor-canvas .af-deck__stage {
   overflow: visible;
 }
-@media (pointer: coarse) {
-  .widget-handle {
-    --constructor-handle-half: calc(var(--af-size-control-l)/2);
+
+/* Explicit Framework frames keep their grid in the authoring canvas. */
+#canvas[data-standard-grid] {
+  max-width: 1920px;
+  padding: 0;
+}
+#canvas[data-standard-grid][data-device='desktop']:has(.af-document--page) {
+  width: var(--constructor-document-width);
+  max-width: none;
+}
+#canvas .af-layout-grid.af-page {
+  padding: var(--af-grid-top) var(--af-grid-right) var(--af-grid-bottom) var(--af-grid-left);
+}
+#canvas[data-standard-grid] .af-layout-grid.af-page > .af-panel {
+  display: grid;
+  grid-template-columns: repeat(var(--af-grid-active-columns), minmax(0, 1fr)) !important;
+  grid-auto-rows: minmax(var(--af-row-height), auto) !important;
+}
+#canvas[data-device='desktop']
+  .af-layout-grid.af-page
+  > .af-panel
+  > .af-widget:not([data-free-position]) {
+  grid-column: var(--constructor-widget-column) !important;
+  grid-row: var(--constructor-widget-row) !important;
+  width: auto;
+  height: auto !important;
+}
+#canvas .af-layout-grid.af-slide > .af-panel {
+  position: absolute;
+  grid-auto-rows: var(--af-row-height) !important;
+}
+.canvas-grid-guides {
+  display: none;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+.canvas-snap-guides {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 6;
+}
+.canvas-snap-line {
+  position: absolute;
+  background: var(--af-color-brand-blue);
+}
+.canvas-snap-line[data-axis='x'] {
+  top: 0;
+  bottom: 0;
+  width: 1px;
+}
+.canvas-snap-line[data-axis='y'] {
+  left: 0;
+  right: 0;
+  height: 1px;
+}
+#canvas[data-show-grid] .canvas-grid-guides {
+  display: block;
+}
+#canvas[data-show-grid] .af-layout-grid > .af-panel {
+  background-image: none;
+}
+.canvas-grid-columns {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--af-grid-left);
+  right: var(--af-grid-right);
+  background-image: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--af-color-neutral-300) 15%, transparent)
+      calc(100% - var(--constructor-grid-gap)),
+    transparent 0
+  );
+  background-size: calc((100% + var(--constructor-grid-gap)) / var(--constructor-grid-columns)) 100%;
+}
+.canvas-grid-rows {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--af-grid-top);
+  bottom: var(--af-grid-bottom);
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--af-color-neutral-300) 15%, transparent) var(--constructor-grid-row),
+    transparent 0
+  );
+  background-size: 100% calc(var(--constructor-grid-row) + var(--constructor-grid-gap));
+}
+@container (max-width:1023px) {
+  #canvas .af-layout-grid.af-page {
+    padding-inline: 32px;
+    padding-top: min(var(--af-grid-top), 96px);
+  }
+  #canvas .af-page .canvas-grid-columns {
+    left: 32px;
+    right: 32px;
+    background-size: calc(
+        (100% + var(--constructor-grid-gap)) / var(--constructor-grid-tablet-columns)
+      )
+      100%;
+  }
+  #canvas .af-page .canvas-grid-rows {
+    top: min(var(--af-grid-top), 96px);
+  }
+}
+@container (max-width:639px) {
+  #canvas .af-layout-grid.af-page {
+    padding-inline: 20px;
+    padding-top: min(var(--af-grid-top), 64px);
+  }
+  #canvas .af-page .canvas-grid-columns {
+    left: 20px;
+    right: 20px;
+    background-size: calc(
+        (100% + var(--constructor-grid-gap)) / var(--constructor-grid-mobile-columns)
+      )
+      100%;
+  }
+  #canvas .af-page .canvas-grid-rows {
+    top: min(var(--af-grid-top), 64px);
   }
 }

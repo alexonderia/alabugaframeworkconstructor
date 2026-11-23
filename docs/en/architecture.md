@@ -1,8 +1,16 @@
 # Architecture
 
+## Templates and layout
+
+`templates.ts` builds a registry from public Framework catalogs. A document template creates an editable AFDocument. A section or slide template describes a composition, semantic fields, layout variants and styling presets. `sections.ts` maps matching blocks by role and stores unmatched blocks for later placement. EditorSession applies the result as one undoable change.
+
+`layout/site.ts` and `layout/presentation.ts` supply separate placement limits and preflight viewports. The shared cell search uses the bounds provided by each layout module. Framework renders flow and fixed layouts and supplies the layout variants. HTML implements the `DocumentExporter` contract using preflight and the standalone runtime.
+
+`document-validation.ts` validates the Constructor extension `templateInfo` alongside the document. Rendering, export and AI commands receive a projected AFDocument. IndexedDB, history and portable JSON use the existing asset pipeline for both placed and unplaced blocks.
+
 Constructor pins Framework {{FRAMEWORK_VERSION}} and requires at least {{FRAMEWORK_MINIMUM}}. Documentation builds read these values from package.json. UI components initialize only in editor-owned containers and clean up before DOM replacement. DatePicker is enhanced; Select controls retain their native backing field and use the public Framework component. The editable document canvas is not passed to general component initialization.
 
-`document-surface.ts` hosts the public standalone runtime/CSS inside an iframe. Preview, shared quality checks and exported HTML use the same Framework runtime without copying renderer implementation. The isolation serves document sizing and routing; the iframe contains trusted runtime and a validated AFDocument. Preflight checks website viewports at 1440/768/390 px and slides at 1600 px, blocking export for clipped content or unavailable images.
+`document-surface.ts` hosts the public standalone runtime/CSS inside an iframe. Preview, shared quality checks and exported HTML use the same Framework runtime without copying renderer implementation. The isolation serves document sizing and routing; the iframe contains trusted runtime and a validated AFDocument. Preflight checks website viewports at 1920/768/390 (1440/768/390 for legacy grids) px and slides at 1600 px, blocking export for clipped content or unavailable images.
 
 IndexedDB 3 uses an internal Project.version counter checked atomically for stale writes. BroadcastChannel informs the interface but the transaction enforces protection. Revisions are indexed by project; repeated assets are read in one batch. The material cache retains at most approximately 16 MiB of UTF-16 strings. Save scheduling keeps the active write and latest pending snapshot. Asset deletion checks projects, trash, revisions and AI draft references in one transaction. Write versions and private structure labels do not extend AFDocument.
 
@@ -18,7 +26,7 @@ IndexedDB 3 uses an internal Project.version counter checked atomically for stal
 
 Framework publishes an independent npm package. Constructor workspaces stay private; a library change and its application update use separate PRs. Cross-package imports use public exports only. Shared model configuration lives outside the server implementation.
 
-`npm run check:boundaries` enforces package directions: editor may use public ai exports; ai and ai-server cannot import other application workspaces. Cross-workspace relative imports are forbidden, and editor/ai cannot import Node.js built-ins. Document modules (`model`, `sections`, `section-name`, `document-content`, `property-patch`, `editor-save`, `editor-session`) may depend only on each other and public Framework schema/compositions, keeping UI and IndexedDB out of their dependencies. Update their explicit list in `scripts/import-boundaries.mjs` when extracting modules.
+`npm run check:boundaries` enforces package directions. The editor may use public ai exports. Ai and ai-server work in their respective workspaces. The model, templates and document operations use public Framework contracts and Zod. Their allowed imports are defined in `scripts/import-boundaries.mjs` separately from UI and IndexedDB.
 
 The check also detects cycles in relative imports across workspace sources, including type imports, re-exports and literal dynamic imports. Computed paths and runtime dependencies are outside this graph. Negative cases and the command running against an isolated fixture workspace are included in `npm test`.
 
@@ -65,3 +73,5 @@ There is no server project database, account system or synchronization. The mode
 Framework is now a separate repository publishing @alabuga/framework. Constructor pins {{FRAMEWORK_VERSION}} in its manifests and lockfile; editor, ai and ai-server remain private internal workspaces. Framework releases never release or deploy Constructor. Cross-package access uses public exports. apps/editor/src/framework-adapter.ts centralizes rendering, fitting, built-in resource URLs and DOM editing hooks.
 
 The installed package already provides standalone.css and standalone.js. Constructor never builds Framework. Library DOM/CSS/API compatibility is a SemVer contract documented in Framework docs/public-contract.md. The Framework reference is a separate static website; VITE_FRAMEWORK_DOCS_URL configures its link and CONSTRUCTOR_URL configures return links when building that site. Browser storage and AI stay in Constructor.
+
+New documents use the public `@alabuga/framework/grid` API for defaults, canvas dimensions and placement bounds. Preflight uses 1920 px for new documents and retains legacy dimensions; tablet and phone viewports are checked separately. The compatible Framework extension lives in its own repository. Constructor consumes the built `vendor/alabuga-framework-1.4.0-grid.0.tgz` archive through package-lock.json. This is a local prerelease, not a registry publication.

@@ -1,6 +1,5 @@
 import type { AFDocument } from '@alabuga/framework/schema';
 import { hydrate } from './storage';
-import { checked } from './model';
 import { standaloneRuntime } from './document-surface';
 import { documentContent } from './document-content';
 export function projectFilename(title: string, extension: 'html' | 'json') {

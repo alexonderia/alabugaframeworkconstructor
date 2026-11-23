@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {EditorModel,emptyDocument,createWidget,findSpace,checked,copySection} from '../apps/editor/src/model';
-import {makeSection} from '../apps/editor/src/sections';
+import {makeSection} from './editor-fixtures';
 import {documentContent} from '../apps/editor/src/document-content';
 
 test('visible document content excludes section names without changing the editable project',()=>{
@@ -21,8 +21,8 @@ test('history rejects invalid changes atomically and clears redo branch',()=>{
   model.change(d=>d.title='A');model.change(d=>d.title='B');model.undo();assert.equal(model.document.title,'A');model.redo();assert.equal(model.document.title,'B');model.undo();model.change(d=>d.title='C');assert.equal(model.canRedo,false);
 });
 test('placement finds free cells and fails on a full slide',()=>{
-  const doc=emptyDocument('presentation');const widget=createWidget('text',doc,0);widget.position={col:1,row:1,width:12,height:8};doc.pages[0].widgets.push(widget);assert.throws(()=>findSpace(doc,0,1,1));
-  const page=emptyDocument();page.pages[0].widgets.push(createWidget('calendar',page,0));assert.deepEqual(findSpace(page,0,4,4),{col:5,row:1,width:4,height:4});
+  const doc=emptyDocument('presentation');const widget=createWidget('text',doc,0);widget.position={col:1,row:1,width:24,height:12};doc.pages[0].widgets.push(widget);assert.throws(()=>findSpace(doc,0,1,1));
+  const page=emptyDocument();page.pages[0].widgets.push(createWidget('calendar',page,0));assert.deepEqual(findSpace(page,0,4,4),{col:9,row:1,width:4,height:4});
 });
 test('history is bounded and document copies cannot mutate model',()=>{const model=new EditorModel(emptyDocument());for(let i=0;i<50;i++)model.change(d=>d.title=String(i));let count=0;while(model.undo())count++;assert.equal(count,30);const copy=model.document;copy.title='outside';assert.notEqual(model.document.title,'outside')});
 test('embedded raster images are allowed only for images',()=>{

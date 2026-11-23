@@ -20,6 +20,8 @@ import {
   responsiveKey,
 } from './widget-layout';
 import type { AFDocument } from '@alabuga/framework/schema';
+import { gridFrame, positionBounds } from '@alabuga/framework/grid';
+import { positionFromRect } from './snap-geometry';
 type Callbacks = {
   apply: (widget: Widget) => boolean;
   current?: () => Widget;
@@ -171,7 +173,7 @@ export function properties(host: HTMLElement, original: Widget, actions: Callbac
       const note = el('p', 'af-help', layoutNote(mode));
       note.style.gridColumn = '1 / -1';
       responsive.append(note);
-      const size = responsiveSize(draft, mode);
+      const size = responsiveSize(draft, mode, actions.columns);
       for (const [key, label, min, max] of [
         ['width', 'Ширина, %', 1, 100],
         ['minHeight', 'Минимальная высота, px', 0, 3200],
@@ -199,6 +201,13 @@ export function properties(host: HTMLElement, original: Widget, actions: Callbac
       responsive.append(reset);
       form.append(responsive);
     }
+    const precise = draft.position.free,
+      sectionGrid = actions.document.pages.find((section) =>
+        section.widgets.some((widget) => widget.id === draft.id),
+      )!.grid,
+      frame = gridFrame(sectionGrid),
+      contentWidth = frame.width - frame.left - frame.right,
+      pixelBounds = positionBounds(sectionGrid, draft.position);
     for (const [key, name] of [
       ['col', 'Колонка'],
       ['row', 'Строка'],
@@ -207,19 +216,31 @@ export function properties(host: HTMLElement, original: Widget, actions: Callbac
     ] as const) {
       const input = field(
         geometry,
-        name,
-        draft.position[key],
-        (v) => (draft.position[key] = Number(v)),
+        precise
+          ? { col: 'X, px', row: 'Y, px', width: 'Ширина, px', height: 'Высота, px' }[key]
+          : name,
+        precise
+          ? Math.round(pixelBounds[key === 'col' ? 'x' : key === 'row' ? 'y' : key] * 1000) / 1000
+          : draft.position[key],
+        (v) => {
+          if (!precise) draft.position[key] = Number(v);
+          else {
+            pixelBounds[key === 'col' ? 'x' : key === 'row' ? 'y' : key] = Number(v);
+            draft.position = positionFromRect(pixelBounds, sectionGrid, contentWidth);
+          }
+        },
         'number',
       );
-      input.min = String(
-        key === 'width'
-          ? widgetRegistry[draft.type].minWidth
-          : key === 'height'
-            ? widgetRegistry[draft.type].minHeight
-            : 1,
-      );
-      input.step = '1';
+      input.min = precise
+        ? String(key === 'col' ? -frame.left : key === 'row' ? -frame.top : 1)
+        : String(
+            key === 'width'
+              ? widgetRegistry[draft.type].minWidth
+              : key === 'height'
+                ? widgetRegistry[draft.type].minHeight
+                : 1,
+          );
+      input.step = precise ? 'any' : '1';
       input.required = true;
     }
     form.append(geometry);
@@ -241,6 +262,8 @@ export function properties(host: HTMLElement, original: Widget, actions: Callbac
     slider.min = '1';
     slider.max = String(maximum());
     slider.step = '1';
+    slider.disabled = !!precise;
+    placement.hidden = !!precise;
     const presets = el('div', 'af-row');
     for (const label of ['Слева', 'По центру', 'Справа'])
       presets.append(
@@ -266,9 +289,17 @@ export function properties(host: HTMLElement, original: Widget, actions: Callbac
     select(
       form,
       'Выравнивание содержимого',
-      draft.align ?? 'left',
-      { left: 'По левому краю', center: 'По центру', right: 'По правому краю' },
-      (v) => (draft.align = v as 'left' | 'center' | 'right'),
+      draft.align ?? '',
+      {
+        '': 'Из композиции',
+        left: 'По левому краю',
+        center: 'По центру',
+        right: 'По правому краю',
+      },
+      (v) => {
+        if (v) draft.align = v as 'left' | 'center' | 'right';
+        else delete draft.align;
+      },
     );
     if (draft.type === 'text') {
       draft.content.forEach((block, index) => {
@@ -546,7 +577,19 @@ export function properties(host: HTMLElement, original: Widget, actions: Callbac
         (node === geometry || node === placement ? 'geometry' : 'content');
       groups.get(key)!.body.append(node);
     }
-    for (const { group, body } of groups.values()) if (body.children.length) form.append(group);
+    for (const key of ['content', 'style'] as const) {
+      const { group, body } = groups.get(key)!;
+      if (body.children.length) form.append(group);
+    }
+    const advanced = settingsGroup('Дополнительно', 'section-property-group');
+    advanced.group.dataset.setting = 'advanced';
+    advanced.group.dataset.advancedSetting = '';
+    advanced.group.open = opened.get('advanced') ?? true;
+    for (const key of ['geometry', 'behavior'] as const) {
+      const { group, body } = groups.get(key)!;
+      if (body.children.length) advanced.body.append(group);
+    }
+    if (advanced.body.children.length) form.append(advanced.group);
     form.append(
       small('Сбросить неприменённые изменения', () => {
         clearTimeout(timer);

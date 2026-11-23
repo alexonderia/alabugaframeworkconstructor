@@ -2,6 +2,7 @@ import type { AFDocument, DocumentController } from '@alabuga/framework';
 import { assetsBaseUrl } from './framework-adapter';
 import { hydrate } from './storage';
 import { documentContent } from './document-content';
+import documentAlignment from './styles/document-alignment.css?raw';
 
 let runtime: Promise<{ css: string; script: string }> | undefined;
 export function standaloneRuntime() {
@@ -9,7 +10,10 @@ export function standaloneRuntime() {
     import('@alabuga/framework/standalone.css?raw'),
     import('@alabuga/framework/standalone.js?raw'),
   ])
-    .then(([css, script]) => ({ css: css.default, script: script.default }))
+    .then(([css, script]) => ({
+      css: css.default + '\n' + documentAlignment,
+      script: script.default,
+    }))
     .catch((e) => {
       runtime = undefined;
       throw e;

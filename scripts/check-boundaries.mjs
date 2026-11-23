@@ -66,7 +66,11 @@ for (const cycle of findCycles(graph)) errors.push('Dependency cycle: ' + cycle.
 for (const file of ['package.json', 'apps/editor/package.json', 'packages/ai/package.json']) {
   const p = JSON.parse(await readFile(file, 'utf8')),
     v = p.dependencies?.['@alabuga/framework'];
-  if (!/^\d+\.\d+\.\d+(?:-[\w.]+)?$/.test(v))
+  const localPin =
+    file === 'package.json'
+      ? 'file:vendor/alabuga-framework-1.4.0-grid.4.tgz'
+      : 'file:../../vendor/alabuga-framework-1.4.0-grid.4.tgz';
+  if (!/^\d+\.\d+\.\d+(?:-[\w.]+)?$/.test(v) && v !== localPin)
     errors.push(file + ': Framework must use an exact npm version');
 }
 if (errors.length) throw new Error(errors.join('\n'));

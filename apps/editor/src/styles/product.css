@@ -1,4 +1,6 @@
 @import './shell/gallery.css';
+@import './document-alignment.css';
+@import './dialogs/composition-preview.css';
 @import './shell/editor-feedback.css';
 @import './responsive/product.css';
 @import './inspector/feedback.css';

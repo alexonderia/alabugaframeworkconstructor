@@ -98,3 +98,10 @@
 .template-blank i {
   display: none;
 }
+#catalog [aria-pressed='true'] {
+  box-shadow: inset 0 0 0 var(--af-border-width-thin) var(--af-border-focus);
+}
+
+#palette .palette-button[hidden] {
+  display: none;
+}

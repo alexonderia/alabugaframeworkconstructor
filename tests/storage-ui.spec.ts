@@ -68,6 +68,7 @@ test('failed material upload leaves storage empty and retry saves one complete l
   let storage = await openStorage(page);
   await expect(storage.getByRole('checkbox')).toHaveCount(0);
   await storage.getByRole('button', { name: 'Закрыть', exact: true }).click();
+  await page.locator('.project-menu[open] > summary').click();
   await page.getByRole('button', { name: 'Создать с ИИ', exact: true }).click();
   await ai.locator('summary').click();
   await ai.locator('input[type=file]').setInputFiles(payload);
