@@ -1,4 +1,38 @@
-import { el } from './ui';
+import { el, iconButton } from './ui';
+
+// Info help is the innermost layer, before any drawer or editor Escape handler.
+// Register once for the application; each instance clears its owner on hide/dispose.
+let informationHelp: { owner: HTMLElement; dismiss: () => void } | undefined;
+if (typeof window !== 'undefined')
+  window.addEventListener(
+    'keydown',
+    (event) => {
+      if (event.key !== 'Escape' || !informationHelp) return;
+      const help = informationHelp;
+      const visible = help.owner.isConnected && help.owner.getClientRects().length > 0;
+      help.dismiss();
+      if (visible) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }
+    },
+    { capture: true },
+  );
+
+/** Shared information control for settings panels and popovers. */
+export function settingsInfo(label: string, text: string) {
+  const control = iconButton(
+    label,
+    () => control.focus({ preventScroll: true }),
+    'info',
+    'af-btn af-btn--clear settings-info',
+  );
+  control.removeAttribute('title');
+  control.dataset.info = '';
+  control.dataset.hint = text;
+  control.setAttribute('aria-expanded', 'false');
+  return control;
+}
 
 /** One top-layer hint for pointer, keyboard and click-to-pin information controls. */
 export function controlHints(host: HTMLElement, signal: AbortSignal) {
@@ -16,6 +50,7 @@ export function controlHints(host: HTMLElement, signal: AbortSignal) {
     if (hint.matches(':popover-open')) hint.hidePopover();
     owner?.removeAttribute('aria-describedby');
     if (owner?.hasAttribute('data-info')) owner.setAttribute('aria-expanded', 'false');
+    if (informationHelp?.owner === owner) informationHelp = undefined;
     owner = undefined;
     pinned = false;
   };
@@ -67,6 +102,14 @@ export function controlHints(host: HTMLElement, signal: AbortSignal) {
     hint.textContent = target.dataset.hint;
     target.setAttribute('aria-describedby', hint.id);
     if (target.hasAttribute('data-info')) target.setAttribute('aria-expanded', String(pinned));
+    if (target.hasAttribute('data-info'))
+      informationHelp = {
+        owner: target,
+        dismiss: () => {
+          hide();
+          pointerMuted = true;
+        },
+      };
     if (!hint.matches(':popover-open')) hint.showPopover();
     position();
   };

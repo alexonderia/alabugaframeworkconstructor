@@ -1,0 +1,289 @@
+/* Settings are grouped by task; spacing applies to the content and actions alike. */
+.inspector-body .inspector-heading {
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 600;
+  color: var(--af-text-secondary);
+}
+#inspector[data-inspector-view='block'] .inspector-mode {
+  grid-template-columns: minmax(0, 1fr) 172px;
+  align-items: center;
+  gap: var(--af-space-12);
+}
+.block-settings-context {
+  display: flex;
+  flex-direction: column;
+  gap: var(--af-space-8);
+  padding: var(--af-space-16);
+  border-radius: var(--af-radius-12);
+  background: var(--af-color-neutral-50);
+}
+.inspector-body .block-settings-type {
+  font-size: 18px;
+  line-height: 1.4;
+  color: var(--af-text-primary);
+}
+.block-settings-context > p,
+.block-operations > p {
+  margin: 0;
+}
+.block-fragment {
+  display: flex;
+  flex-direction: column;
+  gap: var(--af-space-16);
+  min-width: 0;
+  padding: var(--af-space-12);
+  border: 1px solid var(--af-border-subtle);
+  border-radius: var(--af-radius-8);
+  background: var(--af-color-neutral-50);
+}
+.block-fragment-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--af-space-8);
+}
+.block-fragment-title,
+.block-settings-subtitle {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  font-weight: 600;
+  color: var(--af-text-primary);
+}
+.block-fragment-actions {
+  display: flex;
+  flex: none;
+  gap: var(--af-space-4);
+  margin-inline-start: auto;
+}
+.inspector-body .block-fragment-action {
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  min-height: 28px;
+  padding: 5px;
+}
+.block-fragment-add {
+  display: flex;
+  flex-direction: column;
+  gap: var(--af-space-12);
+  padding-block: var(--af-space-16);
+  border-block: 1px solid var(--af-border-subtle);
+}
+.block-fragment-add > .af-btn {
+  width: 100%;
+  justify-content: center;
+}
+.block-operations {
+  display: flex;
+  flex-direction: column;
+  gap: var(--af-space-12);
+  padding: var(--af-space-16);
+  border: 1px solid var(--af-border-default);
+  border-radius: var(--af-radius-12);
+}
+.block-operations > .af-btn {
+  width: 100%;
+  justify-content: center;
+}
+.inspector-body .block-operations > .property-actions {
+  border: 0;
+  padding: 0;
+}
+.property-feedback:empty {
+  display: none;
+}
+.inspector-body .settings-section {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--af-border-default);
+  border-radius: var(--af-radius-12);
+  background: var(--af-bg-surface);
+}
+.inspector-body .settings-section > summary {
+  box-sizing: border-box;
+  padding: var(--af-space-12) var(--af-space-16);
+  min-height: 44px;
+  margin: 0;
+  gap: var(--af-space-12);
+}
+.inspector-body .settings-section > .settings-group-body,
+.inspector-body .settings-section > form,
+.inspector-body .settings-section > .af-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--af-space-20);
+  padding: 0 var(--af-space-16) var(--af-space-16);
+}
+.inspector-body .settings-section > .settings-section-description {
+  padding-inline: var(--af-space-16);
+  margin-bottom: var(--af-space-16);
+}
+.settings-section-description {
+  margin: 0;
+  color: var(--af-text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.inspector-body .setting-item {
+  position: relative;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--af-space-8);
+}
+.inspector-body .setting-item > label {
+  margin: 0;
+  min-width: 0;
+}
+.inspector-body .setting-item > label > .af-label {
+  padding-inline-end: 30px;
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+}
+.inspector-body .setting-item > .settings-info {
+  position: absolute;
+  inset-block-start: -2px;
+  inset-inline-end: -4px;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  min-height: 28px;
+  padding: 5px;
+}
+.inspector-body .setting-item > .af-check {
+  padding-inline-end: 32px;
+  min-height: 28px;
+}
+.inspector-body .settings-grid-body,
+.inspector-body .settings-grid-body > .af-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--af-space-20);
+}
+.settings-subsection,
+.settings-scope {
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  border-top: 1px solid var(--af-border-subtle);
+  padding: var(--af-space-16) 0 0;
+}
+.settings-subsection > legend,
+.settings-scope > legend {
+  padding: 0 var(--af-space-8) 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--af-text-primary);
+}
+.settings-scope {
+  display: flex;
+  flex-direction: column;
+  gap: var(--af-space-12);
+}
+.settings-scope > p {
+  margin: 0;
+}
+.settings-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--af-space-16) var(--af-space-12);
+}
+.settings-pair > p {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+.inspector-body .settings-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--af-space-16) var(--af-space-12);
+}
+.inspector-body .settings-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--af-space-12);
+  border-top: 1px solid var(--af-border-subtle);
+  padding-top: var(--af-space-16);
+}
+.inspector-body .settings-actions > .af-btn {
+  width: 100%;
+  justify-content: center;
+}
+.inspector-body .af-btn:not(.settings-info, .block-fragment-action) {
+  padding: var(--af-space-12) var(--af-space-16);
+  min-height: 40px;
+}
+.inspector-body :is(.af-stack, .settings-group-body, .slide-settings-panel) > .af-help {
+  margin: 0;
+}
+.inspector-body .property-form > .af-btn,
+.inspector-body #properties > .af-btn {
+  margin-block: var(--af-space-8);
+}
+.inspector-body #properties:not(:has(.property-form)):not(:empty) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--af-space-16);
+}
+.inspector-body .settings-section .settings-section {
+  border: 0;
+  border-top: 1px solid var(--af-border-subtle);
+  border-radius: 0;
+  background: transparent;
+}
+.inspector-body .settings-section .settings-section > :is(.settings-group-body, form, .af-stack) {
+  padding-inline: 0;
+  padding-bottom: 0;
+}
+.inspector-body .settings-section .settings-section > .settings-section-description {
+  padding-inline: 0;
+}
+.inspector-body .block-editor {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  gap: var(--af-space-16);
+}
+.inspector-body .block-editor > legend {
+  padding: 0;
+  margin-bottom: var(--af-space-12);
+  font-size: 12px;
+  line-height: 1.5;
+  font-weight: 600;
+  color: var(--af-text-secondary);
+}
+.inspector-body .block-editor + .block-editor {
+  padding-top: var(--af-space-16);
+  border-top: 1px solid var(--af-border-subtle);
+}
+.inspector-body .block-editor > .af-row {
+  flex-wrap: wrap;
+  gap: var(--af-space-8);
+}
+.inspector-body .settings-section:not([open]) {
+  background: var(--af-color-neutral-50);
+}
+.inspector-body .settings-section .settings-section:not([open]) {
+  background: transparent;
+}
+@media (pointer: coarse) {
+  .inspector-body .block-fragment-action {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+  }
+  .inspector-body .setting-item > .settings-info {
+    width: 44px;
+    height: 44px;
+    inset-block-start: -8px;
+  }
+  .inspector-body .setting-item > label > .af-label {
+    padding-inline-end: 44px;
+    min-height: 32px;
+  }
+}

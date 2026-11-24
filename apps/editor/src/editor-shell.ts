@@ -30,11 +30,11 @@ export const editorMarkup = `
     <button id="catalog-materials" type="button" class="af-btn af-btn--secondary af-btn--sm">Материалы</button>
   </div>
   <p id="catalog-description" class="af-help" role="status"></p>
-  <div class="af-row">
+  <div id="catalog-filters" class="af-row">
     <label class="af-field"><span class="af-label">Поиск по каталогу</span><input id="catalog-search" type="search" class="af-input"></label>
     <label id="catalog-category-field" class="af-field"><span class="af-label">Категория шаблона</span><select id="catalog-category" class="af-select" aria-label="Категория шаблона"></select></label>
     <label id="catalog-theme-field" class="af-field"><span class="af-label">Оформление композиции</span><select id="catalog-theme" class="af-select" aria-label="Оформление композиции"></select></label>
   </div>
   <p id="catalog-empty" class="af-help" hidden>Ничего не найдено. Измените запрос или категорию.</p>
-  <div id="templates"></div><div id="palette"></div>
+  <div id="templates"></div><div id="palette"></div><div id="catalog-materials-pane" hidden></div>
 </div></dialog>`;

@@ -150,9 +150,6 @@ export function widgetDesign(
     i.type = 'number';
     i.min = '0';
     i.max = '20';
-    motionHost.append(
-      el('p', 'af-help', '0 — сразу; одинаковый номер — показ вместе по команде «Далее».'),
-    );
   }
   if (w.type === 'image') {
     host.append(
@@ -705,7 +702,7 @@ function slideDesign(
   behavior.dataset.advancedSetting = '';
   grid.open = opened.get('slide-grid') ?? false;
   grid.append(el('summary', 'af-btn af-btn--clear af-btn--sm', 'Сетка и размеры'));
-  const form = el('form', 'af-stack');
+  const form = el('form', 'af-stack settings-grid-body');
   form.dataset.gridDraft = 'true';
   const feedback = el('p', 'af-help');
   feedback.setAttribute('role', 'status');
@@ -726,6 +723,8 @@ function slideDesign(
     true,
   );
   const draft = structuredClone(page.grid);
+  const basics = el('div', 'settings-grid');
+  form.append(basics);
   gridScopeControl(form, doc, index, tools.gridScope ?? commit);
   for (const [key, label, min, max] of [
     ['columns', 'Колонки', 1, 24],
@@ -733,7 +732,7 @@ function slideDesign(
     ['gap', 'Отступ, px', 0, 48],
   ] as const) {
     const field = input(
-      form,
+      basics,
       label,
       String(draft[key]),
       (v) => (draft[key] = Number(v)),
@@ -748,16 +747,10 @@ function slideDesign(
     field,
     value: field.value,
   }));
-  form.append(
-    el(
-      'p',
-      'af-help',
-      'Измените нужные параметры и нажмите «Применить сетку». Положение и размеры блоков будут пересчитаны.',
-    ),
-  );
-  const save = el('button', 'af-btn af-btn--ghost af-btn--sm', 'Применить сетку');
+  const save = el('button', 'af-btn', 'Применить сетку');
   save.type = 'submit';
-  form.append(save);
+  const gridActions = el('div', 'settings-actions');
+  gridActions.append(save);
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     let issue = '';
@@ -776,7 +769,7 @@ function slideDesign(
         issue || 'Сетка не применена. Проверьте параметры и повторите действие.';
     }
   });
-  form.append(
+  gridActions.append(
     button('Отменить изменения сетки', () => {
       Object.assign(draft, structuredClone(page.grid));
       for (const { field, value } of originalValues) field.value = value;
@@ -785,14 +778,12 @@ function slideDesign(
       feedback.textContent = 'Изменения сетки отменены.';
       tools.notice?.('Изменения сетки отменены.');
     }),
-    feedback,
-  );
-  grid.append(form);
-  grid.append(
     standardGridButton(() => {
       commit((d) => applyStandardGrid(d, index));
     }),
   );
+  form.append(gridActions, feedback);
+  grid.append(form);
   structure.append(grid, el('h3', '', 'Элементы слайда'));
   if (!page.widgets.length)
     structure.append(el('p', 'af-help', 'Слайд пока пуст. Выберите шаблон или добавьте блок.'));
@@ -853,13 +844,6 @@ function slideDesign(
     chrome.header = { ...chrome.header, text: headerText.value.trim() || undefined };
     applyChrome();
   });
-  header.append(
-    el(
-      'p',
-      'af-help',
-      'Пустое поле — «АЛАБУГА / название проекта». Положение и размер одинаковы на всех слайдах.',
-    ),
-  );
   const numbering = el('fieldset', 'block-editor');
   numbering.append(el('legend', '', 'Нумерация страниц'));
   chromeSettings.append(numbering);
@@ -934,13 +918,6 @@ function slideDesign(
       chrome.number = { ...chrome.number, color: v as NonNullable<typeof chrome.number>['color'] };
       applyChrome();
     },
-  );
-  numbering.append(
-    el(
-      'p',
-      'af-help',
-      'Пустой номер рассчитывается по порядку слайдов и обновляется при перестановке. Свой текст заменяет автоматический номер.',
-    ),
   );
   if (appearance.background)
     cropControl(
@@ -1127,14 +1104,7 @@ function slideDesign(
     );
     advanced.append(group);
   });
-  behavior.append(
-    el(
-      'p',
-      'af-help',
-      'Шаг 0 — сразу. Одинаковый номер — показ вместе. При печати видны все элементы.',
-    ),
-    button('Посмотреть этот слайд', tools.preview, 'af-btn'),
-  );
+  behavior.append(button('Посмотреть этот слайд', tools.preview, 'af-btn'));
   const modals = el('details', 'settings-disclosure');
   modals.dataset.setting = 'slide-modals';
   modals.open = opened.get('slide-modals') ?? false;

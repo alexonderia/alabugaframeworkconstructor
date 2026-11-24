@@ -26,3 +26,5 @@
 @import './canvas/controls.css';
 @import './canvas/snap-controls.css';
 @import './shared/control-hints.css';
+@import './inspector/settings.css';
+@import './shell/panel-surfaces.css';

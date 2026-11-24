@@ -97,6 +97,10 @@ for (const kind of ['page', 'presentation'] as const) {
       height = grid.getByLabel('Строка, px', { exact: true });
     await columns.fill('12');
     await columns.press('Tab');
+    await expect(
+      grid.getByRole('button', { name: 'О настройке «Колонки»', exact: true }),
+    ).toBeFocused();
+    await page.keyboard.press('Tab');
     await expect(height).toBeFocused();
     await height.fill('80');
     await grid.getByLabel('Отступ, px', { exact: true }).fill('12');

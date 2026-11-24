@@ -169,9 +169,22 @@ html[data-block-cursor] * {
   max-width: 1920px;
   padding: 0;
 }
-#canvas[data-standard-grid][data-device='desktop']:has(.af-document--page) {
+#canvas[data-standard-grid][data-device='desktop']:has(.af-document--page),
+#canvas:has(.af-document--presentation) {
   width: var(--constructor-document-width);
   max-width: none;
+}
+#builder .canvas-scroll:has(.af-document--presentation) {
+  border-radius: 0;
+}
+#builder .editor-canvas:has(.af-document--presentation) {
+  min-height: 0;
+  padding: 0;
+  background: transparent;
+}
+#canvas .af-deck {
+  border: 0;
+  background: transparent;
 }
 #canvas .af-layout-grid.af-page {
   padding: var(--af-grid-top) var(--af-grid-right) var(--af-grid-bottom) var(--af-grid-left);

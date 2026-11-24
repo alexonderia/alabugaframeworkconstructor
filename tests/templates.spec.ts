@@ -100,8 +100,9 @@ test('corporate website safely replaces a composition and recovers data from a p
   await expect(page.locator('#canvas')).toHaveCSS('width', '390px');
   await page.locator('#add-widget').click();
   await page.locator('#catalog').getByRole('button', { name: 'Материалы', exact: true }).click();
-  const assets = page.getByRole('dialog', { name: 'Библиотека материалов', exact: true });
+  const assets = page.locator('#catalog');
   await assets.locator('.asset-card').first().click();
+  await assets.getByRole('button', { name: 'Добавить изображение', exact: true }).click();
   await expect(assets).toBeHidden();
   await expect(page.locator('#canvas .is-selected img')).toBeVisible();
 });

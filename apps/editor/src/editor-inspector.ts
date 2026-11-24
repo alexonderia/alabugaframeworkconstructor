@@ -21,6 +21,8 @@ import {
   standardGridButton,
 } from './grid-settings';
 import { applyInheritedGrid } from './document-grid';
+import { controlHints, settingsInfo } from './control-hints';
+import { inspectorHelp } from './settings-help';
 
 export type InspectorDraftState = 'valid' | 'pending' | 'invalid';
 export interface InspectorContext {
@@ -93,25 +95,51 @@ export class EditorInspector {
     );
     this.modeControl.closest('label')!.id = 'editor-mode-field';
     this.drawer.querySelector('.inspector-body')!.prepend(this.modeControl.closest('label')!);
+    const modeLabel = this.modeControl.closest('label')!;
+    const modeGroup = el('div', 'inspector-mode');
+    const modeHeading = el('div', 'settings-field-heading');
+    modeLabel.before(modeGroup);
+    modeHeading.append(
+      modeLabel.querySelector('.af-label')!,
+      settingsInfo(
+        'О режиме редактора',
+        'Стандартный режим оставляет основные настройки. Расширенный добавляет точную геометрию, сетку и поведение. Переключение не изменяет документ.',
+      ),
+    );
+    modeGroup.append(modeHeading, modeLabel);
+    const headerActions = el('div', 'settings-header-actions');
+    const close = this.get('close-inspector');
+    close.before(headerActions);
+    headerActions.append(
+      settingsInfo(
+        'О настройках',
+        'Изменения сохраняются автоматически в этом браузере. Для сетки используйте «Применить сетку». Действия можно отменить. Для переноса проекта скачайте копию JSON.',
+      ),
+      close,
+    );
+    const hints = controlHints(this.drawer, this.lifetime.signal);
+    const visibility = new MutationObserver(() => {
+      if (this.drawer.hidden) hints.hide();
+    });
+    visibility.observe(this.drawer, { attributes: true, attributeFilter: ['hidden'] });
+    this.lifetime.signal.addEventListener('abort', () => visibility.disconnect(), { once: true });
     this.access = responsiveDrawer(root, drawer, () => this.close(), this.lifetime.signal);
     inspectorLayout(drawer, this.lifetime.signal);
+    inspectorHelp(drawer, this.lifetime.signal);
     const settings = this.get<HTMLFormElement>('settings');
+    settings.querySelector(':scope > .af-help')?.remove();
     settings.dataset.gridDraft = 'true';
     this.gridFeedback.setAttribute('role', 'status');
     this.gridFeedback.setAttribute('aria-live', 'polite');
-    const applyGrid = el('button', 'af-btn af-btn--secondary af-btn--sm', 'Применить сетку');
+    const applyGrid = el('button', 'af-btn', 'Применить сетку');
     applyGrid.type = 'submit';
     const grid = el('details', 'advanced-grid settings-disclosure');
     grid.dataset.advancedSetting = '';
-    grid.append(
-      el('summary', 'af-btn af-btn--clear af-btn--sm', 'Дополнительно: сетка'),
-      settings.querySelector('.settings-grid')!,
-      this.gridExtras,
-      el(
-        'p',
-        'af-help',
-        'Измените нужные параметры и нажмите «Применить сетку». Положение и размеры блоков будут пересчитаны.',
-      ),
+    const gridBody = el('div', 'settings-group-body settings-grid-body');
+    const gridActions = el('div', 'settings-actions');
+    grid.append(el('summary', 'af-btn af-btn--clear', 'Дополнительно: сетка'), gridBody);
+    gridBody.append(settings.querySelector('.settings-grid')!, this.gridExtras);
+    gridActions.append(
       applyGrid,
       button('Отменить изменения сетки', () => {
         this.loadGridDraft(this.actions.document().pages[this.actions.context().section], 'page');
@@ -126,8 +154,8 @@ export class EditorInspector {
           'Стандартная сетка применена. Можно отменить действие.',
         );
       }),
-      this.gridFeedback,
     );
+    gridBody.append(gridActions, this.gridFeedback);
     settings.append(grid);
     settings.addEventListener(
       'submit',
@@ -283,6 +311,7 @@ export class EditorInspector {
     if (this.lifetime.signal.aborted) return;
     this.setMode(doc);
     const { selected, section: pageIndex, documentMode, preview } = this.actions.context();
+    this.drawer.dataset.inspectorView = documentMode ? 'document' : selected ? 'block' : 'section';
     this.get('inspector-title').textContent = selected
       ? 'Настройки блока'
       : doc.kind === 'presentation'
@@ -370,17 +399,7 @@ export class EditorInspector {
       });
     else {
       disposeControls(this.host);
-      this.host.replaceChildren(
-        ...(doc.kind === 'presentation'
-          ? []
-          : [
-              el(
-                'p',
-                'af-help',
-                'Сетка действует внутри этой секции. Используйте «Применить сетку», чтобы сохранить её параметры.',
-              ),
-            ]),
-      );
+      this.host.replaceChildren();
     }
   }
 

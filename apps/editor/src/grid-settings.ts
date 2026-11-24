@@ -16,13 +16,16 @@ export function gridScopeControl(
 ) {
   const id = document.pages[index].id,
     note = el('p', 'af-help');
+  const scope = el('fieldset', 'settings-scope');
+  scope.append(el('legend', '', 'Где применяется сетка'));
+  host.append(scope);
   let local = hasSectionGrid(document, id);
   const describe = () =>
     (note.textContent = local
       ? 'Параметры применяются только к этому разделу. Снимите флажок, чтобы наследовать общую сетку.'
       : 'Общая сетка документа. Изменения применятся ко всем разделам без собственной сетки, в том числе к новым.');
   const field = checkboxField(
-    host,
+    scope,
     document.kind === 'page' ? 'Своя сетка для этой секции' : 'Своя сетка для этого слайда',
     local,
     (value) => {
@@ -32,7 +35,7 @@ export function gridScopeControl(
     },
   );
   describe();
-  host.append(note);
+  scope.append(note);
 }
 
 /** Optional frame fields share the existing grid form, draft and undo transaction. */
@@ -42,7 +45,10 @@ export function gridFrameFields(
   kind: AFDocument['kind'],
 ) {
   if (!draft.frame) return;
-  host.append(
+  const margins = el('fieldset', 'settings-subsection settings-pair');
+  margins.append(el('legend', '', 'Поля холста'));
+  host.append(margins);
+  margins.append(
     el('p', 'af-help', `${draft.frame.width}×${draft.frame.height} · поля сетки в пикселях`),
   );
   for (const [key, label] of [
@@ -52,7 +58,7 @@ export function gridFrameFields(
     ['bottom', 'Поле снизу, px'],
   ] as const) {
     const field = inputField(
-      host,
+      margins,
       label,
       draft.frame[key],
       (value) => {
@@ -65,19 +71,15 @@ export function gridFrameFields(
     field.required = true;
   }
   if (kind === 'page' && draft.responsive) {
-    host.append(
-      el(
-        'p',
-        'af-help',
-        'При уменьшении основной сетки число колонок планшета и телефона тоже уменьшается. На телефоне колонок не больше, чем на планшете.',
-      ),
-    );
+    const responsive = el('fieldset', 'settings-subsection settings-pair');
+    responsive.append(el('legend', '', 'Планшет и телефон'));
+    host.append(responsive);
     for (const [key, label] of [
       ['tabletColumns', 'Колонки на планшете'],
       ['mobileColumns', 'Колонки на телефоне'],
     ] as const) {
       const field = inputField(
-        host,
+        responsive,
         label,
         draft.responsive[key],
         (value) => {

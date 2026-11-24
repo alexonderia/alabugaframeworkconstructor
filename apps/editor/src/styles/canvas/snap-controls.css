@@ -69,14 +69,14 @@
   gap: 2px;
 }
 .block-controls-actions > .af-btn,
-.block-controls-body .snap-info {
+.block-controls-body .settings-info {
   width: 28px;
   height: 28px;
   min-width: 28px;
   min-height: 28px;
   padding: 5px;
 }
-.block-controls-body .af-label > .snap-info {
+.block-controls-body .af-label > .settings-info {
   margin-block: -5px;
 }
 .block-controls-body .af-field {

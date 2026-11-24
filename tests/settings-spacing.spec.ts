@@ -19,7 +19,7 @@ for(const spaced of [false,true])test(`disclosure spacing includes field caption
   const gaps=await disclosure.locator('.af-field').evaluateAll(fields=>fields.slice(1).map((n,i)=>n.getBoundingClientRect().top-fields[i].getBoundingClientRect().bottom));for(const gap of gaps)expect(gap).toBeGreaterThanOrEqual(15);
   await summary.scrollIntoViewIfNeeded();await page.locator('#inspector').screenshot({path:info.outputPath(`motion-${width}.png`)});
   await summary.click();await expect(disclosure.locator('.af-field').first()).toBeHidden();
-  expect(await disclosure.evaluate(n=>Math.abs(n.getBoundingClientRect().height-n.querySelector('summary')!.getBoundingClientRect().height))).toBeLessThanOrEqual(1);
+  expect(await disclosure.evaluate(n=>{const s=getComputedStyle(n);return Math.abs(n.getBoundingClientRect().height-n.querySelector('summary')!.getBoundingClientRect().height-parseFloat(s.borderTopWidth)-parseFloat(s.borderBottomWidth))})).toBeLessThanOrEqual(1);
  }
  await page.locator('#close-inspector').click();await page.setViewportSize({width:1440,height:1000});await page.locator('.project-menu summary').click();await page.locator('#demo-deck').click();await page.locator('#page-settings-open').click();
  await page.getByRole('tab',{name:'Структура',exact:true}).click();const grid=page.locator('.slide-grid');await grid.locator('summary').click();await headingGap(grid);

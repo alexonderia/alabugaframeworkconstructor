@@ -71,7 +71,7 @@ test('a short landscape viewport keeps canvas commands compact and panels access
  await expect(page.locator('#preview')).toHaveText('Просмотр');expect((await page.locator('.canvas-scroll').boundingBox())!.y).toBeLessThan(240);
  await page.locator('#page-settings-open').click();const close=page.locator('#close-inspector');await expect(close).toBeInViewport();
  await close.focus();await page.keyboard.press('Shift+Tab');expect(await page.locator('#inspector').evaluate(n=>n.contains(document.activeElement))).toBe(true);
- await page.keyboard.press('Escape');await expect(page.locator('#inspector')).toBeHidden();await expect(page.locator('#page-settings-open')).toBeFocused();
+ await expect(page.getByRole('tooltip')).toBeVisible();await page.keyboard.press('Escape');await expect(page.getByRole('tooltip')).toBeHidden();await expect(page.locator('#inspector')).toBeVisible();await page.keyboard.press('Escape');await expect(page.locator('#inspector')).toBeHidden();await expect(page.locator('#page-settings-open')).toBeFocused();
 });
 
 test('catalog and material descriptions inherit readable button states',async({page})=>{

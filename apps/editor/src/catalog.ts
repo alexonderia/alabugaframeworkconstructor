@@ -1,5 +1,5 @@
 import { widgetRegistry, type AFDocument, type Widget } from '@alabuga/framework/schema';
-import { chooseAsset } from './assets';
+import { mountAssetPicker } from './assets';
 import { compositionPreview } from './composition-preview';
 import { transferCompositionsDialog } from './composition-library';
 import { createWidget } from './model';
@@ -15,7 +15,7 @@ import {
 } from './templates';
 import { button, el, showDialog } from './ui';
 
-type CatalogMode = 'section' | 'widget';
+type CatalogMode = 'section' | 'widget' | 'materials';
 type CatalogActions = {
   document: () => AFDocument;
   change: (edit: (document: AFDocument) => void, status: string) => boolean;
@@ -56,6 +56,7 @@ export function editorCatalog(
       return entry;
     });
   const previews: ReturnType<typeof compositionPreview>[] = [];
+  let materialsPicker: ReturnType<typeof mountAssetPicker> | undefined;
   let saved: SectionTemplate[] = [],
     request = 0,
     mode: CatalogMode = 'widget',
@@ -112,6 +113,7 @@ export function editorCatalog(
   }
   function draw() {
     clearPreviews();
+    if (mode === 'materials') return;
     const query = search.value.trim().toLocaleLowerCase('ru');
     const matches = (value: string) => value.toLocaleLowerCase('ru').includes(query);
     if (mode === 'widget') {
@@ -159,6 +161,7 @@ export function editorCatalog(
   function tab(next: CatalogMode) {
     mode = next;
     const sections = mode === 'section';
+    const materials = mode === 'materials';
     const presentation = actions.document().kind === 'presentation';
     get('catalog-title').textContent = sections
       ? presentation
@@ -167,33 +170,39 @@ export function editorCatalog(
       : 'Добавить блок';
     description.textContent = sections
       ? 'Выберите шаблон и замените содержимое своим.'
-      : 'Выберите блок для текущего раздела.';
+      : materials
+        ? 'Выберите материал, затем нажмите «Добавить изображение». Он появится отдельным блоком в текущем разделе.'
+        : 'Выберите блок для текущего раздела.';
     for (const [id, selected] of [
       ['catalog-sections', sections],
-      ['catalog-components', !sections],
+      ['catalog-components', mode === 'widget'],
+      ['catalog-materials', materials],
     ] as const) {
       get(id).setAttribute('aria-pressed', String(selected));
     }
     get('catalog-theme-field').hidden = !sections;
     get('catalog-category-field').hidden = !sections;
     templates.hidden = !sections;
-    palette.hidden = sections;
+    palette.hidden = mode !== 'widget';
     transfer.hidden = !sections;
+    get('catalog-filters').hidden = materials;
+    get('catalog-materials-pane').hidden = !materials;
+    if (materials) {
+      get('catalog-empty').hidden = true;
+      materialsPicker ??= mountAssetPicker(
+        get('catalog-materials-pane'),
+        (src) => {
+          if (signal.aborted || !addWidget('image', src))
+            throw new Error('Не удалось добавить изображение в текущий раздел.');
+        },
+        { signal, initialCategory: '', confirmLabel: 'Добавить изображение' },
+      );
+    }
     draw();
   }
   get('catalog-sections').addEventListener('click', () => tab('section'), { signal });
   get('catalog-components').addEventListener('click', () => tab('widget'), { signal });
-  get('catalog-materials').addEventListener(
-    'click',
-    () => {
-      dialog.close();
-      void chooseAsset((src) => {
-        if (signal.aborted || !addWidget('image', src))
-          throw new Error('Не удалось добавить изображение в текущий раздел.');
-      }, signal);
-    },
-    { signal },
-  );
+  get('catalog-materials').addEventListener('click', () => tab('materials'), { signal });
   theme.addEventListener('change', draw, { signal });
   category.addEventListener('change', draw, { signal });
   search.addEventListener('input', draw, { signal });
@@ -204,6 +213,8 @@ export function editorCatalog(
       if (dialog.open) return;
       request++;
       clearPreviews();
+      materialsPicker?.destroy();
+      materialsPicker = undefined;
     },
     { signal },
   );
@@ -211,12 +222,18 @@ export function editorCatalog(
     'abort',
     () => {
       clearPreviews();
+      materialsPicker?.destroy();
+      materialsPicker = undefined;
       if (dialog.open) dialog.close();
     },
     { once: true },
   );
 
   return (next: CatalogMode, index: number, active: number) => {
+    if (!dialog.open) {
+      materialsPicker?.destroy();
+      materialsPicker = undefined;
+    }
     insertAt = next === 'section' ? index : active + 1;
     widgetIndex = next === 'widget' ? index : active;
     category.value = '';

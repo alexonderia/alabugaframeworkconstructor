@@ -91,10 +91,37 @@ export function setSectionGrid(document: AFDocument, id: string, local: boolean)
   Object.assign(target, info);
 }
 
-/** Adopt the existing framed grid as the common grid; leave legacy unframed files readable. */
+export function needsStandardPresentationGrid(document: AFDocument) {
+  return (
+    document.kind === 'presentation' &&
+    !templateInfo(document)?.documentGrid &&
+    document.pages.every((section) => !section.grid.frame)
+  );
+}
+
+/** An explicit grid lets a source revision restore its geometry without migrating again. */
+export function preserveGridSettings(input: AFDocument) {
+  const document = structuredClone(input),
+    info = editTemplateInfo(document),
+    base = info.documentGrid ?? document.pages[0].grid,
+    overrides = new Set(info.gridOverrides ?? []);
+  info.documentGrid = structuredClone(base);
+  for (const section of document.pages)
+    if (JSON.stringify(section.grid) !== JSON.stringify(base)) overrides.add(section.id);
+  if (overrides.size) info.gridOverrides = [...overrides];
+  return document;
+}
+
+/** Share framed grids and bring legacy presentations onto the same grid as sites. */
 export function prepareDocumentGrid(input: AFDocument): AFDocument {
   const document = structuredClone(input);
-  if (templateInfo(document)?.documentGrid || document.pages.some((section) => section.grid.frame))
+  if (needsStandardPresentationGrid(document)) {
+    applyDocumentGrid(document, standardGrid());
+    if (document.schemaVersion < 6) document.schemaVersion = 6;
+  } else if (
+    templateInfo(document)?.documentGrid ||
+    document.pages.some((section) => section.grid.frame)
+  )
     applyDocumentGrid(document, documentGrid(document));
   return document;
 }

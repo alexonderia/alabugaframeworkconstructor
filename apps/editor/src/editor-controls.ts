@@ -31,7 +31,11 @@ export function createZoomControls(canvas: HTMLElement, status: HTMLElement) {
     canvas.style.maxWidth = '';
     baseWidth = canvas.offsetWidth;
     const slide = canvas.querySelector<HTMLElement>('.af-slide--active');
-    const width = Math.max(baseWidth, canvas.scrollWidth),
+    // Slide decorations and editing controls must not enlarge the slide frame.
+    const width = slide
+        ? parseFloat(canvas.style.getPropertyValue('--constructor-document-width')) ||
+          slide.offsetWidth
+        : Math.max(baseWidth, canvas.scrollWidth),
       availableWidth = viewport.clientWidth;
     let scale = availableWidth / Math.max(1, width);
     if (slide) {
@@ -72,14 +76,15 @@ export function createZoomControls(canvas: HTMLElement, status: HTMLElement) {
     reset,
     fit,
     sync() {
-      const fixedSite =
-        canvas.hasAttribute('data-standard-grid') && !!canvas.querySelector('.af-document--page');
-      const current = `${fixedSite}:${canvas.dataset.device}:${canvas.style.getPropertyValue('--constructor-document-width')}`;
+      const fixedCanvas =
+        !!canvas.querySelector('.af-document--presentation') ||
+        (canvas.hasAttribute('data-standard-grid') && canvas.dataset.device === 'desktop');
+      const current = `${fixedCanvas}:${canvas.dataset.device}:${canvas.style.getPropertyValue('--constructor-document-width')}:${canvas.style.getPropertyValue('--constructor-document-height')}`;
       if (current === screen) return;
-      const previousFixedSite = screen.startsWith('true:');
+      const previousFixedCanvas = screen.startsWith('true:');
       screen = current;
-      if (fixedSite && canvas.dataset.device === 'desktop') fit();
-      else if (previousFixedSite && !fixedSite) reset();
+      if (fixedCanvas) fit();
+      else if (previousFixedCanvas) reset();
     },
     destroy() {
       cancelAnimationFrame(resizeFrame);

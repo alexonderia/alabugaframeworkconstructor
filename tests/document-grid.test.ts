@@ -6,6 +6,8 @@ import {
   applyDocumentGrid,
   applyInheritedGrid,
   prepareDocumentGrid,
+  needsStandardPresentationGrid,
+  preserveGridSettings,
   setSectionGrid,
 } from '../apps/editor/src/document-grid';
 import { planGridChange } from '../apps/editor/src/grid-change';
@@ -138,4 +140,39 @@ test('invalid grid metadata is rejected and stale override references are pruned
     () => checked({ ...doc, templateInfo: { documentGrid: { columns: -1 } } }),
     /сетка документа/,
   );
+});
+
+test('legacy presentations adopt the site grid atomically without losing content or changing the source', () => {
+  const legacy = checked({
+    schemaVersion: 3,
+    kind: 'presentation',
+    title: 'Старая презентация',
+    pages: ['brand-cover', 'metrics'].map((key) => makeComposition(key, 'presentation')),
+  });
+  const before = structuredClone(legacy),
+    next = prepareDocumentGrid(legacy);
+  assert.equal(needsStandardPresentationGrid(legacy), true);
+  assert.ok(
+    next.pages.every((section) => JSON.stringify(section.grid) === JSON.stringify(standardGrid())),
+  );
+  assert.deepEqual(content(next), content(before));
+  assert.deepEqual(legacy, before);
+  assert.equal(needsStandardPresentationGrid(next), false);
+  assert.deepEqual(prepareDocumentGrid(next), next);
+  assert.deepEqual(checked(next), next);
+  legacy.pages[1].grid.gap = 12;
+  const backup = preserveGridSettings(legacy);
+  assert.equal(needsStandardPresentationGrid(backup), false);
+  assert.deepEqual(prepareDocumentGrid(backup).pages, legacy.pages);
+  assert.deepEqual(templateInfo(backup)?.gridOverrides, [legacy.pages[1].id]);
+});
+
+test('explicit presentation grid settings survive preparation', () => {
+  const document = create('presentation');
+  applyDocumentGrid(document, { ...standardGrid(), columns: 20, gap: 12 });
+  setSectionGrid(document, document.pages[1].id, true);
+  applyInheritedGrid(document, 1, { ...standardGrid(), columns: 12 });
+  const before = structuredClone(document);
+  assert.equal(needsStandardPresentationGrid(document), false);
+  assert.deepEqual(prepareDocumentGrid(document), before);
 });

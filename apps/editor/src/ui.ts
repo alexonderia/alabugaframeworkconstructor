@@ -74,7 +74,7 @@ export function alert(text: string, tone: 'info' | 'success' | 'warning' | 'dang
 /** One spacing owner for inspector groups; native disclosure semantics remain. */
 export function settingsGroup(title: string, className: string) {
   const group = el('details', className),
-    summary = el('summary', 'af-btn af-btn--ghost', title),
+    summary = el('summary', 'af-btn af-btn--clear', title),
     body = el('div', 'settings-group-body');
   const icon = el('span', 'af-icon af-icon--expand');
   icon.setAttribute('aria-hidden', 'true');

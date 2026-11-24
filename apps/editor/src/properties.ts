@@ -1,6 +1,6 @@
 import { mountControls, disposeControls } from './component-lifecycle';
 import { frameworkDom as dom } from './framework-adapter';
-import { el, button, settingsGroup } from './ui';
+import { el, button, iconButton, settingsGroup } from './ui';
 import type { ActionIcon } from './action-icons';
 import {
   inputField as field,
@@ -150,11 +150,14 @@ export function properties(host: HTMLElement, original: Widget, actions: Callbac
       opened.set(group.dataset.setting!, group.open);
     disposeControls(form);
     form.replaceChildren();
-    form.append(
-      el('h2', 'af-title inspector-heading', widgetRegistry[draft.type].title),
-      el('p', 'af-help', 'Изменения сразу отображаются на странице.'),
+    const context = el('div', 'block-settings-context');
+    context.append(
+      el('h2', 'af-title inspector-heading block-settings-type', widgetRegistry[draft.type].title),
     );
-    field(form, 'Название блока', draft.title, (v) => (draft.title = v)).maxLength = 200;
+    form.append(context);
+    const name = field(form, 'Название блока', draft.title, (v) => (draft.title = v));
+    name.maxLength = 200;
+    const nameField = name.closest('label')!;
     const mode = actions.layout?.() ?? 'grid',
       geometry = el('fieldset', 'geometry');
     geometry.append(
@@ -277,16 +280,9 @@ export function properties(host: HTMLElement, original: Widget, actions: Callbac
           draw();
         }),
       );
-    placement.append(
-      presets,
-      el(
-        'p',
-        'af-help',
-        'Сдвигается сам блок внутри секции. Для точной позиции задайте колонку или перетащите блок за ручку ↕.',
-      ),
-    );
+    placement.append(presets);
     form.append(placement);
-    select(
+    const alignment = select(
       form,
       'Выравнивание содержимого',
       draft.align ?? '',
@@ -301,16 +297,21 @@ export function properties(host: HTMLElement, original: Widget, actions: Callbac
         else delete draft.align;
       },
     );
+    alignment.closest<HTMLElement>('label')!.dataset.propertyGroup = 'style';
     if (draft.type === 'text') {
       draft.content.forEach((block, index) => {
-        const box = el('fieldset', 'block-editor');
-        box.append(
-          el(
-            'legend',
-            '',
+        const box = el('div', 'block-fragment'),
+          header = el('div', 'block-fragment-header'),
+          title = el(
+            'h3',
+            'block-fragment-title',
             `${index + 1}. ${{ paragraph: 'Абзац', heading: 'Заголовок', list: 'Список', divider: 'Разделитель', callout: 'Акцент', link: 'Ссылка' }[block.type]}`,
-          ),
-        );
+          );
+        title.id = 'fragment-' + crypto.randomUUID();
+        box.setAttribute('role', 'group');
+        box.setAttribute('aria-labelledby', title.id);
+        header.append(title);
+        box.append(header);
         if ('text' in block) area(box, 'Текст', block.text, (v) => (block.text = v));
         if (block.type === 'paragraph') {
           const { group, body } = settingsGroup('Параметры абзаца', 'paragraph-settings');
@@ -360,33 +361,50 @@ export function properties(host: HTMLElement, original: Widget, actions: Callbac
               },
             );
         }
-        const controls = el('div', 'af-row');
-        const up = small('↑', () => {
-          [draft.content[index - 1], draft.content[index]] = [block, draft.content[index - 1]];
-          draw();
-        });
+        const controls = el('div', 'block-fragment-actions');
+        const up = iconButton(
+          'Поднять фрагмент',
+          () => {
+            [draft.content[index - 1], draft.content[index]] = [block, draft.content[index - 1]];
+            draw();
+          },
+          'up',
+          'af-btn af-btn--clear block-fragment-action',
+        );
         up.disabled = index === 0;
         up.setAttribute('aria-label', 'Поднять фрагмент');
-        const down = small('↓', () => {
-          [draft.content[index + 1], draft.content[index]] = [block, draft.content[index + 1]];
-          draw();
-        });
+        const down = iconButton(
+          'Опустить фрагмент',
+          () => {
+            [draft.content[index + 1], draft.content[index]] = [block, draft.content[index + 1]];
+            draw();
+          },
+          'down',
+          'af-btn af-btn--clear block-fragment-action',
+        );
         down.disabled = index === draft.content.length - 1;
         down.setAttribute('aria-label', 'Опустить фрагмент');
         controls.append(
           up,
           down,
-          small('Удалить фрагмент', () => {
-            draft.content.splice(index, 1);
-            draw();
-          }),
+          iconButton(
+            'Удалить фрагмент',
+            () => {
+              draft.content.splice(index, 1);
+              draw();
+            },
+            'delete',
+            'af-btn af-btn--clear block-fragment-action',
+          ),
         );
-        box.append(controls);
+        header.append(controls);
         form.append(box);
       });
       let kind = 'paragraph';
+      const addFragment = el('div', 'block-fragment-add');
+      addFragment.append(el('h3', 'block-settings-subtitle', 'Добавление фрагмента'));
       select(
-        form,
+        addFragment,
         'Новый фрагмент',
         kind,
         {
@@ -399,7 +417,7 @@ export function properties(host: HTMLElement, original: Widget, actions: Callbac
         },
         (v) => (kind = v),
       );
-      form.append(
+      addFragment.append(
         small('Добавить фрагмент', () => {
           const blocks: Record<string, TextBlock> = {
             paragraph: { type: 'paragraph', text: 'Новый абзац', dropCap: false },
@@ -413,6 +431,7 @@ export function properties(host: HTMLElement, original: Widget, actions: Callbac
           draw();
         }),
       );
+      form.append(addFragment);
     }
     if (draft.type === 'metric') {
       field(form, 'Значение', draft.value, (v) => (draft.value = v)).maxLength = 30;
@@ -498,9 +517,15 @@ export function properties(host: HTMLElement, original: Widget, actions: Callbac
         const i = tablePage * 10 + j,
           group = el('fieldset', 'block-editor');
         group.append(el('legend', '', `Строка ${i + 1}`));
-        draft.columns.forEach((col) =>
-          field(group, col.label, String(row[col.key] ?? ''), (v) => (row[col.key] = v)),
-        );
+        draft.columns.forEach((col) => {
+          const cell = field(
+            group,
+            col.label,
+            String(row[col.key] ?? ''),
+            (v) => (row[col.key] = v),
+          );
+          cell.dataset.settingHelp = `Содержимое ячейки в строке ${i + 1}, столбце «${col.label}». Название столбца редактируется выше, в группе «Колонки».`;
+        });
         group.append(
           small('Удалить строку', () => {
             draft.rows.splice(i, 1);
@@ -571,26 +596,23 @@ export function properties(host: HTMLElement, original: Widget, actions: Callbac
         opened.get(key) ?? (key === 'content' || (draft.type !== 'text' && key !== 'geometry'));
       groups.set(key, entry);
     }
-    for (const node of Array.from(form.children).slice(2)) {
+    for (const node of Array.from(form.children).filter((node) => node !== context)) {
       const key =
         (node as HTMLElement).dataset.propertyGroup ??
         (node === geometry || node === placement ? 'geometry' : 'content');
       groups.get(key)!.body.append(node);
     }
-    for (const key of ['content', 'style'] as const) {
+    // Text comes first; its optional block name follows the fragments.
+    if (draft.type === 'text') groups.get('content')!.body.append(nameField);
+    for (const key of ['content', 'style', 'geometry', 'behavior'] as const) {
       const { group, body } = groups.get(key)!;
+      if (key === 'geometry' || key === 'behavior') group.dataset.advancedSetting = '';
       if (body.children.length) form.append(group);
     }
-    const advanced = settingsGroup('Дополнительно', 'section-property-group');
-    advanced.group.dataset.setting = 'advanced';
-    advanced.group.dataset.advancedSetting = '';
-    advanced.group.open = opened.get('advanced') ?? true;
-    for (const key of ['geometry', 'behavior'] as const) {
-      const { group, body } = groups.get(key)!;
-      if (body.children.length) advanced.body.append(group);
-    }
-    if (advanced.body.children.length) form.append(advanced.group);
-    form.append(
+    const operations = el('section', 'block-operations');
+    operations.setAttribute('aria-label', 'Действия с блоком');
+    operations.append(
+      el('h3', 'block-settings-subtitle', 'Действия с блоком'),
       small('Сбросить неприменённые изменения', () => {
         clearTimeout(timer);
         for (const key of Object.keys(draft)) Reflect.deleteProperty(draft, key);
@@ -611,7 +633,8 @@ export function properties(host: HTMLElement, original: Widget, actions: Callbac
       ),
       small('Удалить блок', actions.remove, 'delete'),
     );
-    form.append(footer);
+    operations.append(footer);
+    form.append(operations);
     mountControls(form);
   };
   draw();

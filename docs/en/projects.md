@@ -6,6 +6,8 @@ The gallery separates websites and presentations. The + card creates an empty pr
 
 Routes are #/projects, #/edit/ID, #/view/ID and #/trash. Reload and browser back/forward work. Leaving the editor waits for pending writes; errors keep it open with retry and project download.
 
+Ordinary navigation, reload and opening a project from the gallery start at the top. Previewing from the editor retains the selected section or slide; returning directly to that editor restores the working position. Later gallery visits do not reuse that position.
+
 IndexedDB belongs to this browser profile and origin. Use «Скачать копию (.json)» (Download a copy) in the editor or the gallery card menu to back up an editable project. Open the copy in another browser with «Импорт проекта» (Import project). Clearing browser data removes projects. Trash retains revisions, has no automatic expiry, and can restore a project. Permanent deletion requires confirmation, removes its revisions and draft, preserves shared assets and records a tombstone so another tab's autosave cannot recreate it.
 
 Database version 3 adds a revision index by project. ProjectSummary and the internal write version update atomically with the document. Databases 1–2 upgrade automatically, preserving projects, revisions and assets; localStorage migration is one-time and preserves the original. The gallery loads summaries and creates thumbnails on visibility, with at most eight live renderers.

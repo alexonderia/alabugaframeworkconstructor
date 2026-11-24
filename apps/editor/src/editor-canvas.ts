@@ -8,6 +8,7 @@ import { el, button, iconButton } from './ui';
 import { geometryLocked } from './templates';
 import { blockControls } from './block-controls';
 import type { ResizeDirection } from './block-geometry';
+import { gridFrame } from '@alabuga/framework/grid';
 
 interface CanvasActions {
   document: () => AFDocument;
@@ -73,10 +74,14 @@ export class EditorCanvas {
       'data-standard-grid',
       doc.pages.some((page) => !!page.grid.frame),
     );
+    const frame = doc.kind === 'presentation' ? gridFrame(doc.pages[pageIndex].grid) : undefined;
     this.elements.canvas.style.setProperty(
       '--constructor-document-width',
-      Math.max(...doc.pages.map((page) => page.grid.frame?.width ?? 1440)) + 'px',
+      (frame?.width ?? Math.max(...doc.pages.map((page) => page.grid.frame?.width ?? 1440))) + 'px',
     );
+    if (frame)
+      this.elements.canvas.style.setProperty('--constructor-document-height', frame.height + 'px');
+    else this.elements.canvas.style.removeProperty('--constructor-document-height');
     this.suggestFit();
     this.elements.canvas.inert = false;
     const signature = JSON.stringify(doc);

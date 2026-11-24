@@ -1,3 +1,11 @@
+.settings-info {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  min-height: 28px;
+  padding: 5px;
+}
 .control-hint {
   position: fixed;
   inset: auto;

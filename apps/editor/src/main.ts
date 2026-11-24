@@ -44,6 +44,7 @@ import {
 } from './storage';
 import { projectDialog } from './projects';
 import { createOutline } from './outline';
+import { needsStandardPresentationGrid, preserveGridSettings } from './document-grid';
 
 const backupTipKey = 'alabuga:backup-tip-shown';
 let backupTipShown = false;
@@ -56,10 +57,15 @@ export async function mountEditor(
   changed: (id: string) => void,
   initialVersion = projectVersion(projectId),
   beforeMount: () => void = () => {},
+  returnView?: ViewState,
 ) {
+  const upgradedGrid = needsStandardPresentationGrid(initial);
+  if (upgradedGrid) await saveRevision(projectId, preserveGridSettings(initial));
   const learning = await tutorialState(projectId);
   let sectionNames = await loadSectionNames(projectId);
-  const initialMessage = '';
+  const initialMessage = upgradedGrid
+    ? 'Сетка презентации обновлена. Исходная версия доступна в истории.'
+    : '';
   function fitCurrent(all: boolean) {
     if (!flush()) return;
     openSlideFit(
@@ -104,10 +110,7 @@ export async function mountEditor(
       },
     },
   );
-  let pageIndex = Math.min(
-      readViewState(session.projectId)?.section ?? learning?.section ?? 0,
-      initial.pages.length - 1,
-    ),
+  let pageIndex = Math.min(returnView?.section ?? learning?.section ?? 0, initial.pages.length - 1),
     selected = '',
     preview = false,
     documentMode = false;
@@ -887,10 +890,11 @@ export async function mountEditor(
   menu.append(button('Пять действий для знакомства', showLearning));
   mountControls(root);
   compactToolbar(root, session.signal);
-  const returnScroll = readViewState(session.projectId)?.scroll;
+  const returnScroll = returnView?.scroll;
   if (returnScroll)
     void document.fonts.ready.then(() => {
-      if (!session.signal.aborted) window.scrollTo(0, returnScroll);
+      if (!session.signal.aborted)
+        window.scrollTo({ top: returnScroll, left: 0, behavior: 'instant' });
     });
   if (learning?.enabled) {
     scrollSection(pageIndex);
@@ -909,6 +913,7 @@ export async function mountEditor(
     },
     { signal: session.signal },
   );
+  if (upgradedGrid) session.save();
   return {
     async beforeLeave() {
       if (document.activeElement instanceof HTMLElement && root.contains(document.activeElement))

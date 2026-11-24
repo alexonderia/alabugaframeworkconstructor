@@ -21,6 +21,7 @@ import { draftDocument } from '@alabuga/ai/contracts';
 import { installRequestedProjects } from './install-projects';
 
 const root = document.querySelector<HTMLElement>('#builder')!;
+history.scrollRestoration = 'manual';
 let route = '',
   dispose = () => {},
   leave: undefined | (() => Promise<boolean>),
@@ -596,10 +597,15 @@ async function gallery(trash = false) {
   mountControls(tools);
 }
 
-async function view(id: string) {
+async function view(id: string, fromEditor: boolean) {
   const p = await storage.getProject(id),
     doc = await storage.hydrate(p.document),
-    state = readViewState(id) ?? { section: 0, device: 'desktop' as const, scroll: 0 };
+    savedView = readViewState(id),
+    state = {
+      section: fromEditor ? (savedView?.section ?? 0) : 0,
+      device: savedView?.device ?? 'desktop',
+      scroll: fromEditor ? (savedView?.scroll ?? 0) : 0,
+    };
   const main = shell(p.title, 'Просмотр проекта'),
     bar = el('div', 'preview-toolbar'),
     host = el('div', 'project-preview'),
@@ -673,7 +679,7 @@ async function view(id: string) {
     .then(() => {
       if (!stopped) {
         status.remove();
-        if (doc.kind === 'page') {
+        if (doc.kind === 'page' && fromEditor && state.section > 0) {
           const section = surface.root?.querySelector<HTMLElement>(
             '[data-section-id="' +
               doc.pages[Math.min(state.section, doc.pages.length - 1)].id +
@@ -702,7 +708,7 @@ async function refresh() {
     pendingSurface(false);
   }
 }
-async function show(path: string) {
+async function show(path: string, previousRoute = '') {
   try {
     if (path.startsWith('/edit/')) {
       const id = decodeURIComponent(path.slice(6)),
@@ -722,11 +728,14 @@ async function show(path: string) {
         },
         p.version ?? 0,
         releaseSurface,
+        previousRoute === '/view/' + id ? readViewState(id) : undefined,
       );
       leave = editor.beforeLeave;
       dispose = editor.destroy;
-    } else if (path.startsWith('/view/')) await view(decodeURIComponent(path.slice(6)));
-    else await gallery(path === '/trash');
+    } else if (path.startsWith('/view/')) {
+      const id = decodeURIComponent(path.slice(6));
+      await view(id, previousRoute === '/edit/' + id);
+    } else await gallery(path === '/trash');
   } catch (e) {
     const main = shell('Не удалось открыть проекты', errorText(e));
     main.append(
@@ -751,9 +760,18 @@ async function changeRoute() {
       d.close();
       d.remove();
     });
+    const previousRoute = route;
     route = next;
-    window.scrollTo(0, 0);
-    await show(next);
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    await show(next, previousRoute);
+    // Mounting and focus cleanup can move the viewport after the first reset.
+    // Only an explicit preview round trip restores a project's working position.
+    const sameProject = next.slice(6) === previousRoute.slice(6);
+    const previewRoundTrip =
+      sameProject &&
+      ((next.startsWith('/edit/') && previousRoute.startsWith('/view/')) ||
+        (next.startsWith('/view/') && previousRoute.startsWith('/edit/')));
+    if (!previewRoundTrip) window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   } finally {
     pendingSurface(false);
     routing = false;

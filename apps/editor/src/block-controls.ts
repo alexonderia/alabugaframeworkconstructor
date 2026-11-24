@@ -1,7 +1,7 @@
 import { el, button, iconButton } from './ui';
 import { actionIcon } from './action-icons';
 import { inputField, checkboxField, selectField } from './ui-fields';
-import { controlHints } from './control-hints';
+import { controlHints, settingsInfo } from './control-hints';
 import type { SnapPreferences, SnapMode } from './snap-geometry';
 
 const descriptions: Record<SnapMode, string> = {
@@ -44,19 +44,7 @@ export function blockControls(canvas: HTMLElement, openGrid: () => void, signal:
   trigger.setAttribute('aria-expanded', 'false');
   details.append(trigger, body);
 
-  const info = (label: string, text: string) => {
-    const control = iconButton(
-      label,
-      () => {},
-      'info',
-      'af-btn af-btn--clear af-btn--sm snap-info',
-    );
-    control.removeAttribute('title');
-    control.dataset.info = '';
-    control.dataset.hint = text;
-    control.setAttribute('aria-expanded', 'false');
-    return control;
-  };
+  const info = settingsInfo;
   const header = el('div', 'block-controls-header'),
     actions = el('div', 'block-controls-actions');
   const closeButton = iconButton(

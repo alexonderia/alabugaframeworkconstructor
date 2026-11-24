@@ -43,16 +43,21 @@ async function setup(page: Page, kind: 'page' | 'presentation', bottom = false) 
 async function gridGeometry(page: Page, selector: string) {
   return page.locator(selector).evaluate((element) => {
     const panel = element.querySelector<HTMLElement>('.af-panel')!;
-    const style = getComputedStyle(panel);
+    const style = getComputedStyle(panel),
+      shellStyle = getComputedStyle(element);
     return {
-      width: (element as HTMLElement).offsetWidth,
-      height: (element as HTMLElement).offsetHeight,
-      left: panel.offsetLeft,
-      top: panel.offsetTop,
-      panelWidth: panel.offsetWidth,
-      panelHeight: panel.offsetHeight,
+      width: Math.round(parseFloat(shellStyle.width)),
+      height: Math.round(parseFloat(shellStyle.height)),
+      left: Math.round(
+        parseFloat(style.position === 'absolute' ? style.left : shellStyle.paddingLeft),
+      ),
+      top: Math.round(
+        parseFloat(style.position === 'absolute' ? style.top : shellStyle.paddingTop),
+      ),
+      panelWidth: Math.round(parseFloat(style.width)),
+      panelHeight: Math.round(parseFloat(style.height)),
       gap: style.gap,
-      columns: style.gridTemplateColumns.split(' ').map(parseFloat),
+      columns: style.gridTemplateColumns.split(' ').map((value) => Math.round(parseFloat(value))),
       rowHeight: parseFloat(style.gridAutoRows),
     };
   });
@@ -84,13 +89,16 @@ test('new presentations use the exact Figma frame and last row in editor, export
       const probe = document.createElement('div');
       probe.style.cssText = `position:absolute;width:${size[1]};height:${size[2]}`;
       e.append(probe);
-      const step = [probe.offsetWidth, probe.offsetHeight];
+      const step = [getComputedStyle(probe).width, getComputedStyle(probe).height].map((value) =>
+        Math.round(parseFloat(value)),
+      );
       probe.remove();
+      const style = getComputedStyle(e);
       return {
-        left: e.offsetLeft,
-        top: e.offsetTop,
-        width: e.offsetWidth,
-        height: e.offsetHeight,
+        left: Math.round(parseFloat(style.left)),
+        top: Math.round(parseFloat(style.top)),
+        width: Math.round(parseFloat(style.width)),
+        height: Math.round(parseFloat(style.height)),
         step,
       };
     }),

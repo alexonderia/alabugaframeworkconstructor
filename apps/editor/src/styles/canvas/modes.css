@@ -2,7 +2,7 @@
   display: none;
 }
 .editor-canvas .af-slide {
-  overflow: visible;
+  overflow: clip;
 }
 .editor-canvas .af-slide > .section-tools {
   display: none;
@@ -11,13 +11,11 @@
   overflow: hidden;
 }
 @media screen {
-  /* Reserve slide space before ResizeObserver runs. Its inline height writes
-     otherwise cause a second resize notification when the inspector opens.
-     The 900px cap matches the public runtime's unscaled 1600x900 slide. */
+  /* Reserve exactly the active slide's frame before the runtime observer runs. */
   .editor-canvas .af-deck {
-    height: auto !important;
-    aspect-ratio: 16 / 9;
-    max-height: var(--af-slide-height, 900px);
+    height: var(--constructor-document-height, var(--af-slide-height, 900px)) !important;
+    aspect-ratio: auto;
+    max-height: none;
   }
 }
 .is-preview .canvas-toolbar,

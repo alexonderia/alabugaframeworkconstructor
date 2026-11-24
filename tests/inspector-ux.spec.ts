@@ -87,7 +87,7 @@ test('the slide inspector distinguishes fitting this slide from fitting the whol
     .getByRole('button', { name: 'Подобрать оформление всей презентации' });
   await expect(single).toBeInViewport();
   await expect(all).toBeInViewport();
-  await expect(style.getByLabel('Текст подписи')).toBeHidden();
+  await expect(style.getByLabel('Текст подписи', { exact: true })).toBeHidden();
   await page.screenshot({ path: info.outputPath('slide-settings-mobile.png') });
 
   await single.click();

@@ -3,16 +3,26 @@ import { readImage } from './export';
 import { loadBrandManifest } from './brand-manifest';
 import { listAssets, describeAsset, addAsset } from './storage';
 
-export async function chooseAsset(apply: (src: string) => void, signal?: AbortSignal) {
-  if (signal?.aborted) return;
-  const { dialog, body } = libraryDialog('Библиотека материалов', 'asset-library'),
+type AssetPickerOptions = {
+  signal?: AbortSignal;
+  initialCategory?: string;
+  confirmLabel?: string;
+};
+
+/** Shared content for a standalone picker and the catalog's Materials tab. */
+export function mountAssetPicker(
+  host: HTMLElement,
+  apply: (src: string) => void,
+  options: AssetPickerOptions = {},
+) {
+  const body = el('div', 'asset-picker'),
     grid = el('div', 'asset-grid'),
     filter = el('select', 'af-select'),
     error = el('p', 'af-error'),
     status = el('p'),
     search = el('input', 'af-input'),
     sort = el('select', 'af-select');
-  dialog.setAttribute('aria-label', 'Библиотека материалов');
+  host.append(body);
   filter.setAttribute('aria-label', 'Категория материалов');
   search.type = 'search';
   search.placeholder = 'Найти по названию и описанию';
@@ -21,6 +31,7 @@ export async function chooseAsset(apply: (src: string) => void, signal?: AbortSi
   status.setAttribute('role', 'status');
   error.setAttribute('role', 'alert');
   for (const [value, label] of [
+    ['', 'Все материалы'],
     ['background', 'Фоны'],
     ['logo', 'Логотипы'],
     ['photo', 'Фотографии'],
@@ -31,6 +42,7 @@ export async function chooseAsset(apply: (src: string) => void, signal?: AbortSi
     o.value = value;
     filter.append(o);
   }
+  filter.value = options.initialCategory ?? 'background';
   for (const [value, label] of [
     ['name', 'По названию'],
     ['reverse', 'В обратном порядке'],
@@ -54,11 +66,44 @@ export async function chooseAsset(apply: (src: string) => void, signal?: AbortSi
   };
   let items: Item[] = [],
     request = 0,
-    closed = false;
+    closed = false,
+    selected: Item | undefined;
+  const lifetime = new AbortController();
+  const confirm = button(
+    options.confirmLabel ?? 'Выбрать материал',
+    () => {
+      if (selected) pick(selected.src);
+    },
+    'af-btn',
+  );
+  confirm.disabled = true;
+  const selection = el('p', 'af-help', 'Материал не выбран'),
+    selectionPreview = el('img'),
+    selectionBar = el('div', 'asset-picker-confirm');
+  selectionPreview.alt = '';
+  selectionPreview.hidden = true;
+  selectionBar.setAttribute('aria-live', 'polite');
+  selectionBar.append(selectionPreview, selection, confirm);
+  const choose = (item: Item) => {
+    if (!options.confirmLabel) {
+      pick(item.src);
+      return;
+    }
+    selected = item;
+    selection.textContent = 'Выбрано: ' + item.name;
+    selectionPreview.src = item.thumbnail;
+    selectionPreview.hidden = false;
+    confirm.disabled = false;
+    for (const card of grid.querySelectorAll<HTMLButtonElement>('.asset-card')) {
+      const active = card.dataset.assetId === item.id;
+      card.setAttribute('aria-pressed', String(active));
+      card.closest('.asset-item')!.classList.toggle('is-selected', active);
+    }
+  };
   const pick = (src: string) => {
+    if (closed || options.signal?.aborted) return;
     try {
       apply(src);
-      dialog.close();
     } catch (e) {
       error.textContent = (e as Error).message;
     }
@@ -69,14 +114,20 @@ export async function chooseAsset(apply: (src: string) => void, signal?: AbortSi
     const visible = items
       .filter(
         (a) =>
-          a.category === filter.value &&
+          (!filter.value || a.category === filter.value) &&
           (!q || (a.name + ' ' + a.description).toLocaleLowerCase().includes(q)),
       )
       .sort((a, b) => a.name.localeCompare(b.name, 'ru') * (sort.value === 'reverse' ? -1 : 1));
     for (const a of visible) {
       const card = el('div', 'asset-item'),
-        b = button('', () => pick(a.src), 'asset-card'),
+        b = button('', () => choose(a), 'asset-card'),
         img = el('img');
+      b.dataset.assetId = a.id;
+      if (options.confirmLabel) {
+        const active = selected?.id === a.id;
+        b.setAttribute('aria-pressed', String(active));
+        card.classList.toggle('is-selected', active);
+      }
       img.src = a.thumbnail;
       img.alt = '';
       img.loading = 'lazy';
@@ -165,8 +216,23 @@ export async function chooseAsset(apply: (src: string) => void, signal?: AbortSi
         if (!file) return;
         const src = await readImage(file);
         if (closed) return;
-        await addAsset(src, file.name);
-        if (!closed) pick(src);
+        const id = await addAsset(src, file.name);
+        if (closed) return;
+        if (options.confirmLabel) {
+          const item = {
+            id,
+            name: file.name,
+            description: file.name,
+            src,
+            thumbnail: src,
+            category: 'local',
+          };
+          items = [item, ...items.filter((asset) => asset.id !== id)];
+          search.value = '';
+          filter.value = 'local';
+          filter.dispatchEvent(new Event('change', { bubbles: true }));
+          choose(item);
+        } else pick(src);
       } catch (e) {
         error.textContent = (e as Error).message;
       } finally {
@@ -176,25 +242,60 @@ export async function chooseAsset(apply: (src: string) => void, signal?: AbortSi
   });
   const uploadField = el('label', 'af-field');
   uploadField.append(el('span', 'af-label', 'Или загрузите своё изображение'), upload);
-  body.append(filter, search, sort, uploadField, status, error, retry, grid);
+  const filters = el('div', 'asset-picker-filters');
+  for (const [caption, control] of [
+    ['Категория', filter],
+    ['Поиск', search],
+    ['Сортировка', sort],
+  ] as const) {
+    const field = el('label', 'af-field');
+    field.append(el('span', 'af-label', caption), control);
+    filters.append(field);
+  }
+  body.append(filters, uploadField, status, error, retry, grid);
+  if (options.confirmLabel) body.append(selectionBar);
+  function destroy() {
+    if (closed) return;
+    closed = true;
+    request++;
+    lifetime.abort();
+    options.signal?.removeEventListener('abort', destroy);
+    body.remove();
+  }
+  options.signal?.addEventListener('abort', destroy, { once: true });
+  filter.addEventListener('change', draw, { signal: lifetime.signal });
+  search.addEventListener('input', draw, { signal: lifetime.signal });
+  sort.addEventListener('change', draw, { signal: lifetime.signal });
+  if (options.signal?.aborted) destroy();
+  else void load();
+  return { destroy };
+}
+
+export async function chooseAsset(apply: (src: string) => void, signal?: AbortSignal) {
+  if (signal?.aborted) return;
+  const { dialog, body } = libraryDialog('Библиотека материалов', 'asset-library');
+  dialog.setAttribute('aria-label', 'Библиотека материалов');
+  const picker = mountAssetPicker(
+    body,
+    (src) => {
+      apply(src);
+      dialog.close();
+    },
+    { signal },
+  );
   document.body.append(dialog);
   const abort = () => dialog.close();
   signal?.addEventListener('abort', abort, { once: true });
   dialog.addEventListener(
     'close',
     () => {
-      closed = true;
-      request++;
+      picker.destroy();
       signal?.removeEventListener('abort', abort);
       dialog.remove();
     },
     { once: true },
   );
-  filter.addEventListener('change', draw);
-  search.addEventListener('input', draw);
-  sort.addEventListener('change', draw);
   showDialog(dialog);
-  void load();
 }
 
 export type FocalPoint = { x: number; y: number };
