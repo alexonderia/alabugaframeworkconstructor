@@ -1,3 +1,4 @@
+import type { Grid } from '@alabuga/document-core';
 import type { AFDocument, Section } from '@alabuga/framework/schema';
 
 export type TemplateRef = { id: string; version: number };
@@ -5,7 +6,7 @@ export type TemplateInfo = {
   document?: TemplateRef;
   sections?: Record<string, TemplateRef>;
   unplaced?: Section[];
-  documentGrid?: Section['grid'];
+  documentGrid?: Grid;
   gridOverrides?: string[];
 };
 

@@ -1,11 +1,11 @@
-﻿import type { AFDocument, Section } from '@alabuga/framework/schema';
+import type { AFDocument, Section } from '@alabuga/framework/schema';
 import { checked } from './document-validation';
 import { copySection, findSpace, retargetSection, uid } from './model';
 import { editTemplateInfo, sectionTemplateRef, templateInfo } from './template-metadata';
 import { sectionSlots, setSectionTemplate, type SectionTemplate } from './templates';
-import { hasSectionGrid } from './document-grid';
+import { hasSectionGrid, documentGrid } from './document-grid';
 import { planGridChange } from './grid-change';
-import { standardGrid } from '@alabuga/framework/grid';
+import { alabugaGrid } from './framework-grid-adapter';
 
 export function planComposition(
   source: Section,
@@ -51,9 +51,7 @@ export function replaceComposition(
   if (unplaced.length && !saveUnplaced)
     throw new Error('В этой композиции другие места для содержимого.');
 
-  document.pages[index] = hasSectionGrid(document, source.id)
-    ? planGridChange(section, source.grid, document.kind)
-    : section;
+  document.pages[index] = planGridChange(section, source.grid, document.kind);
   setSectionTemplate(document, sectionId, template);
   if (unplaced.length) {
     const info = editTemplateInfo(document);
@@ -76,6 +74,8 @@ export function restoreUnplaced(document: AFDocument, id: string, after: string)
   const [section] = list.splice(index, 1);
   const anchor = document.pages.findIndex((page) => page.id === after);
   document.pages.splice(anchor < 0 ? document.pages.length : anchor + 1, 0, section);
+  if (JSON.stringify(section.grid) !== JSON.stringify(documentGrid(document)))
+    (editTemplateInfo(document).gridOverrides ??= []).push(section.id);
 }
 
 export function placeUnplacedWidget(
@@ -107,7 +107,7 @@ export function duplicateSection(document: AFDocument, index: number) {
 }
 
 export function reusableSection(kind: AFDocument['kind'], section: Section): Section {
-  const copy = planGridChange(section, standardGrid(), kind);
+  const copy = planGridChange(section, alabugaGrid(), kind);
   for (const widget of copy.widgets) {
     if (widget.type === 'button') widget.action = { type: 'link', href: '#' };
     if (widget.type === 'text')

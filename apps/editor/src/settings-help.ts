@@ -1,5 +1,6 @@
 import { el } from './ui';
 import { settingsInfo } from './control-hints';
+import { captureFocus } from './focus';
 
 /** Product language shared by section, slide, document and widget inspectors. */
 const fieldHelp: Record<string, string> = {
@@ -191,6 +192,7 @@ export function inspectorHelp(drawer: HTMLElement, signal: AbortSignal) {
   let frame = 0;
   const enhance = () => {
     frame = 0;
+    const restoreFocus = captureFocus(drawer);
     for (const label of drawer.querySelectorAll<HTMLElement>(
       '.inspector-body label.af-field, .inspector-body label.af-check',
     )) {
@@ -227,6 +229,7 @@ export function inspectorHelp(drawer: HTMLElement, signal: AbortSignal) {
       if (body) body.prepend(note);
       else summary.after(note);
     }
+    restoreFocus();
   };
   const schedule = () => {
     if (!frame) frame = requestAnimationFrame(enhance);

@@ -51,6 +51,7 @@ export function layoutChooser(
               'af-btn af-btn--secondary',
             );
             b.disabled = true;
+            b.dataset.layoutVariant = variant;
             card.append(b);
             status.textContent = 'Проверяем содержание…';
             void Promise.all([

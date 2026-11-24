@@ -1,3 +1,4 @@
+import { inheritSectionGrid } from './document-grid';
 import { widgetRegistry, type AFDocument, type Widget } from '@alabuga/framework/schema';
 import { mountAssetPicker } from './assets';
 import { compositionPreview } from './composition-preview';
@@ -99,7 +100,7 @@ export function editorCatalog(
     const section = instantiateSection(template, theme.value);
     if (
       !actions.change((doc) => {
-        doc.pages.splice(insertAt, 0, section);
+        doc.pages.splice(insertAt, 0, inheritSectionGrid(doc, section));
         setSectionTemplate(doc, section.id, template);
       }, 'Композиция добавлена.')
     )

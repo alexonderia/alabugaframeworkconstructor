@@ -45,10 +45,10 @@ test('editor disclosures, dynamic select options and tutorial keep Framework sty
  await expect(page.locator('#pages')).toHaveValue('1');
  await page.locator('#page-settings-open').click();await expectFrameworkControls(page);
  const group=page.locator('#inspector summary').first();await expect(group).toHaveClass(/af-btn/);await expect(group).toHaveCSS('font-size','14px');
- await page.locator('#close-inspector').click();await page.locator('.project-menu>summary').click();await page.getByRole('button',{name:'Пять действий для знакомства',exact:true}).click();
- const tutorial=page.locator('.author-tutorial');await expect(tutorial).toHaveAttribute('open','');await expect(tutorial.locator(':scope>.af-card')).toBeVisible();
- const check=tutorial.getByRole('checkbox').first();await expect(check).toHaveClass(/af-checkbox/);await expect(check).toHaveCSS('appearance','none');await check.check();
- await page.reload();await expect(page.locator('.author-tutorial').getByRole('checkbox').first()).toBeChecked();
+ await page.locator('#close-inspector').click();await page.locator('.project-menu>summary').click();await page.locator('.project-menu').getByRole('button',{name:'Режим знакомства',exact:true}).click();
+ const tutorial=page.locator('.author-tutorial');await expect(tutorial.locator('.tutorial-content')).toBeVisible();
+ await expect(tutorial.getByRole('checkbox')).toHaveCount(0);await expect(tutorial.getByRole('button',{name:'Далее',exact:true})).toBeDisabled();
+ await page.reload();await expect(tutorial.locator('.tutorial-progress')).toHaveText('Шаг 1 из 5');
  await expectFrameworkControls(page);await capture(page,'tutorial',info.project.name);
 });
 

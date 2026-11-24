@@ -7,21 +7,30 @@ const nodeModules = new Set(builtinModules.map((name) => name.replace(/^node:/, 
 export const workspaceRoots = {
   editor: 'apps/editor',
   ai: 'packages/ai',
+  'document-core': 'packages/document-core',
   'ai-server': 'apps/ai-server',
 };
 const workspaceNames = {
   '@alabuga/editor': 'editor',
   '@alabuga/ai': 'ai',
+  '@alabuga/document-core': 'document-core',
   '@alabuga/ai-server': 'ai-server',
 };
-const allowedWorkspaces = { editor: ['ai'], ai: [], 'ai-server': [] };
+const allowedWorkspaces = {
+  editor: ['ai', 'document-core'],
+  ai: ['document-core'],
+  'ai-server': [],
+  'document-core': [],
+};
 // These modules operate on documents or injected services, without UI or persistence.
 export const documentModules = new Set([
   'apps/editor/src/model.ts',
   'apps/editor/src/block-geometry.ts',
+  'apps/editor/src/widget-clipboard.ts',
   'apps/editor/src/snap-geometry.ts',
   'apps/editor/src/grid-change.ts',
   'apps/editor/src/document-grid.ts',
+  'apps/editor/src/framework-grid-adapter.ts',
   'apps/editor/src/editor-save.ts',
   'apps/editor/src/editor-session.ts',
   'apps/editor/src/property-patch.ts',
@@ -40,6 +49,7 @@ export const documentModules = new Set([
 ]);
 const documentFrameworkEntries = new Set([
   '@alabuga/framework/grid',
+  '@alabuga/document-core',
   '@alabuga/framework/schema',
   '@alabuga/framework/compositions',
   '@alabuga/framework/demo-documents',
@@ -144,6 +154,22 @@ export function dependencyErrors(file, specifier, aiExports) {
   const clean = specifier.split('?')[0];
   const source = workspaceOf(file);
   const errors = [];
+  if (
+    source === 'document-core' &&
+    (!clean.startsWith('.') ||
+      workspaceOf(posix.normalize(posix.join(posix.dirname(file), clean))) !== source)
+  )
+    errors.push('document core must not depend on renderers, applications or external packages');
+  if (
+    clean === '@alabuga/framework/grid' &&
+    source &&
+    file !== 'apps/editor/src/framework-grid-adapter.ts'
+  )
+    errors.push(
+      'grid geometry belongs to document core; access Framework presets through the adapter',
+    );
+  if (clean.startsWith('@alabuga/document-core/') || clean === '@alabuga/document-core/src')
+    errors.push('unpublished document core entry');
   if (clean.startsWith('.')) {
     const target = posix.normalize(posix.join(posix.dirname(file), clean));
     if (target === '..' || target.startsWith('../')) errors.push('import escapes repository');
@@ -208,8 +234,11 @@ export function dependencyErrors(file, specifier, aiExports) {
         'document modules can use only document modules and Framework schema/compositions',
       );
     }
-    if (source === 'ai' && !['@alabuga/framework', 'zod', '@alabuga/ai'].includes(packageName)) {
-      errors.push('ai can use only Framework, Zod and its own modules');
+    if (
+      source === 'ai' &&
+      !['@alabuga/framework', 'zod', '@alabuga/ai', '@alabuga/document-core'].includes(packageName)
+    ) {
+      errors.push('ai can use only document core, Framework, Zod and its own modules');
     }
   }
   return errors.map((error) => file + ': ' + error + ' (' + specifier + ')');

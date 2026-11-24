@@ -1,7 +1,7 @@
 import { validateDocument } from '@alabuga/framework/schema';
 import { z } from 'zod';
 import { frameworkDocument, type EditorDocument, type TemplateInfo } from './template-metadata';
-import { applyDocumentGrid, validatedGrid } from './document-grid';
+import { validatedGrid } from './document-grid';
 
 const ref = z.strictObject({
   id: z
@@ -56,6 +56,5 @@ export function checked(input: unknown): EditorDocument {
     if (overrides.length) info.gridOverrides = overrides;
   }
   const result = Object.keys(info).length ? { ...document, templateInfo: info } : document;
-  if (info.documentGrid) applyDocumentGrid(result, info.documentGrid);
   return result;
 }

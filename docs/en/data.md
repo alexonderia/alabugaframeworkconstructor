@@ -48,6 +48,6 @@ Slide header and number settings (`page.chrome`, Framework 1.3+) use document sc
 
 Independent page number background and text colors require Framework 1.3.1 or later and remain in document schema 5.
 
-Grids with `grid.frame` and `grid.responsive` use document schema 6 and the local Framework 1.4.0-grid.0 build. Opening legacy documents does not opt them into the new grid. Portable project envelopes and IndexedDB remain at version 3. New projects require a schema 6 reader.
+Grids with `grid.frame` and `grid.responsive` use document schema 6 and the local Framework {{FRAMEWORK_VERSION}} build. Opening legacy documents does not opt them into the new grid. Portable project envelopes and IndexedDB remain at version 3. New projects require a schema 6 reader.
 
 `templateInfo.documentGrid` stores the common grid; `templateInfo.gridOverrides` lists section IDs with their own grid. Parameters are materialized in every `pages[].grid`, so export and the public Framework receive resolved geometry without Constructor metadata. Common grid changes validate all inheriting sections before committing and undo as one operation. Catalog templates store the standard grid; inserted instances inherit the destination document grid.

@@ -2,7 +2,8 @@ import { compositionCatalog, makeComposition, showcase } from '@alabuga/framewor
 import { demoDocument } from '@alabuga/framework/demo-documents';
 import { layoutVariants, type LayoutVariant } from '@alabuga/framework/layout-variants';
 import type { AFDocument, Section, Widget } from '@alabuga/framework/schema';
-import { standardGrid, remapSectionGrid } from '@alabuga/framework/grid';
+import { alabugaGrid } from './framework-grid-adapter';
+import { remapSectionGrid } from '@alabuga/document-core';
 import { planGridChange } from './grid-change';
 import { sectionVariant } from './layout/placement';
 import { copySection, emptyDocument } from './model';
@@ -122,7 +123,7 @@ function category(key: string): SectionTemplate['category'] {
 const kinds = ['page', 'presentation'] as const;
 const sections: readonly SectionTemplate[] = kinds.flatMap((kind) =>
   compositionCatalog(kind).map(([key, title, description]): SectionTemplate => {
-    const create = () => remapSectionGrid(makeComposition(key, kind), standardGrid(), kind);
+    const create = () => remapSectionGrid(makeComposition(key, kind), alabugaGrid(), kind);
     return {
       id: `section/${kind}/${key}`,
       key,
@@ -144,8 +145,8 @@ const corporateSections = {
   presentation: ['brand-cover', 'thesis', 'metrics', 'final'],
 };
 function standardDocument(doc: AFDocument) {
-  doc.pages = doc.pages.map((section) => planGridChange(section, standardGrid(), doc.kind));
-  editTemplateInfo(doc).documentGrid = standardGrid();
+  doc.pages = doc.pages.map((section) => planGridChange(section, alabugaGrid(), doc.kind));
+  editTemplateInfo(doc).documentGrid = alabugaGrid();
   return doc;
 }
 const documents: readonly DocumentTemplate[] = kinds.flatMap(
@@ -263,7 +264,7 @@ export function customTemplate(saved: SavedComposition): SectionTemplate {
         for (const block of widget.content)
           if (block.type === 'link' && !block.href) block.href = '#';
     }
-    return planGridChange(copy, standardGrid(), saved.kind);
+    return planGridChange(copy, alabugaGrid(), saved.kind);
   };
   return {
     ...templateRef(saved),

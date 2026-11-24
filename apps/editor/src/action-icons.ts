@@ -1,5 +1,6 @@
 import { el } from '@alabuga/framework/dom';
 export type ActionIcon =
+  | 'add'
   | 'close'
   | 'copy'
   | 'delete'
@@ -18,6 +19,7 @@ export function actionIcon(name: ActionIcon) {
     return icon;
   }
   const paths = {
+    add: ['M12 5v14', 'M5 12h14'],
     info: ['M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18', 'M12 11v6', 'M12 7v.5'],
     chevron: ['M6 9l6 6 6-6'],
     copy: ['M9 9h11v12H9z', 'M5 16H3V3h12v2'],

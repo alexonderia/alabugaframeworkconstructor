@@ -1,31 +1,79 @@
 /* Shared surface geometry. Framework supplies the controls and their states. */
-#builder .author-tutorial > summary {
+#builder .tutorial-launch {
   margin-bottom: var(--af-space-8);
 }
-#builder .author-tutorial ol {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
-  grid-auto-rows: 1fr;
+.author-tutorial .tutorial-content,
+.author-tutorial .tutorial-introduction {
+  display: flex;
+  flex-direction: column;
   gap: var(--af-space-12);
-  margin: 0;
-  padding: 0;
-}
-#builder .author-tutorial li {
-  display: grid;
-  grid-template-columns: var(--af-space-20) minmax(0, 1fr);
-  align-items: center;
-  gap: var(--af-space-8);
   min-width: 0;
 }
-#builder .author-tutorial li > .af-btn {
-  height: 100%;
-  white-space: normal;
-  text-align: left;
-  justify-content: flex-start;
-}
-#builder .author-tutorial p:empty {
+.author-tutorial[hidden],
+.author-tutorial [hidden] {
   display: none;
 }
-#builder .author-tutorial .tutorial-dismiss {
-  align-self: flex-start;
+.author-tutorial p {
+  margin: 0;
+}
+.author-tutorial .tutorial-actions,
+.author-tutorial .tutorial-header,
+.author-tutorial .tutorial-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--af-space-8);
+}
+.author-tutorial .tutorial-header {
+  align-items: center;
+}
+.author-tutorial .tutorial-navigation {
+  margin-top: var(--af-space-4);
+}
+.author-tutorial .af-btn {
+  max-width: 100%;
+  white-space: normal;
+}
+.author-tutorial p:empty {
+  display: none;
+}
+.author-tutorial .tutorial-dismiss {
+  margin-left: auto;
+}
+.tutorial-floating {
+  position: fixed;
+  z-index: 1;
+  pointer-events: auto;
+  overflow: auto;
+  overscroll-behavior: contain;
+  margin: 0;
+  scroll-padding-top: var(--af-space-64);
+}
+.tutorial-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 10000;
+}
+.tutorial-overlay:not(:popover-open) {
+  display: none;
+}
+.tutorial-overlay::backdrop {
+  background: transparent;
+  pointer-events: none;
+}
+.tutorial-dimmer {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }

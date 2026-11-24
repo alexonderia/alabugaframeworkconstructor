@@ -4,7 +4,7 @@ import { renderDocument } from './framework-adapter';
 import { type DocumentController } from '@alabuga/framework/runtime';
 import type { AFDocument } from '@alabuga/framework/schema';
 import { sectionDisplayName } from './section-name';
-import { gridFrame } from '@alabuga/framework/grid';
+import { gridFrame } from '@alabuga/document-core';
 import { controlHints, settingsInfo } from './control-hints';
 import { compactEditorQuery } from './editor-commands';
 export function createOutline(

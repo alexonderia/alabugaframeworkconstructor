@@ -11,9 +11,12 @@ import { mountControls, disposeControls } from './component-lifecycle';
 import { frameworkDom as dom } from './framework-adapter';
 import { EditorSession } from './editor-session';
 import { showSaveConflict } from './save-conflict';
-import { createZoomControls, bindEditorShortcuts } from './editor-controls';
+import { createZoomControls } from './editor-controls';
+import { bindEditorShortcuts, shortcutHelp } from './editor-shortcuts';
+import { copyWidget, pasteWidget } from './widget-clipboard';
 import { downloadEditorHTML } from './editor-export';
 import { tutorial, tutorialState } from './tutorial';
+import { tutorialLayout, type TutorialTarget } from './tutorial-progress';
 import { openSlideFit } from './slide-fit';
 import { captureFocus } from './focus';
 import { responsiveDrawer } from './responsive-drawer';
@@ -44,7 +47,7 @@ import {
 } from './storage';
 import { projectDialog } from './projects';
 import { createOutline } from './outline';
-import { needsStandardPresentationGrid, preserveGridSettings } from './document-grid';
+import { inheritSectionGrid } from './document-grid';
 
 const backupTipKey = 'alabuga:backup-tip-shown';
 let backupTipShown = false;
@@ -59,13 +62,9 @@ export async function mountEditor(
   beforeMount: () => void = () => {},
   returnView?: ViewState,
 ) {
-  const upgradedGrid = needsStandardPresentationGrid(initial);
-  if (upgradedGrid) await saveRevision(projectId, preserveGridSettings(initial));
   const learning = await tutorialState(projectId);
+  let learningMode: ReturnType<typeof tutorial> | undefined;
   let sectionNames = await loadSectionNames(projectId);
-  const initialMessage = upgradedGrid
-    ? 'Сетка презентации обновлена. Исходная версия доступна в истории.'
-    : '';
   function fitCurrent(all: boolean) {
     if (!flush()) return;
     openSlideFit(
@@ -135,10 +134,10 @@ export async function mountEditor(
       selected: () => selected,
       flush: () => flush(),
       select: (id, index) => {
-        selected = id;
-        pageIndex = index;
+        focusWidget(id, index);
       },
       change: commit,
+      keyboardChange: (edit, text, group) => commit(edit, text, false, group),
       inlineCommit: (edit, group) => inlineCommit(edit, group),
       focusWidget,
       selectWidget,
@@ -270,15 +269,16 @@ export async function mountEditor(
     edit: (d: AFDocument) => void,
     success = 'Изменения применены.',
     keepProperties = false,
+    group?: string,
   ) {
     if (session.signal.aborted) return false;
     const restoreFocus = captureFocus(drawer);
     try {
-      session.change(edit);
+      session.change(edit, group);
       canvasView.preserveViewport(() => {
         draw(keepProperties);
         if (!keepProperties) restoreFocus();
-      });
+      }, !group);
       message(
         success.replace('Сохранено.', 'Изменения применены.').replace('сохранены.', 'применены.'),
       );
@@ -295,6 +295,7 @@ export async function mountEditor(
       canvasView.synchronize(session.document);
       historyButtons();
       inspectorView.refresh();
+      learningMode?.update();
       return true;
     } catch (error) {
       message((error as Error).message, true);
@@ -322,6 +323,10 @@ export async function mountEditor(
     selected = id;
     pageIndex = index;
     canvasView.preserveViewport(() => draw());
+    focusSelectedWidget();
+  }
+  function focusSelectedWidget() {
+    canvas.querySelector<HTMLElement>(dom.widgetById(selected))?.focus({ preventScroll: true });
   }
   function openInspector(id = '', index = pageIndex) {
     inspectorView.open(id, index);
@@ -340,6 +345,7 @@ export async function mountEditor(
         documentMode = false;
         draw();
         scrollSection();
+        learningMode?.resume();
       },
       error: (text) => message(text, true),
     },
@@ -453,6 +459,7 @@ export async function mountEditor(
     inspectorView.render(doc, active, keepProperties, true);
     inspectorView.sync();
     zoomControls.sync();
+    learningMode?.update();
   }
 
   run('undo', () => {
@@ -551,38 +558,24 @@ export async function mountEditor(
     if (!flush()) return;
     const control = get<HTMLButtonElement>('export');
     control.disabled = true;
+    const projectId = session.projectId;
     message('Подготовка HTML…');
     try {
       const document = session.document;
       await downloadEditorHTML(document);
+      if (!session.signal.aborted && session.projectId === projectId) learningMode?.exported();
       message(
         templateInfo(document)?.unplaced?.length
           ? 'HTML скачан. Неразмещённые блоки доступны в проекте.'
           : 'HTML скачан. Внешние изображения по HTTP(S) требуют сети.',
       );
     } catch (e) {
+      if (!session.signal.aborted && session.projectId === projectId)
+        learningMode?.failed((e as Error).message);
       message((e as Error).message, true);
     } finally {
       control.disabled = false;
     }
-  });
-  bindEditorShortcuts(session.signal, {
-    close: () => {
-      if (root.classList.contains('outline-open')) {
-        closeOutline();
-        return true;
-      }
-      if (drawer.hidden) return false;
-      closeInspector();
-      return true;
-    },
-    undo: () => get('undo').click(),
-    redo: () => get('redo').click(),
-    save: () => {
-      if (document.activeElement instanceof HTMLElement && root.contains(document.activeElement))
-        document.activeElement.blur();
-      get('save').click();
-    },
   });
   for (const [id, kind] of [
     ['demo-page', 'page'],
@@ -697,7 +690,65 @@ export async function mountEditor(
       'af-btn af-btn--ghost af-btn--sm quality-open',
     ),
   );
+  bindEditorShortcuts(root, canvas, session.signal, {
+    arrow: (event) => canvasView.arrow(event),
+    close: () => {
+      if (root.classList.contains('outline-open')) {
+        closeOutline();
+        return true;
+      }
+      if (!drawer.hidden) {
+        closeInspector();
+        return true;
+      }
+      if (!selected) return false;
+      selected = '';
+      canvasView.select('');
+      canvas.tabIndex = -1;
+      canvas.focus({ preventScroll: true });
+      return true;
+    },
+    undo: () => get('undo').click(),
+    redo: () => get('redo').click(),
+    save: () => {
+      if (document.activeElement instanceof HTMLElement && root.contains(document.activeElement))
+        document.activeElement.blur();
+      get('save').click();
+    },
+    duplicate: () => {
+      if (selected) {
+        duplicateWidget();
+        focusSelectedWidget();
+      }
+    },
+    remove: () => {
+      if (selected && flush()) removeWidget();
+    },
+    copy: () => (flush() ? copyWidget(session.document, pageIndex, selected) : undefined),
+    cut: () => {
+      if (selected) removeWidget();
+    },
+    paste: (text) => {
+      if (!flush()) return false;
+      const result = pasteWidget(session.document, pageIndex, text);
+      if (!result) return false;
+      session.replace(result.document);
+      selected = result.id;
+      documentMode = false;
+      draw();
+      focusSelectedWidget();
+      message('Блок вставлен. Можно отменить действие.');
+      return true;
+    },
+    zoom: zoomControls.change,
+    resetZoom: zoomControls.reset,
+    fit: zoomControls.fit,
+    preview: openPreview,
+    help: shortcutHelp,
+    error: (error) => message((error as Error).message, true),
+  });
   const menu = root.querySelector('.project-menu > div')!;
+  menu.append(button('Горячие клавиши', shortcutHelp));
   menu.append(button('Хранилище и материалы', storageDialog));
   const switchProject = (id: string, doc: AFDocument) => {
     inspectorView.discard();
@@ -747,7 +798,7 @@ export async function mountEditor(
   canvas.dataset.device = readViewState(session.projectId)?.device ?? 'desktop';
   get<HTMLSelectElement>('device').value = canvas.dataset.device;
   draw();
-  message(initialMessage);
+  message('');
   root.querySelector('.section-toolbar')!.append(
     button(
       'Создать с ИИ',
@@ -772,6 +823,10 @@ export async function mountEditor(
                   draftDocument(draft).pages,
                   draft.anchorId,
                   draft.request.kind,
+                );
+                const existing = new Set(document.pages.map((section) => section.id));
+                next.pages = next.pages.map((section) =>
+                  existing.has(section.id) ? section : inheritSectionGrid(document, section),
                 );
                 await session.applyDocument(
                   document.templateInfo ? { ...next, templateInfo: document.templateInfo } : next,
@@ -850,44 +905,105 @@ export async function mountEditor(
 
   get('save-state').classList.add('header-save-state');
   root.querySelector('.document-name')!.after(get('save-state'));
-  const openBlockStyle = () => {
-    const style = drawer.querySelector<HTMLDetailsElement>(
-      '#properties details[data-setting="style"]',
+  const learningControl = (step: number, target: TutorialTarget) => {
+    if (drawer.hidden) return undefined;
+    if (step === 1) {
+      if (get('design-settings').dataset.designSection !== target.sectionId || selected) return;
+      return Array.from(drawer.querySelectorAll<HTMLButtonElement>('button')).find(
+        (node) => node.textContent === 'Изменить компоновку',
+      );
+    }
+    if (inspector.dataset.propertyWidget !== target.widgetId || !selected) return;
+    if (step === 0)
+      return (
+        inspector
+          .querySelectorAll<HTMLElement>('.block-fragment')
+          [target.textIndex ?? 0]?.querySelector<HTMLTextAreaElement>(
+            'textarea[aria-label="Текст"]',
+          ) ?? undefined
+      );
+    if (step === 2)
+      return Array.from(inspector.querySelectorAll<HTMLButtonElement>('button')).find(
+        (node) => node.textContent === 'Выбрать изображение',
+      );
+    return (
+      inspector
+        .querySelector<HTMLElement>('select[aria-label="Цвет текста"]')
+        ?.closest<HTMLElement>('.af-select-box') ?? undefined
     );
-    if (style) style.open = true;
   };
-  const showLearning = tutorial(
-    root.querySelector('.editor-workspace')!,
-    session.projectId,
+  learningMode = tutorial(
+    root,
     learning,
-    (step) => {
-      if (!flush()) return;
-      const doc = session.document;
-      const current = doc.pages[pageIndex];
-      if (step === 1) {
-        openInspector('', pageIndex);
-        return;
-      }
-      if (step === 4) {
-        get('preview').click();
-        return;
-      }
-      const desired = step === 2 ? 'image' : 'text';
-      const index = current.widgets.some((w) => w.type === desired)
-        ? pageIndex
-        : doc.pages.findIndex((p) => p.widgets.some((w) => w.type === desired));
-      if (index < 0) {
-        get('add-widget').click();
-        return;
-      }
-      const w = doc.pages[index].widgets.find((w) => w.type === desired)!;
-      openInspector(w.id, index);
-      if (step === 3) openBlockStyle();
-      scrollSection(index);
-      if (step === 0) canvas.querySelector<HTMLElement>(dom.editableWidget(w.id))?.focus();
+    {
+      projectId: () => session.projectId,
+      document: () => session.document,
+      section: () => pageIndex,
+      flush,
+      locate: learningControl,
+      locateResult: (target) => {
+        const section = canvas.querySelector<HTMLElement>(dom.sectionById(target.sectionId));
+        if (session.document.kind !== 'page') return section;
+        return (
+          section?.querySelector<HTMLElement>(
+            target.widgetId ? dom.widgetById(target.widgetId) : dom.panel,
+          ) ?? section
+        );
+      },
+      showResult: (target) => {
+        if (!flush()) return false;
+        const index = session.document.pages.findIndex((page) => page.id === target.sectionId);
+        if (index < 0) return false;
+        pageIndex = index;
+        selected = target.widgetId ?? '';
+        documentMode = false;
+        if (!drawer.hidden) closeInspector();
+        draw();
+        canvasView.revealSection(target.sectionId, target.widgetId);
+        return true;
+      },
+      go: (step, target) => {
+        const index = session.document.pages.findIndex(({ id }) => id === target.sectionId);
+        if (index < 0) return;
+        if (step === 1 && !tutorialLayout(session.document, target.sectionId)) {
+          if (!drawer.hidden) closeInspector();
+          openCatalog('section', index + 1);
+          get('catalog-description').textContent =
+            'Для задания выберите шаблон с текстом: например, «Текст» или «Текст и изображение». Затем измените его компоновку.';
+          return;
+        }
+        if (step !== 1 && !target.widgetId) {
+          if (!drawer.hidden) closeInspector();
+          openCatalog('widget', index);
+          const type = step === 2 ? 'image' : 'text';
+          get('catalog-description').textContent =
+            `Для этого задания добавьте блок «${type === 'image' ? 'Изображение' : 'Текст'}».`;
+          catalog.querySelector<HTMLElement>(`[data-add="${type}"]`)?.focus();
+          return;
+        }
+        openInspector(target.widgetId ?? '', index);
+        if (step === 1) drawer.querySelector<HTMLButtonElement>('#slide-tab-structure')?.click();
+        const group = drawer.querySelector<HTMLDetailsElement>(
+          step === 1
+            ? '#design-settings details[data-setting="structure"]'
+            : `#properties details[data-setting="${step === 3 ? 'style' : 'content'}"]`,
+        );
+        if (group) group.open = true;
+        scrollSection(index);
+        const control = learningControl(step, target);
+        control?.scrollIntoView({ block: 'nearest' });
+        (control?.matches('details')
+          ? control.querySelector<HTMLElement>('summary')
+          : (control?.querySelector<HTMLElement>('[role="combobox"]') ?? control)
+        )?.focus({ preventScroll: true });
+      },
+      preview: () => get('preview').click(),
+      export: () => get('export').click(),
+      quality: () => root.querySelector<HTMLButtonElement>('.quality-open')?.click(),
     },
+    session.signal,
   );
-  menu.append(button('Пять действий для знакомства', showLearning));
+  menu.append(button('Режим знакомства', () => learningMode?.start()));
   mountControls(root);
   compactToolbar(root, session.signal);
   const returnScroll = returnView?.scroll;
@@ -896,13 +1012,7 @@ export async function mountEditor(
       if (!session.signal.aborted)
         window.scrollTo({ top: returnScroll, left: 0, behavior: 'instant' });
     });
-  if (learning?.enabled) {
-    scrollSection(pageIndex);
-    if (learning.section) {
-      openInspector(session.document.pages[pageIndex].widgets[0]?.id ?? '', pageIndex);
-      openBlockStyle();
-    }
-  }
+  learningMode.resume();
   window.addEventListener(
     'beforeunload',
     (e) => {
@@ -913,7 +1023,6 @@ export async function mountEditor(
     },
     { signal: session.signal },
   );
-  if (upgradedGrid) session.save();
   return {
     async beforeLeave() {
       if (document.activeElement instanceof HTMLElement && root.contains(document.activeElement))
@@ -921,6 +1030,7 @@ export async function mountEditor(
       if (!flushDocumentChanges()) return false;
       root.inert = true;
       try {
+        await learningMode?.settled();
         await session.queue;
         if (session.saveError) {
           message('Не удалось сохранить. Повторите запись или скачайте проект.', true);

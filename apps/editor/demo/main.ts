@@ -72,9 +72,10 @@ async function create(kind: AFDocument['kind'], mode: Mode, status: HTMLElement)
     doc.title += ' — моя копия';
     await saveProject(id, doc);
     await writeSetting('tutorial:' + id, {
-      enabled: true,
+      version: 2,
+      enabled: mode === 'lesson',
+      current: mode === 'lesson' ? 3 : 0,
       section: mode === 'lesson' ? (kind === 'page' ? 4 : 5) : 0,
-      done: [],
     });
     location.href = editorUrl + '#/edit/' + id;
   } catch {
@@ -106,7 +107,11 @@ for (const [kind, title, action] of [
   const article = el('article', 'demo-sample');
   const head = el('div', 'demo-sample-head');
   const status = statusLine();
-  const sampleButton = button(action, () => void create(kind, 'sample', status), 'af-btn af-btn--secondary');
+  const sampleButton = button(
+    action,
+    () => void create(kind, 'sample', status),
+    'af-btn af-btn--secondary',
+  );
   const host = el('div', 'demo-preview ' + kind);
   head.append(el('h3', '', title), sampleButton);
   article.append(head, status, host);
@@ -118,7 +123,10 @@ const exercises = el('section', 'demo-exercises');
 exercises.append(el('h2', '', 'Попробовать инструменты'));
 const format = el('label', 'af-field');
 const select = el('select', 'af-select');
-for (const [value, title] of [['page', 'Сайт'], ['presentation', 'Презентация']]) {
+for (const [value, title] of [
+  ['page', 'Сайт'],
+  ['presentation', 'Презентация'],
+]) {
   const option = el('option', '', title);
   option.value = value;
   select.append(option);
@@ -143,7 +151,11 @@ exercises.append(actions, exerciseStatus);
 main.append(hero, gallery, exercises);
 root.append(header, main);
 const disposeControls = mountControls(actions);
-window.addEventListener('pagehide', () => {
-  disposeControls();
-  controllers.forEach((controller) => controller.destroy());
-}, { once: true });
+window.addEventListener(
+  'pagehide',
+  () => {
+    disposeControls();
+    controllers.forEach((controller) => controller.destroy());
+  },
+  { once: true },
+);

@@ -75,6 +75,7 @@ export function createZoomControls(canvas: HTMLElement, status: HTMLElement) {
     bar,
     reset,
     fit,
+    change,
     sync() {
       const fixedCanvas =
         !!canvas.querySelector('.af-document--presentation') ||
@@ -92,34 +93,4 @@ export function createZoomControls(canvas: HTMLElement, status: HTMLElement) {
       window.removeEventListener('resize', resized);
     },
   };
-}
-export function bindEditorShortcuts(
-  signal: AbortSignal,
-  actions: { close: () => boolean; undo: () => void; redo: () => void; save: () => void },
-) {
-  window.addEventListener(
-    'keydown',
-    (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
-        e.preventDefault();
-        actions.save();
-        return;
-      }
-      if (
-        e.key === 'Escape' &&
-        (document.querySelector('dialog[open]') ||
-          (e.target as HTMLElement).closest(
-            '.outline-menu[open],.project-menu[open],.editor-more[open],.block-controls[open]',
-          ))
-      )
-        return;
-      if (e.key === 'Escape' && actions.close()) return;
-      if ((e.target as HTMLElement).closest('input,textarea,select,[contenteditable]')) return;
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
-        e.preventDefault();
-        (e.shiftKey ? actions.redo : actions.undo)();
-      }
-    },
-    { signal, capture: true },
-  );
 }

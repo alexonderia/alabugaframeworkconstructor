@@ -2,19 +2,20 @@ import { widgetRegistry, type AFDocument, type Widget } from '@alabuga/framework
 import { checked } from './document-validation';
 import type { EditorDocument } from './template-metadata';
 import { sectionPlacement } from './layout/placement';
-import { standardGrid, gridRows } from '@alabuga/framework/grid';
+import { alabugaGrid } from './framework-grid-adapter';
+import { gridRows } from '@alabuga/document-core';
 export { checked } from './document-validation';
 export function emptyDocument(kind: AFDocument['kind'] = 'page'): EditorDocument {
   return {
     schemaVersion: 6,
     kind,
     title: kind === 'page' ? 'Новый сайт' : 'Новая презентация',
-    templateInfo: { documentGrid: standardGrid() },
+    templateInfo: { documentGrid: alabugaGrid() },
     pages: [
       {
         id: uid('page'),
         title: 'Начните с главного',
-        grid: standardGrid(),
+        grid: alabugaGrid(),
         ...(kind === 'page'
           ? {
               appearance: {

@@ -1,4 +1,5 @@
-import { standardGrid } from '@alabuga/framework/grid';
+import { frameworkGrid } from './framework-grid-adapter';
+import type { Grid } from '@alabuga/document-core';
 import { validateDocument, type AFDocument, type Section } from '@alabuga/framework/schema';
 import { planGridChange } from './grid-change';
 import { editTemplateInfo, frameworkDocument, templateInfo } from './template-metadata';
@@ -6,26 +7,21 @@ import { editTemplateInfo, frameworkDocument, templateInfo } from './template-me
 export const hasSectionGrid = (document: AFDocument, id: string) =>
   templateInfo(document)?.gridOverrides?.includes(id) ?? false;
 
-export function documentGrid(document: AFDocument): Section['grid'] {
-  return structuredClone(
-    templateInfo(document)?.documentGrid ??
-      document.pages.find((page) => page.grid.frame)?.grid ??
-      standardGrid(),
-  );
+export function documentGrid(document: AFDocument): Grid {
+  return structuredClone(templateInfo(document)?.documentGrid ?? document.pages[0].grid);
 }
 
-export function validatedGrid(document: AFDocument, value: unknown): Section['grid'] {
-  const result = validateDocument({
-    schemaVersion: 6,
-    kind: document.kind,
-    title: 'Сетка документа',
-    pages: [{ ...document.pages[0], grid: value, widgets: [] }],
-  });
-  if (!result.success)
-    throw new Error(
-      'Некорректная сетка документа: ' + result.issues.map((issue) => issue.message).join('; '),
-    );
-  return result.data.pages[0].grid;
+export function validatedGrid(document: AFDocument, value: unknown): Grid {
+  try {
+    return frameworkGrid(value, document.kind);
+  } catch (error) {
+    throw new Error('Некорректная сетка документа: ' + (error as Error).message);
+  }
+}
+
+/** New instances inherit explicitly; validation and loading never reflow saved sections. */
+export function inheritSectionGrid(document: AFDocument, section: Section): Section {
+  return plannedSection(document, section, documentGrid(document));
 }
 
 function plannedSection(document: AFDocument, section: Section, grid: Section['grid']) {
@@ -91,14 +87,6 @@ export function setSectionGrid(document: AFDocument, id: string, local: boolean)
   Object.assign(target, info);
 }
 
-export function needsStandardPresentationGrid(document: AFDocument) {
-  return (
-    document.kind === 'presentation' &&
-    !templateInfo(document)?.documentGrid &&
-    document.pages.every((section) => !section.grid.frame)
-  );
-}
-
 /** An explicit grid lets a source revision restore its geometry without migrating again. */
 export function preserveGridSettings(input: AFDocument) {
   const document = structuredClone(input),
@@ -112,16 +100,7 @@ export function preserveGridSettings(input: AFDocument) {
   return document;
 }
 
-/** Share framed grids and bring legacy presentations onto the same grid as sites. */
+/** Record existing differences as overrides without changing persisted geometry. */
 export function prepareDocumentGrid(input: AFDocument): AFDocument {
-  const document = structuredClone(input);
-  if (needsStandardPresentationGrid(document)) {
-    applyDocumentGrid(document, standardGrid());
-    if (document.schemaVersion < 6) document.schemaVersion = 6;
-  } else if (
-    templateInfo(document)?.documentGrid ||
-    document.pages.some((section) => section.grid.frame)
-  )
-    applyDocumentGrid(document, documentGrid(document));
-  return document;
+  return preserveGridSettings(input);
 }

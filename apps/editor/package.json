@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@alabuga/framework": "file:../../vendor/alabuga-framework-1.4.0-grid.4.tgz",
-    "@alabuga/ai": "0.7.0"
+    "@alabuga/ai": "0.7.0",
+    "@alabuga/document-core": "0.7.0"
   }
 }

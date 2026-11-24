@@ -19,6 +19,7 @@ const openAI: typeof import('./ai/panel').openAI = (...args) =>
   import('./ai/panel').then((m) => m.openAI(...args));
 import { draftDocument } from '@alabuga/ai/contracts';
 import { installRequestedProjects } from './install-projects';
+import { recordTutorialPreview } from './tutorial';
 
 const root = document.querySelector<HTMLElement>('#builder')!;
 history.scrollRestoration = 'manual';
@@ -676,8 +677,12 @@ async function view(id: string, fromEditor: boolean) {
   status.setAttribute('role', 'status');
   status.textContent = 'Загружаем предпросмотр…';
   void surface.ready
-    .then(() => {
+    .then(async () => {
       if (!stopped) {
+        await recordTutorialPreview(id).catch(() => {
+          notice('Не удалось сохранить прогресс знакомства. Повторите предпросмотр.');
+        });
+        if (stopped) return;
         status.remove();
         if (doc.kind === 'page' && fromEditor && state.section > 0) {
           const section = surface.root?.querySelector<HTMLElement>(

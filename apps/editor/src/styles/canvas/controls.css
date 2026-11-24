@@ -135,6 +135,12 @@
 #canvas .af-widget.is-selected:not([data-text-editing]) [contenteditable] {
   cursor: var(--block-cursor-move, move);
 }
+/* At reduced zoom an edge hit area can cover a whole text line. Text remains
+   selectable/editable; the remaining edge and corner area still resizes. */
+#canvas .af-widget.is-selected [contenteditable] {
+  position: relative;
+  z-index: 11;
+}
 #canvas .af-widget[data-text-editing] [contenteditable] {
   cursor: text;
 }

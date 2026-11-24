@@ -33,7 +33,7 @@ test('Ctrl+S inside an input downloads a named portable project',async({page})=>
 });
 
 test('first tutorial can be declined and the mobile toolbar retains usable space',async({page})=>{
- await page.setViewportSize({width:390,height:844});await openEditor(page);await expect(page.locator('.author-tutorial')).toBeVisible();await expect(page.locator('.editor-more')).not.toHaveAttribute('open');await expect(page.locator('#pages')).toBeHidden();await expect(page.locator('.mobile-editor-actions>button')).toHaveCount(4);const before=await page.locator('.canvas-scroll').boundingBox();expect(before!.y).toBeLessThan(240);await page.locator('.author-tutorial summary').click();await page.getByRole('button',{name:'Скрыть подсказки',exact:true}).click();await page.reload();await expect(page.locator('.author-tutorial')).toBeHidden();expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(390);
+ await page.setViewportSize({width:390,height:844});await openEditor(page);await expect(page.locator('.author-tutorial')).toBeVisible();await expect(page.locator('.editor-more')).not.toHaveAttribute('open');await expect(page.locator('#pages')).toBeHidden();await expect(page.locator('.mobile-editor-actions>button')).toHaveCount(4);const before=await page.locator('.canvas-scroll').boundingBox();expect(before!.y).toBeLessThan(240);await page.locator('.tutorial-launch').click();await page.getByRole('button',{name:'Скрыть подсказки',exact:true}).click();await page.reload();await expect(page.locator('.author-tutorial')).toBeHidden();expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(390);
 });
 
 test('AI readiness errors are visible before generating and can recover',async({page})=>{

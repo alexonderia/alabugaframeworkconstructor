@@ -6,6 +6,16 @@ Choose Create website or Create presentation in the gallery. Start with a blank 
 
 Preview keeps the project's modification date. Search matches names. The card menu lets you rename, download or move a project to the trash. The trash supports restoration and permanent deletion.
 
+## Guided learning mode
+
+Choose «Режим знакомства» (Guided learning mode) in the Project menu. Five tasks cover text, layout, images, element styling, and preview with HTML export. The guide opens and highlights the relevant control. Next unlocks after an actual change. Empty projects are guided to add the missing block. Skipping a task does not mark it complete.
+
+The instruction floats above the editor beside the relevant field. The background is dimmed and interaction is limited to the current task. Guidance stays visible during scrolling and above material libraries, layout dialogs and select menus. Exit at the top of the instruction and Escape remain available at any time, including inside dialogs and with invalid fields. Exit saves progress and closes task dialogs; use the same menu command to resume.
+
+After a task is completed, the guide shows the changed slide or section on the canvas. Settings close, the result is highlighted, and the instruction identifies its number and title. «Изменить ещё» (Edit again) returns to the same element's settings; Next opens the following task.
+
+Changes apply to the current project and support Ctrl+Z. For the final task, return from preview using Edit, then download HTML. Failed preview or export attempts do not count.
+
 ## Templates and individual elements
 
 Use the outline on the left to add, rename, duplicate, move and delete sections or slides. Edit in the centre canvas and open properties on the right.
@@ -50,7 +60,7 @@ Select a block and hover over its boundary to see the resize cursor. Drag a side
 
 Open «Привязка» in the canvas view controls to set horizontal and vertical steps independently, starting at one column and one row. You can also show the grid. «Настроить сетку раздела» opens the current section or slide's advanced grid settings. Grid edits are saved in the project and support Undo. Drag steps and grid visibility are browser preferences.
 
-«Привязка → Режим привязки» offers three modes. Strict snaps either edge to the nearest horizontal and vertical line, including both sides of gutters. Off allows free movement and resizing, including the canvas margins. Mixed preserves free geometry and attracts an edge only within 6 screen pixels of a line. Blue guides show active magnets; full grid visibility is independent. In Off and Mixed modes, arrows move by 1 px and Shift with arrows resizes by 1 px. Block properties show precise pixel coordinates and dimensions. The browser stores the mode; projects and HTML/PDF retain geometry.
+«Привязка → Режим привязки» offers three modes. Strict snaps either edge to the nearest horizontal and vertical line, including both sides of gutters. Off allows free movement and resizing, including the canvas margins. Mixed preserves free geometry and attracts an edge only within 6 screen pixels of a line. Blue guides show active magnets; full grid visibility is independent. In Off and Mixed modes, arrows move by 1 px, Shift accelerates movement to 10 px and Alt with arrows resizes. Block properties show precise pixel coordinates and dimensions. The browser stores the mode; projects and HTML/PDF retain geometry.
 
 Flow section heights expand with content. On tablet and phone canvases, the right and bottom boundaries edit responsive sizes, while dragging inside a block changes reading order. All edges and corners are available in desktop grid layouts and on slides.
 
@@ -58,9 +68,31 @@ The «Привязка» button stays highlighted while its panel is open. Info 
 
 Choose a screen in «Вид холста», open block properties and expand «Размеры и положение». Set percentage width and minimum pixel height independently for tablet and phone. Content can grow beyond the minimum height. «Автоматический размер» resets only the current screen. These settings apply to flow website sections; desktop grid and slide geometry remain separate.
 
-On tablet and phone canvases, arrows on a focused block change reading order. Shift with left/right adjusts width by 10 percentage points; Shift with up/down adjusts minimum height by 16 px. Escape cancels an active drag; Undo restores an applied size. Simulated device widths stay stable when properties open; use canvas scrolling or «Вписать» when space is limited.
+On tablet and phone canvases, arrows on a focused block change reading order. Alt with left/right adjusts width by 5 percentage points; Alt with up/down adjusts minimum height by 16 px. Shift increases the step tenfold. Escape cancels an active drag; Undo restores an applied size. Simulated device widths stay stable when properties open; use canvas scrolling or «Вписать» when space is limited.
 
-Use Tab to focus a block. In grid layouts, arrows move it by the configured snapping step, and Shift with arrows changes width or height. Enter opens block settings. Settings, copy and delete buttons support keyboard and screen reader access. Closing properties returns focus to the invoking element.
+Use Tab to focus a block or single click anywhere on it, including its text. Double click to edit text; Escape returns focus to the block. In grid layouts, arrows move it by the configured snapping step, Shift increases the step tenfold and Alt with arrows changes width or height. A held arrow undoes as one gesture; separate key presses remain separate history entries. Enter opens block settings. Settings, copy and delete buttons support keyboard and screen reader access. Closing properties returns focus to the invoking element.
+
+## Keyboard shortcuts
+
+Open «Проект → Горячие клавиши», press F1 or «?» for the complete list. On macOS use Cmd instead of Ctrl. Letter shortcuts also work with the Russian keyboard layout.
+
+| Shortcut | Action |
+| --- | --- |
+| Ctrl+C / Ctrl+X / Ctrl+V | Copy, cut and paste the selected block |
+| Ctrl+D | Duplicate the block |
+| Delete / Backspace | Delete the selected block |
+| Ctrl+Z | Undo |
+| Ctrl+Shift+Z / Ctrl+Y | Redo |
+| Arrows / Shift+arrows | Move by one step / ten steps |
+| Alt+arrows / Alt+Shift+arrows | Resize by one step / ten steps |
+| Ctrl++ / Ctrl+− / Ctrl+wheel over the canvas | Change canvas zoom |
+| Ctrl+0 / Shift+0 | Canvas zoom 100% |
+| Shift+1 | Fit canvas |
+| Ctrl+Enter | Open preview |
+| Ctrl+S | Download a project copy |
+| Escape | Finish editing, close the panel or clear selection |
+
+Block copy uses the system clipboard: paste repeatedly, into another section or another Constructor tab. Pasting preserves content, creates a new ID and finds free space in the destination grid. Invalid data and insufficient space leave the document unchanged. While editing text, clipboard actions, undo and arrows retain their normal text behavior. Dialogs and selection menus handle their own keys. Brand template geometry is editable in advanced mode.
 
 ## Standard grid
 
@@ -69,7 +101,7 @@ In the editor, the desktop screen uses the configured canvas width (1920 px by d
 
 New websites and presentations use the Figma grid: 24 columns of 64 px at a 1920 px width, 8 px gaps and 100 px side margins. Slides measure 1920×1080 with a 176 px top inset and 48 px bottom inset, leaving 12 rows of 64 px. Websites grow with content, using 12 columns on tablets and 4 on phones by default. These responsive counts are configurable web implementation defaults.
 
-The grid is shared across the document: changes apply to all inheriting sections and new sections/slides. Enable «Своя сетка для этой секции» or «Своя сетка для этого слайда» for an explicit exception; clearing it restores the common grid. All templates and catalog compositions use the standard grid and inherit the destination document grid when inserted. Saving a composition to the catalog leaves the source project unchanged. Projects with explicit insets adopt their first grid as the common grid when opened. Legacy presentations without insets or an explicit common grid adopt the standard grid when opened in the editor; their source version is saved in history. Legacy websites without insets retain their previous dimensions.
+The grid is shared across the document: changes apply to all inheriting sections and new sections/slides. Enable «Своя сетка для этой секции» or «Своя сетка для этого слайда» for an explicit exception; clearing it restores the common grid. All templates and catalog compositions use the standard grid and inherit the destination document grid when inserted. Saving a composition to the catalog leaves the source project unchanged. Opening preserves every section's saved grid and positions, including legacy websites and presentations. When no common grid is recorded, the first section supplies it and differing section grids become overrides. Apply grid parameters or the standard grid explicitly to convert an older project.
 
 Presentations use the same guides, snapping modes and zoom as websites. «100%» shows actual canvas pixels, while «Вписать» fits the slide into the workspace. Opening settings and resizing the window do not change the column count. Slides retain their fixed 16:9 format.
 

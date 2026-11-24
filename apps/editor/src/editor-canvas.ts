@@ -8,7 +8,7 @@ import { el, button, iconButton } from './ui';
 import { geometryLocked } from './templates';
 import { blockControls } from './block-controls';
 import type { ResizeDirection } from './block-geometry';
-import { gridFrame } from '@alabuga/framework/grid';
+import { gridFrame } from '@alabuga/document-core';
 
 interface CanvasActions {
   document: () => AFDocument;
@@ -16,6 +16,7 @@ interface CanvasActions {
   flush: () => boolean;
   select: (id: string, index: number) => void;
   change: (edit: (document: AFDocument) => void, message: string) => boolean;
+  keyboardChange: (edit: (document: AFDocument) => void, message: string, group: string) => boolean;
   inlineCommit: InlineCommit;
   focusWidget: (id: string, index: number) => void;
   selectWidget: (id: string) => void;
@@ -44,6 +45,8 @@ export class EditorCanvas {
   private fitHintTimer: ReturnType<typeof setTimeout> | undefined;
   private readonly fitHint: HTMLButtonElement;
   private readonly controls: ReturnType<typeof blockControls>;
+  private readonly keyboardHandlers = new WeakMap<HTMLElement, (event: KeyboardEvent) => void>();
+  private keyboardStroke?: { key: string; group: string; id: string; direction?: ResizeDirection };
   constructor(
     private readonly elements: CanvasElements,
     private readonly actions: CanvasActions,
@@ -173,9 +176,10 @@ export class EditorCanvas {
             if (w.type !== 'button') b.disabled = true;
             b.tabIndex = -1;
           });
-          bindInline(box, w, index, this.actions.inlineCommit, () =>
-            this.actions.focusWidget(w.id, index),
-          );
+          bindInline(box, w, index, this.actions.inlineCommit, () => {
+            box.dataset.textEditing = 'true';
+            this.actions.focusWidget(w.id, index);
+          });
           const bar = el('div', 'widget-tools');
           bar.style.left = w.position.col > page.grid.columns / 2 ? 'auto' : '0';
           bar.style.right = w.position.col > page.grid.columns / 2 ? '0' : 'auto';
@@ -224,18 +228,23 @@ export class EditorCanvas {
             resize.setAttribute('aria-label', 'Изменить размер блока');
             box.append(resize);
             this.attachHandle(resize, w, true, panel, index);
-            bindWidgetHandle(box, w.id, index, false, {
-              canvas: this.elements.canvas,
-              signal: this.lifetime.signal,
-              document: this.actions.document,
-              flush: this.actions.flush,
-              select: this.actions.select,
-              change: this.actions.change,
-              status: this.actions.status,
-              direction: 'se',
-              step: this.controls.step,
-              surface: true,
-            });
+            this.keyboardHandlers.set(
+              box,
+              bindWidgetHandle(box, w.id, index, false, {
+                canvas: this.elements.canvas,
+                signal: this.lifetime.signal,
+                document: this.actions.document,
+                flush: this.actions.flush,
+                select: this.actions.select,
+                change: this.actions.change,
+                keyboardChange: this.actions.keyboardChange,
+                keyboardGroup: (event) => this.keyGroup(event, w.id),
+                status: this.actions.status,
+                direction: 'se',
+                step: this.controls.step,
+                surface: true,
+              }),
+            );
             box.addEventListener('dblclick', (event) => {
               const field = (event.target as HTMLElement).closest<HTMLElement>('[contenteditable]');
               if (!field) return;
@@ -300,11 +309,52 @@ export class EditorCanvas {
       .querySelectorAll<HTMLElement>(dom.widgets)
       .forEach((box) => box.classList.toggle('is-selected', box.dataset.widgetId === id));
   }
+  private keyGroup(event: KeyboardEvent, id: string, direction?: ResizeDirection) {
+    const key = `${id}:${direction ?? 'move'}:${event.key}:${event.shiftKey}:${event.altKey}`;
+    if (!event.repeat || this.keyboardStroke?.key !== key)
+      this.keyboardStroke = { key, id, direction, group: 'nudge-' + crypto.randomUUID() };
+    return this.keyboardStroke!.group;
+  }
+  /** Keep a held arrow working even when renderer layout temporarily drops focus to body. */
+  arrow(event: KeyboardEvent) {
+    const id = this.actions.selected(),
+      box = this.elements.canvas.querySelector<HTMLElement>(dom.widgetById(id));
+    if (!box || this.preview) return false;
+    const direction =
+      event.repeat && this.keyboardStroke?.id === id ? this.keyboardStroke.direction : undefined;
+    const target = direction
+      ? (box.querySelector<HTMLElement>(`[data-resize-direction="${direction}"]`) ?? box)
+      : box;
+    this.keyboardHandlers.get(target)?.(event);
+    return event.defaultPrevented;
+  }
   scrollSection(id: string) {
     if (this.lifetime.signal.aborted) return;
+    cancelAnimationFrame(this.viewportFrame);
     this.elements.canvas
       .querySelector<HTMLElement>(dom.sectionById(id))
       ?.scrollIntoView({ block: 'start', behavior: 'instant' });
+  }
+  revealSection(id: string, widgetId?: string) {
+    if (this.lifetime.signal.aborted) return;
+    cancelAnimationFrame(this.viewportFrame);
+    const doc = this.actions.document(),
+      index = doc.pages.findIndex((page) => page.id === id);
+    if (index < 0) return;
+    if (doc.kind === 'presentation') this.controller?.goToSlide(index);
+    const reveal = () => {
+      const section = this.elements.canvas.querySelector<HTMLElement>(dom.sectionById(id));
+      const target =
+        doc.kind === 'page'
+          ? (section?.querySelector<HTMLElement>(widgetId ? dom.widgetById(widgetId) : dom.panel) ??
+            section)
+          : section;
+      target?.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' });
+    };
+    reveal();
+    this.viewportFrame = requestAnimationFrame(() => {
+      this.viewportFrame = requestAnimationFrame(reveal);
+    });
   }
   private small(title: string, action: () => void) {
     return button(title, action, 'af-btn af-btn--ghost af-btn--sm context-button');
@@ -312,10 +362,11 @@ export class EditorCanvas {
   private insertion(index: number) {
     const bar = el('div', 'section-insert');
     bar.append(
-      button(
-        '+ Добавить секцию',
+      iconButton(
+        'Добавить секцию',
         () => this.actions.openCatalog('section', index),
-        'insert-button',
+        'add',
+        'af-btn af-btn--secondary af-btn--sm af-btn--round insert-button',
       ),
     );
     return bar;
@@ -328,32 +379,51 @@ export class EditorCanvas {
     index: number,
     direction: ResizeDirection = 'se',
   ) {
-    bindWidgetHandle(handle, widget.id, index, resizing, {
-      canvas: this.elements.canvas,
-      signal: this.lifetime.signal,
-      document: this.actions.document,
-      flush: this.actions.flush,
-      select: this.actions.select,
-      change: this.actions.change,
-      status: this.actions.status,
-      direction,
-      step: this.controls.step,
-    });
+    this.keyboardHandlers.set(
+      handle,
+      bindWidgetHandle(handle, widget.id, index, resizing, {
+        canvas: this.elements.canvas,
+        signal: this.lifetime.signal,
+        document: this.actions.document,
+        flush: this.actions.flush,
+        select: this.actions.select,
+        change: this.actions.change,
+        keyboardChange: this.actions.keyboardChange,
+        keyboardGroup: (event) => this.keyGroup(event, widget.id, direction),
+        status: this.actions.status,
+        direction,
+        step: this.controls.step,
+      }),
+    );
   }
-  preserveViewport(work: () => void) {
+  preserveViewport(work: () => void, anchorWidget = true) {
     if (this.lifetime.signal.aborted) return;
     cancelAnimationFrame(this.viewportFrame);
     const id = this.actions.selected(),
       box = id ? this.elements.canvas.querySelector<HTMLElement>(dom.widgetById(id)) : null,
-      rect = box?.getBoundingClientRect();
+      rect = box?.getBoundingClientRect(),
+      viewport = this.elements.canvas.parentElement!,
+      scroll = {
+        x: window.scrollX,
+        y: window.scrollY,
+        left: viewport.scrollLeft,
+        top: viewport.scrollTop,
+      };
     const visible = rect && rect.bottom > 0 && rect.top < innerHeight;
     work();
-    if (visible) {
+    if (visible || !anchorWidget) {
       const restore = () => {
         const current = this.elements.canvas.querySelector<HTMLElement>(dom.widgetById(id));
+        if (!anchorWidget) {
+          window.scrollTo({ left: scroll.x, top: scroll.y, behavior: 'instant' });
+          viewport.scrollLeft = scroll.left;
+          viewport.scrollTop = scroll.top;
+          current?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'instant' });
+          return;
+        }
         if (current)
           window.scrollBy({
-            top: current.getBoundingClientRect().top - rect.top,
+            top: current.getBoundingClientRect().top - rect!.top,
             behavior: 'instant',
           });
       };

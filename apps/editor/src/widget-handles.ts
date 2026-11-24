@@ -2,7 +2,7 @@ import { type AFDocument, type Widget } from '@alabuga/framework/schema';
 import { frameworkDocument } from './template-metadata';
 import { holdBlockCursor } from './canvas-cursors';
 import { resizePosition, type ResizeDirection } from './block-geometry';
-import { gridRows, gridFrame, positionBounds } from '@alabuga/framework/grid';
+import { gridRows, gridFrame, positionBounds } from '@alabuga/document-core';
 import { validateDocument, widgetRegistry } from '@alabuga/framework/schema';
 import {
   manipulateRect,
@@ -30,6 +30,8 @@ type Options = {
   flush: () => boolean;
   select: (id: string, index: number) => void;
   change: (edit: (doc: AFDocument) => void, message: string) => boolean;
+  keyboardChange?: (edit: (doc: AFDocument) => void, message: string, group: string) => boolean;
+  keyboardGroup?: (event: KeyboardEvent) => string;
   status: (message: string) => void;
 };
 /** Grid handles edit geometry; responsive handles edit the layout actually shown. */
@@ -47,7 +49,20 @@ export function bindWidgetHandle(
   const locked = () =>
     !!boxNow().closest('[data-template-geometry]') &&
     !!boxNow().closest('[data-editor-mode="standard"]');
-  const focus = () => {
+  const focus = (deferred = true) => {
+    if (options.signal.aborted) return;
+    // Framework layout can reinsert the focused node after the synchronous render.
+    // Restore only an otherwise lost focus, without taking it from a text field or dialog.
+    if (deferred)
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          if (
+            document.activeElement === document.body &&
+            boxNow()?.classList.contains('is-selected')
+          )
+            focus(false);
+        }),
+      );
     if (options.surface) {
       boxNow()?.focus({ preventScroll: true });
       return;
@@ -62,23 +77,25 @@ export function bindWidgetHandle(
       )
       ?.focus({ preventScroll: true });
   };
+  let keyboardGroup: string | undefined;
+  const change = (edit: (doc: AFDocument) => void, message: string) =>
+    keyboardGroup && options.keyboardChange
+      ? options.keyboardChange(edit, message, keyboardGroup)
+      : options.change(edit, message);
   const update = (position: Widget['position'], resized = resizing) =>
-    options.change(
+    change(
       (doc) => {
         doc.pages[index].widgets.find((widget) => widget.id === id)!.position = position;
       },
       resized ? 'Размер блока изменён.' : 'Блок перемещён.',
     );
   const order = (mode: ReturnType<typeof widgetLayout>, target: number) =>
-    options.change(
-      (doc) => reorderWidget(doc.pages[index], mode, id, target),
-      'Порядок блоков изменён.',
-    );
+    change((doc) => reorderWidget(doc.pages[index], mode, id, target), 'Порядок блоков изменён.');
   const resizeResponsive = (
     mode: ReturnType<typeof widgetLayout>,
     size: ReturnType<typeof responsiveSize>,
   ) =>
-    options.change(
+    change(
       (doc) =>
         setResponsiveSize(
           doc.pages[index].widgets.find((widget) => widget.id === id)!,
@@ -87,9 +104,12 @@ export function bindWidgetHandle(
         ),
       'Адаптивный размер блока изменён.',
     );
-  handle.addEventListener('keydown', (event) => {
-    if (options.surface && event.target !== handle) return;
-    const keyboardResize = resizing || (options.surface && event.shiftKey);
+  const keydown = (event: KeyboardEvent, direct = false) => {
+    if (options.signal.aborted || event.defaultPrevented) return;
+    if (options.surface && !direct && event.target !== handle) return;
+    if (event.ctrlKey || event.metaKey || event.isComposing) return;
+    const keyboardResize = resizing || (options.surface && event.altKey),
+      multiplier = event.shiftKey ? 10 : 1;
     const delta = (
       { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] } as Record<
         string,
@@ -98,9 +118,13 @@ export function bindWidgetHandle(
     )[event.key];
     if (!delta) return;
     event.preventDefault();
-    if (locked()) return;
+    if (locked()) {
+      options.status('Чтобы перемещать блоки шаблона, включите расширенный режим редактора.');
+      return;
+    }
     if (!options.flush()) return;
     options.select(id, index);
+    keyboardGroup = options.keyboardGroup?.(event);
     const mode = widgetLayout(boxNow());
     if (mode !== 'grid' && handle.classList.contains('edge-handle')) return;
     if (mode === 'auto') {
@@ -110,16 +134,19 @@ export function bindWidgetHandle(
     if (mode !== 'grid') {
       if (keyboardResize) {
         const size = responsiveSize(current(), mode, options.document().pages[index].grid.columns);
-        size.width = Math.max(1, Math.min(100, size.width + delta[0] * (event.shiftKey ? 10 : 5)));
+        size.width = Math.max(1, Math.min(100, size.width + delta[0] * (5 * multiplier)));
         if (delta[1])
           size.minHeight = Math.max(
             0,
-            Math.min(3200, (size.minHeight || boxNow().offsetHeight) + delta[1] * 16),
+            Math.min(3200, (size.minHeight || boxNow().offsetHeight) + delta[1] * 16 * multiplier),
           );
         resizeResponsive(mode, size);
       } else {
         const widgets = orderedWidgets(options.document().pages[index], mode);
-        order(mode, widgets.findIndex((widget) => widget.id === id) + (delta[1] || delta[0]));
+        order(
+          mode,
+          widgets.findIndex((widget) => widget.id === id) + (delta[1] || delta[0]) * multiplier,
+        );
       }
     } else {
       const doc = options.document(),
@@ -145,8 +172,8 @@ export function bindWidgetHandle(
           strict = step.mode === 'strict';
         const result = manipulateRect(
           initial,
-          delta[0] * (strict ? sx * step.x : 1),
-          delta[1] * (strict ? sy * step.y : 1),
+          delta[0] * (strict ? sx * step.x : 1) * multiplier,
+          delta[1] * (strict ? sy * step.y : 1) * multiplier,
           keyboardResize ? options.direction : 'move',
           {
             x: -f.left,
@@ -178,8 +205,8 @@ export function bindWidgetHandle(
         focus();
         return;
       }
-      const x = delta[0] * step.x,
-        y = delta[1] * step.y;
+      const x = delta[0] * step.x * multiplier,
+        y = delta[1] * step.y * multiplier;
       let position = { ...current().position };
       if (keyboardResize) {
         const maxRow = doc.kind === 'presentation' ? gridRows(page.grid) : 1000;
@@ -193,22 +220,33 @@ export function bindWidgetHandle(
           maxRow,
         );
       } else {
-        position.col += x;
-        position.row += y;
+        position.col = Math.max(
+          1,
+          Math.min(page.grid.columns - position.width + 1, position.col + x),
+        );
+        const rows = doc.kind === 'presentation' ? gridRows(page.grid) : 1000;
+        position.row = Math.max(1, Math.min(rows - position.height + 1, position.row + y));
       }
       update(position, keyboardResize);
     }
     focus();
-  });
+  };
+  handle.addEventListener('keydown', keydown);
   handle.addEventListener(
     'pointerdown',
     (event) => {
       if (event.button !== 0) return;
+      keyboardGroup = undefined;
       const target = event.target as HTMLElement;
       const editing = target.closest<HTMLElement>('[contenteditable]');
       if (options.surface) {
         const box = boxNow();
         if (!box.classList.contains('is-selected')) {
+          if (target.closest('button,input,select,textarea')) return;
+          event.preventDefault();
+          if (!options.flush()) return;
+          options.select(id, index);
+          box.focus({ preventScroll: true });
           lastTextClick = editing ? { field: editing, time: performance.now() } : undefined;
           return;
         }
@@ -373,7 +411,7 @@ export function bindWidgetHandle(
         }
         if (options.surface && save && !gestureStarted && editing?.isConnected) {
           lastTextClick = { field: editing, time: performance.now() };
-          editing.focus({ preventScroll: true });
+          focus();
         } else {
           lastTextClick = undefined;
           focus();
@@ -509,4 +547,5 @@ export function bindWidgetHandle(
     },
     { capture: options.surface, signal: options.signal },
   );
+  return (event: KeyboardEvent) => keydown(event, true);
 }

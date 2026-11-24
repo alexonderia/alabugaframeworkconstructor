@@ -104,40 +104,17 @@ for (const kind of ['page', 'presentation'] as const)
     await expect(stable).toPass();
   });
 
-test('legacy presentations use the common grid after opening, retain a source revision and export the new geometry', async ({
+test('legacy presentations retain their saved geometry when opened, reloaded and exported', async ({
   page,
 }, info) => {
   await open(page, 'presentation', true);
   const document = await savedDocument(page);
   expect(document.pages).toHaveLength(2);
   for (const section of document.pages) {
-    expect(section.grid).toEqual(standardGrid());
+    expect(section.grid).toEqual({ columns: 12, rowHeight: 64, gap: 16 });
+    expect(section.widgets[0].position).toEqual({ col: 3, row: 3, width: 4, height: 3 });
     expect(section.widgets[0].content[0].text).toBe('Общий принцип сетки');
   }
-  const original = await page.evaluate(async () => {
-    const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open('alabuga-workspace', 3);
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-    try {
-      return await new Promise<boolean>((resolve, reject) => {
-        const request = db.transaction('revisions').objectStore('revisions').getAll();
-        request.onsuccess = () =>
-          resolve(
-            request.result.some((revision) =>
-              revision.document.pages.every(
-                (section: any) => section.grid.columns === 12 && !section.grid.frame,
-              ),
-            ),
-          );
-        request.onerror = () => reject(request.error);
-      });
-    } finally {
-      db.close();
-    }
-  });
-  expect(original).toBe(true);
   await page.reload();
   await expect(page.locator('#project-name')).toHaveValue('Единая сетка');
   expect(await savedDocument(page)).toEqual(document);
@@ -155,15 +132,25 @@ test('legacy presentations use the common grid after opening, retain a source re
         width: (node as HTMLElement).offsetWidth,
         height: (node as HTMLElement).offsetHeight,
       })),
-  ).toEqual({ width: 1920, height: 1080 });
+  ).toEqual({ width: 1600, height: 900 });
   await expect(page.locator('.canvas-grid-guides')).toHaveCount(0);
 });
 
-test('the source revision restores its original grid and keeps that explicit choice after reload', async ({
+test('a saved revision restores the legacy grid after an explicit standard grid change', async ({
   page,
 }) => {
   await open(page, 'presentation', true);
-  await savedDocument(page);
+  const source = await savedDocument(page);
+  await page.evaluate(async () => {
+    const { saveRevision, getProject } = await import('/apps/editor/src/storage.ts' as string);
+    const id = location.hash.split('/').at(-1)!;
+    await saveRevision(id, (await getProject(id)).document);
+  });
+  await page.locator('.block-controls summary').click();
+  await page.getByRole('button', { name: 'Настроить сетку раздела', exact: true }).click();
+  await page.getByRole('button', { name: 'Применить стандартную сетку', exact: true }).click();
+  await expect.poll(async () => (await savedDocument(page)).pages[0].grid.columns).toBe(24);
+  await page.locator('#close-inspector').click();
   await page.locator('.project-menu > summary').click();
   await page.getByRole('button', { name: 'История версий', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'История версий', exact: true });
@@ -173,6 +160,7 @@ test('the source revision restores its original grid and keeps that explicit cho
     .click();
   await expect(dialog).toBeHidden();
   const original = await savedDocument(page);
+  expect(original.pages).toEqual(source.pages);
   expect(
     original.pages.every((section: Section) => section.grid.columns === 12 && !section.grid.frame),
   ).toBe(true);

@@ -113,8 +113,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 38px;
-  margin: var(--af-space-8) 0;
+  height: calc(var(--af-space-40) * var(--constructor-ui-scale, 1));
+  margin: calc(var(--af-space-4) * var(--constructor-ui-scale, 1)) 0;
 }
 .section-insert::before {
   content: '';
@@ -127,6 +127,10 @@
 }
 .insert-button {
   z-index: 1;
+  flex-shrink: 0;
+  /* Cancel canvas zoom during layout: inverse transforms magnify the browser's
+     rounded border width at small zoom levels. */
+  zoom: var(--constructor-ui-scale, 1);
 }
 #end-add {
   max-width: 1200px;

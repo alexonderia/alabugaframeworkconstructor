@@ -23,13 +23,13 @@
     "predev": "tsx scripts/build-docs.ts",
     "dev": "vite --host 127.0.0.1",
     "build": "npm run typecheck && npm run check:boundaries && npm run check:ui && tsx scripts/build.ts",
-    "test": "tsx --test tests/editor.test.ts tests/editor-save.test.ts tests/editor-session.test.ts tests/project-import.test.ts tests/project-format.test.ts tests/templates.test.ts tests/block-geometry.test.ts tests/snap-geometry.test.ts tests/grid-change.test.ts tests/document-grid.test.ts tests/import-boundaries.test.mjs tests/style-entries.test.mjs",
+    "test": "tsx --test tests/editor.test.ts tests/editor-save.test.ts tests/editor-session.test.ts tests/project-import.test.ts tests/project-format.test.ts tests/templates.test.ts tests/block-geometry.test.ts tests/snap-geometry.test.ts tests/grid-change.test.ts tests/document-grid.test.ts tests/document-core.test.ts tests/widget-clipboard.test.ts tests/import-boundaries.test.mjs tests/style-entries.test.mjs",
     "test:browser": "playwright test",
     "preview": "vite preview --outDir dist/site --host 127.0.0.1",
     "typecheck": "tsc --noEmit",
     "check:boundaries": "node scripts/check-boundaries.mjs",
-    "format": "prettier --write apps/editor/src scripts/check-boundaries.mjs scripts/import-boundaries.mjs scripts/style-entries.mjs scripts/check-style-entries.mjs tests/import-boundaries.test.mjs tests/style-entries.test.mjs prettier.config.mjs",
-    "check:format": "prettier --check apps/editor/src scripts/check-boundaries.mjs scripts/import-boundaries.mjs scripts/style-entries.mjs scripts/check-style-entries.mjs tests/import-boundaries.test.mjs tests/style-entries.test.mjs prettier.config.mjs",
+    "format": "prettier --write apps/editor/src packages/document-core scripts/check-boundaries.mjs scripts/import-boundaries.mjs scripts/style-entries.mjs scripts/check-style-entries.mjs tests/import-boundaries.test.mjs tests/style-entries.test.mjs prettier.config.mjs",
+    "check:format": "prettier --check apps/editor/src packages/document-core scripts/check-boundaries.mjs scripts/import-boundaries.mjs scripts/style-entries.mjs scripts/check-style-entries.mjs tests/import-boundaries.test.mjs tests/style-entries.test.mjs prettier.config.mjs",
     "check:ui": "node scripts/check-ui-styles.mjs && node scripts/check-style-entries.mjs",
     "build:editor": "npm run build -w @alabuga/editor",
     "build:docs": "tsx scripts/build-docs.ts",
@@ -45,7 +45,8 @@
   },
   "dependencies": {
     "@alabuga/framework": "file:vendor/alabuga-framework-1.4.0-grid.4.tgz",
-    "zod": "^4.5.4"
+    "zod": "^4.5.4",
+    "@alabuga/document-core": "0.7.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",

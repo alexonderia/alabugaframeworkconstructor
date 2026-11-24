@@ -6,7 +6,7 @@ import {
   applyDocumentGrid,
   applyInheritedGrid,
   prepareDocumentGrid,
-  needsStandardPresentationGrid,
+  inheritSectionGrid,
   preserveGridSettings,
   setSectionGrid,
 } from '../apps/editor/src/document-grid';
@@ -62,7 +62,7 @@ for (const kind of ['page', 'presentation'] as const) {
     const duplicate = doc.pages[2];
     assert.ok(templateInfo(doc)?.gridOverrides?.includes(duplicate.id));
     const added = makeComposition('split', kind);
-    doc.pages.push(added);
+    doc.pages.push(inheritSectionGrid(doc, added));
     const next = checked(doc);
     assert.equal(next.pages.at(-1)!.grid.columns, 20);
     assert.equal(next.pages.find((section) => section.id === ownId)!.grid.columns, 12);
@@ -85,19 +85,23 @@ test('a failure in a later section leaves every section and common metadata inta
   assert.deepEqual(doc, before);
 });
 
-test('mixed framed projects adopt the first grid without changing source data; unframed files stay readable', () => {
+test('mixed framed and unframed projects retain every saved grid and position', () => {
   const doc = create();
   delete doc.templateInfo;
   doc.pages[0] = planGridChange(doc.pages[0], { ...standardGrid(), columns: 20 }, 'page');
   doc.pages[1] = makeComposition('hero', 'page');
   const before = structuredClone(doc),
     next = prepareDocumentGrid(doc);
-  assert.ok(next.pages.every((section) => section.grid.columns === 20));
+  assert.deepEqual(next.pages, before.pages);
+  assert.deepEqual(
+    templateInfo(next)?.gridOverrides,
+    doc.pages.slice(1).map(({ id }) => id),
+  );
   assert.deepEqual(content(next), content(before));
   assert.deepEqual(doc, before);
   const legacy = { ...frameworkDocument(doc), pages: [makeComposition('hero', 'page')] };
-  assert.deepEqual(prepareDocumentGrid(legacy), legacy);
-  assert.equal(templateInfo(prepareDocumentGrid(legacy)), undefined);
+  assert.deepEqual(prepareDocumentGrid(legacy).pages, legacy.pages);
+  assert.deepEqual(templateInfo(prepareDocumentGrid(legacy))?.documentGrid, legacy.pages[0].grid);
 });
 
 test('every document and section template starts with the standard grid', () => {
@@ -128,7 +132,7 @@ test('catalog copies and older saved templates use standard grid while projects 
     section: doc.pages[1],
   });
   assert.deepEqual(old.create().grid, standardGrid());
-  doc.pages.push(old.create());
+  doc.pages.push(inheritSectionGrid(doc, old.create()));
   assert.equal(checked(doc).pages.at(-1)!.grid.columns, 20);
 });
 
@@ -142,7 +146,7 @@ test('invalid grid metadata is rejected and stale override references are pruned
   );
 });
 
-test('legacy presentations adopt the site grid atomically without losing content or changing the source', () => {
+test('legacy presentations retain their original geometry across open, validate and reopen', () => {
   const legacy = checked({
     schemaVersion: 3,
     kind: 'presentation',
@@ -151,18 +155,14 @@ test('legacy presentations adopt the site grid atomically without losing content
   });
   const before = structuredClone(legacy),
     next = prepareDocumentGrid(legacy);
-  assert.equal(needsStandardPresentationGrid(legacy), true);
-  assert.ok(
-    next.pages.every((section) => JSON.stringify(section.grid) === JSON.stringify(standardGrid())),
-  );
+  assert.deepEqual(next.pages, before.pages);
+  assert.equal(next.schemaVersion, legacy.schemaVersion);
   assert.deepEqual(content(next), content(before));
   assert.deepEqual(legacy, before);
-  assert.equal(needsStandardPresentationGrid(next), false);
   assert.deepEqual(prepareDocumentGrid(next), next);
   assert.deepEqual(checked(next), next);
   legacy.pages[1].grid.gap = 12;
   const backup = preserveGridSettings(legacy);
-  assert.equal(needsStandardPresentationGrid(backup), false);
   assert.deepEqual(prepareDocumentGrid(backup).pages, legacy.pages);
   assert.deepEqual(templateInfo(backup)?.gridOverrides, [legacy.pages[1].id]);
 });
@@ -173,6 +173,5 @@ test('explicit presentation grid settings survive preparation', () => {
   setSectionGrid(document, document.pages[1].id, true);
   applyInheritedGrid(document, 1, { ...standardGrid(), columns: 12 });
   const before = structuredClone(document);
-  assert.equal(needsStandardPresentationGrid(document), false);
   assert.deepEqual(prepareDocumentGrid(document), before);
 });

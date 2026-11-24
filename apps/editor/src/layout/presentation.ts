@@ -1,7 +1,7 @@
 import type { Section } from '@alabuga/framework/schema';
 import { applyLayoutVariant, type LayoutVariant } from '@alabuga/framework/layout-variants';
 import { gridSpace } from './grid-space';
-import { gridRows } from '@alabuga/framework/grid';
+import { gridRows } from '@alabuga/document-core';
 
 export const slideViewport = ['Слайд', 1600] as const;
 

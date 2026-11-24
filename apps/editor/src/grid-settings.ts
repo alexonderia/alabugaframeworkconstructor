@@ -1,11 +1,11 @@
 import type { AFDocument, Section } from '@alabuga/framework/schema';
-import { standardGrid } from '@alabuga/framework/grid';
+import { alabugaGrid } from './framework-grid-adapter';
 import { applyInheritedGrid, hasSectionGrid, setSectionGrid } from './document-grid';
 import { el, button } from './ui';
 import { inputField, checkboxField } from './ui-fields';
 
 export function applyStandardGrid(document: AFDocument, index: number) {
-  applyInheritedGrid(document, index, standardGrid());
+  applyInheritedGrid(document, index, alabugaGrid());
 }
 
 export function gridScopeControl(

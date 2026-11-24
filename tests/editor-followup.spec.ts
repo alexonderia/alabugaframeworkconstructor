@@ -37,12 +37,14 @@ test('responsive handles change visible width and order instead of invisible gri
  await chooseOption(page.locator('#device'),'mobile');await box.scrollIntoViewIfNeeded();await expect(resize).toBeEnabled();await expect(resize).toHaveAttribute('title',/Телефон/);await box.focus();await page.keyboard.press('ArrowUp');await expect.poll(async()=>(await current()).mobileOrder).toBe(0);await capture(page,'phone-order',info.project.name);
 });
 
-test('tutorial and dialog geometry share aligned edges and single spacing',async({page},info)=>{
- await page.setViewportSize({width:1536,height:1000});await page.goto('/demo/');await page.getByRole('button',{name:'Урок по настройке блока',exact:true}).click();await expect(page.locator('#project-name')).toBeVisible();await page.locator('#close-inspector').click();
+test('tutorial overlay stays in the viewport and dialog controls keep aligned edges',async({page},info)=>{
+ await page.setViewportSize({width:1536,height:1000});await page.goto('/demo/');await page.getByRole('button',{name:'Урок по настройке блока',exact:true}).click();await expect(page.locator('#project-name')).toBeVisible();
  for(const width of [1536,1024,390,844]){
-  await page.setViewportSize({width,height:width===844?390:1000});await page.evaluate(()=>scrollTo(0,0));const toolbar=(await page.locator('.canvas-toolbar').boundingBox())!,tutorial=(await page.locator('.author-tutorial').boundingBox())!;expect(Math.abs(toolbar.x-tutorial.x)).toBeLessThan(1);expect(Math.abs(toolbar.width-tutorial.width)).toBeLessThan(1);
-  const gap=await page.locator('.author-tutorial').evaluate(n=>{const list=n.querySelector('ol')!.getBoundingClientRect(),close=n.querySelector('.tutorial-dismiss')!.getBoundingClientRect();return close.top-list.bottom});expect(gap).toBeGreaterThanOrEqual(15);expect(gap).toBeLessThanOrEqual(17);
-  const heights=await page.locator('.author-tutorial li>.af-btn').evaluateAll(nodes=>nodes.map(node=>node.getBoundingClientRect().height));expect(Math.max(...heights)-Math.min(...heights)).toBeLessThan(1);
+  await page.setViewportSize({width,height:width===844?390:1000});await page.evaluate(()=>scrollTo(0,0));await expect(page.locator('.author-tutorial')).toBeInViewport();await expect(page.getByRole('button',{name:'Выйти из режима',exact:true})).toBeInViewport();await expect(page.locator('.tutorial-progress')).toHaveText('Шаг 4 из 5');
+ }
+ await page.getByRole('button',{name:'Выйти из режима',exact:true}).click();await page.locator('#close-inspector').click();
+ for(const width of [1536,1024,390,844]){
+  await page.setViewportSize({width,height:width===844?390:1000});
   await page.locator('#add-widget').click();const header=page.locator('#catalog .af-dialog__header'),title=(await header.locator('h2').boundingBox())!,close=(await header.locator('button').boundingBox())!;expect(Math.abs(title.y+title.height/2-close.y-close.height/2)).toBeLessThan(1);await page.locator('#close-catalog').click();
  }
  await page.setViewportSize({width:1536,height:1000});await page.evaluate(()=>scrollTo(0,0));await capture(page,'toolbar-and-tutorial',info.project.name);await page.locator('#add-widget').click();await capture(page,'catalog',info.project.name);

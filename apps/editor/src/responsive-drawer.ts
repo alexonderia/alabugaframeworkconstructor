@@ -38,6 +38,7 @@ export function responsiveDrawer(
   window.addEventListener(
     'keydown',
     (event) => {
+      if (root.classList.contains('is-learning')) return;
       if (!media.matches || !isOpen() || document.querySelector('dialog[open]')) return;
       if (event.key === 'Escape') {
         if ((event.target as HTMLElement).closest('.outline-menu[open]')) return;

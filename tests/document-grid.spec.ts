@@ -5,13 +5,10 @@ async function setup(page: Page, kind: 'page' | 'presentation') {
   await page.goto('/builder/');
   const id = await page.evaluate(async (kind) => {
     const { createDocumentFromTemplate } = await import('/apps/editor/src/templates.ts' as string);
-    const { planGridChange } = await import('/apps/editor/src/grid-change.ts' as string);
+    const { applyDocumentGrid } = await import('/apps/editor/src/document-grid.ts' as string);
     const { saveProject } = await import('/apps/editor/src/storage.ts' as string);
     const doc = createDocumentFromTemplate(kind, `document/${kind}/corporate`);
-    delete doc.templateInfo;
-    doc.pages[0] = planGridChange(doc.pages[0], { ...doc.pages[0].grid, columns: 20 }, kind);
-    // Reproduce a project where only the header was previously changed.
-    doc.pages[1] = planGridChange(doc.pages[1], { columns: 12, rowHeight: 64, gap: 16 }, kind);
+    applyDocumentGrid(doc, { ...doc.pages[0].grid, columns: 20 });
     const id = crypto.randomUUID();
     await saveProject(id, doc);
     return id;
@@ -27,7 +24,7 @@ async function setup(page: Page, kind: 'page' | 'presentation') {
 }
 
 async function renderedGrids(page: Page) {
-  return page.locator('#canvas .af-layout-grid > .af-panel').evaluateAll((panels) =>
+  return page.locator('#canvas [data-section-id] > .af-panel').evaluateAll((panels) =>
     panels.map((panel) => {
       const style = getComputedStyle(panel);
       return {
@@ -40,7 +37,55 @@ async function renderedGrids(page: Page) {
 }
 
 for (const kind of ['page', 'presentation'] as const) {
-  test(`${kind}: common grid unifies existing sections, local override can be removed and persists on reload`, async ({
+  test(`${kind}: opening and editing a mixed legacy project preserves all saved geometry`, async ({
+    page,
+  }) => {
+    await page.goto('/builder/');
+    const { id, pages } = await page.evaluate(async (kind) => {
+      const { createDocumentFromTemplate } = await import(
+        '/apps/editor/src/templates.ts' as string
+      );
+      const { planGridChange } = await import('/apps/editor/src/grid-change.ts' as string);
+      const { saveProject } = await import('/apps/editor/src/storage.ts' as string);
+      const document = createDocumentFromTemplate(kind, `document/${kind}/corporate`);
+      delete document.templateInfo;
+      document.pages[0] = planGridChange(
+        document.pages[0],
+        { ...document.pages[0].grid, columns: 20 },
+        kind,
+      );
+      document.pages[1] = planGridChange(
+        document.pages[1],
+        { columns: 12, rowHeight: 64, gap: 16 },
+        kind,
+      );
+      const id = crypto.randomUUID();
+      const saved = await saveProject(id, document);
+      return { id, pages: saved.pages };
+    }, kind);
+    await page.evaluate((id) => (location.hash = '/edit/' + id), id);
+    await expect(page.locator('#project-name')).toBeVisible();
+    expect((await savedDocument(page)).pages).toEqual(pages);
+    const columns = pages.map((section: any) => section.grid.columns);
+    await expect
+      .poll(async () => (await renderedGrids(page)).map((grid) => grid.columns))
+      .toEqual(columns);
+    await page.locator('#project-name').fill('Сохранённая геометрия');
+    await page.locator('#project-name').press('Tab');
+    await expect.poll(async () => (await savedDocument(page)).title).toBe('Сохранённая геометрия');
+    await page.reload();
+    await expect(page.locator('#project-name')).toHaveValue('Сохранённая геометрия');
+    const saved = await savedDocument(page);
+    expect(saved.pages).toEqual(pages);
+    expect(saved.templateInfo.gridOverrides).toEqual(
+      pages.slice(1).map((section: any) => section.id),
+    );
+    await expect
+      .poll(async () => (await renderedGrids(page)).map((grid) => grid.columns))
+      .toEqual(columns);
+  });
+
+  test(`${kind}: common grid updates existing sections, local override can be removed and persists on reload`, async ({
     page,
   }) => {
     const grid = await setup(page, kind),

@@ -18,7 +18,14 @@ try {
 } catch (e) {
   if (e.code !== 'ENOENT') throw e;
 }
-const roots = ['apps/editor', 'apps/ai-server', 'packages/ai', 'scripts', 'tests'],
+const roots = [
+    'apps/editor',
+    'apps/ai-server',
+    'packages/ai',
+    'packages/document-core',
+    'scripts',
+    'tests',
+  ],
   errors = [];
 const ai = JSON.parse(await readFile('packages/ai/package.json', 'utf8'));
 const files = new Set((await Promise.all(roots.map(walk))).flat());
@@ -75,5 +82,5 @@ for (const file of ['package.json', 'apps/editor/package.json', 'packages/ai/pac
 }
 if (errors.length) throw new Error(errors.join('\n'));
 console.log(
-  'Public Framework/AI exports, workspace directions, document modules and dependency cycles checked',
+  'Public Framework/AI/core exports, isolated document core, workspace directions, document modules and dependency cycles checked',
 );

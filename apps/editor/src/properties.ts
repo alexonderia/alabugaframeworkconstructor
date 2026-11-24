@@ -20,7 +20,7 @@ import {
   responsiveKey,
 } from './widget-layout';
 import type { AFDocument } from '@alabuga/framework/schema';
-import { gridFrame, positionBounds } from '@alabuga/framework/grid';
+import { gridFrame, positionBounds } from '@alabuga/document-core';
 import { positionFromRect } from './snap-geometry';
 type Callbacks = {
   apply: (widget: Widget) => boolean;

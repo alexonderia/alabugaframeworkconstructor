@@ -5,6 +5,7 @@ FROM node:24.19.0-bookworm-slim AS dependencies
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY vendor/ vendor/
+COPY packages/document-core/package.json packages/document-core/package.json
 COPY packages/ai/package.json packages/ai/package.json
 COPY apps/editor/package.json apps/editor/package.json
 COPY apps/ai-server/package.json apps/ai-server/package.json

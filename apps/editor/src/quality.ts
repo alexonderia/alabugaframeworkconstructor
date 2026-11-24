@@ -1,4 +1,4 @@
-import { gridFrame } from '@alabuga/framework/grid';
+import { gridFrame } from '@alabuga/document-core';
 import { showDialog, libraryDialog, el, button } from './ui';
 import { frameworkDom as dom } from './framework-adapter';
 import type { AFDocument } from '@alabuga/framework/schema';

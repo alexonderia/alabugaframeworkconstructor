@@ -1,4 +1,4 @@
-import {remapSectionGrid} from '@alabuga/framework/grid';
+import {remapSectionGrid} from '@alabuga/document-core';
 import {z} from 'zod';
 import {compositionCatalog,makeComposition} from '@alabuga/framework/compositions';
 import {validateDocument,isSafeUrl,type AFDocument,type Section} from '@alabuga/framework/schema';

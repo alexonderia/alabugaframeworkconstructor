@@ -18,9 +18,10 @@ IndexedDB 3 uses an internal Project.version counter checked atomically for stal
 
 | Package | Responsibility | Dependencies |
 | --- | --- | --- |
+| document-core | Grid contracts, geometry, placement and snapping | None |
 | framework | Schema, runtime, compositions, fitting, export | Zod; no editor |
-| ai | Contracts, commands, generation, content review | Public framework APIs and Zod |
-| editor | Gallery, canvas, properties, IndexedDB, AI UI | framework and ai |
+| ai | Contracts, commands, generation, content review | document-core, public framework APIs and Zod |
+| editor | Gallery, canvas, properties, IndexedDB, AI UI | document-core, framework and ai |
 | ai-server | HTTP, limits, Ollama, model initialization | Node.js and model configuration |
 | docs | Manuals and interactive examples | framework |
 
@@ -74,4 +75,8 @@ Framework is now a separate repository publishing @alabuga/framework. Constructo
 
 The installed package already provides standalone.css and standalone.js. Constructor never builds Framework. Library DOM/CSS/API compatibility is a SemVer contract documented in Framework docs/public-contract.md. The Framework reference is a separate static website; VITE_FRAMEWORK_DOCS_URL configures its link and CONSTRUCTOR_URL configures return links when building that site. Browser storage and AI stay in Constructor.
 
-New documents use the public `@alabuga/framework/grid` API for defaults, canvas dimensions and placement bounds. Preflight uses 1920 px for new documents and retains legacy dimensions; tablet and phone viewports are checked separately. The compatible Framework extension lives in its own repository. Constructor consumes the built `vendor/alabuga-framework-1.4.0-grid.0.tgz` archive through package-lock.json. This is a local prerelease, not a registry publication.
+`packages/document-core` (`@alabuga/document-core`) owns `Grid`, `GridFrame`, `Position`, format validation, bounds, coordinate conversion, placement, resizing and snapping. It has no Framework, DOM, editor or widget catalog dependencies. Widget minimum sizes are injected. Import checks enforce this boundary.
+
+`framework-grid-adapter.ts` connects the brand preset through the public `@alabuga/framework/grid` API, widget constraints and renderer compatibility validation. Unsupported grids fail explicitly instead of being replaced with a preset. Another renderer supplies its own adapter and constraints while retaining core geometry. The complete AFDocument content schema and rendering still depend on Framework.
+
+Projects store their grid and positions. Opening, validating and saving never reflow geometry using the current preset. Differing section grids become explicit overrides. Conversion runs for explicit grid changes and new instances. Legacy dimensions without `grid.frame` are frozen in core as format compatibility. Preflight uses the saved canvas dimensions, with separate tablet and phone checks. Constructor consumes `vendor/alabuga-framework-1.4.0-grid.4.tgz` through package-lock.json; updating that dependency remains a separate action.
