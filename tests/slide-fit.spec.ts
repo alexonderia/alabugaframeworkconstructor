@@ -1,3 +1,4 @@
+import {chooseNewProject} from './new-project-helper';
 import {openEditor} from './open-editor';
 import {test,expect} from '@playwright/test';
 import {savedDocument} from './project-helper';
@@ -55,7 +56,7 @@ test('preview applies once, rejects stale edits and survives storage and export'
 });
 
 test('typing only suggests fitting, preserving text, geometry and focus',async({page})=>{
- await openEditor(page);await page.locator('.project-menu summary').click();await page.locator('#demo-deck').click();const before=await savedDocument(page);
+ await openEditor(page);await page.locator('.project-menu summary').click();await chooseNewProject(page, 'demo-deck');const before=await savedDocument(page);
  const heading=page.locator('#canvas .af-slide--active .af-title [contenteditable]').first();await heading.fill('Длинный заголовок '.repeat(100));
  await expect(page.getByRole('button',{name:'Текст не помещается — подобрать оформление',exact:true})).toBeVisible();await expect(heading).toBeFocused();
  const after=await savedDocument(page);expect(after.pages[0].widgets.map((w:any)=>({position:w.position,typography:w.typography}))).toEqual(before.pages[0].widgets.map((w:any)=>({position:w.position,typography:w.typography})));

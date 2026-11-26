@@ -102,7 +102,7 @@ export function bindEditorShortcuts(
       if (event.key === 'Escape') {
         if (
           target.closest(
-            '.outline-menu[open],.project-menu[open],.editor-more[open],.block-controls[open]',
+            '.outline-menu[open],.project-menu[open],.editor-help[open],.editor-more[open],.block-controls[open]',
           )
         )
           return;

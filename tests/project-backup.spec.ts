@@ -63,7 +63,7 @@ test('backup commands travel with HTML and a downloaded project opens in a clean
   await page.setViewportSize({ width: 390, height: 844 });
   await title.fill('Копия с телефона');
   await title.blur();
-  await expect(page.locator('#save-state')).toHaveText('Сохранено в браузере');
+  await expect(page.locator('#save-state')).toHaveText('Сохранено');
   await expect(hint).toBeHidden();
 
   const menu = page.locator('.project-menu');

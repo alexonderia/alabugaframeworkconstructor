@@ -31,7 +31,12 @@ test('demo preview does not save; each explicit action creates its own editable 
  await page.goto('/demo/');await expect(page.getByRole('heading',{name:'Конструктор сайтов и презентаций'})).toBeVisible();
  expect(await page.evaluate(async()=>{const s=await import('/apps/editor/src/storage.ts' as string);return (await s.listProjectSummaries()).length})).toBe(0);
  await page.getByRole('button',{name:'Урок по настройке блока',exact:true}).click();await expect(page.locator('#project-name')).toBeVisible();await expect(page.locator('.author-tutorial')).toBeVisible();const first=await savedDocument(page);expect(first.pages).toHaveLength(10);
- await chooseOption(page.getByLabel('Цвет текста',{exact:true}),'blue');await expect.poll(async()=>(await savedDocument(page)).pages[4].widgets[0].style?.color).toBe('blue');await page.getByRole('button',{name:'Выйти из режима',exact:true}).click();await page.locator(`#canvas [data-widget-id="${first.pages[4].widgets[0].id}"]`).press('Enter');await chooseOption(page.getByLabel('Масштаб текста',{exact:true}),'large');await page.reload();await expect(page.locator('#canvas [data-element-color]').first()).toBeVisible();
+ await chooseOption(page.getByLabel('Цвет текста',{exact:true}),'blue');await expect.poll(async()=>(await savedDocument(page)).pages[4].widgets[0].style?.color).toBe('blue');await page.getByRole('button',{name:'Выйти из режима',exact:true}).click();await page.locator(`#canvas [data-widget-id="${first.pages[4].widgets[0].id}"]`).press('Enter');
+ for(const group of ['style','theme-style']){
+  const details=page.locator(`#properties details[data-setting="${group}"]`);
+  if(await details.getAttribute('open')===null)await details.locator(':scope > summary').click();
+ }
+ await chooseOption(page.getByLabel('Масштаб текста',{exact:true}),'large');await page.reload();await expect(page.locator('#canvas [data-element-color]').first()).toBeVisible();
  await page.goto('/demo/');await page.getByRole('button',{name:'Редактировать образец презентации',exact:true}).click();await expect(page.locator('#project-name')).toBeVisible();expect((await savedDocument(page)).pages).toHaveLength(11);
  expect(await page.evaluate(async()=>{const s=await import('/apps/editor/src/storage.ts' as string);return (await s.listProjectSummaries()).length})).toBe(2);
 });

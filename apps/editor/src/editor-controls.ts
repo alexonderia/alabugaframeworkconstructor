@@ -1,4 +1,4 @@
-import { el, button } from './ui';
+import { el, button, iconButton } from './ui';
 export function createZoomControls(canvas: HTMLElement, status: HTMLElement) {
   const viewport = canvas.parentElement!;
   let zoom = 1,
@@ -59,7 +59,12 @@ export function createZoomControls(canvas: HTMLElement, status: HTMLElement) {
     more = button('+', () => change(0.1), 'af-btn af-btn--ghost af-btn--sm');
   less.setAttribute('aria-label', 'Уменьшить масштаб');
   more.setAttribute('aria-label', 'Увеличить масштаб');
-  bar.append(less, label, more, button('Вписать', fit, 'af-btn af-btn--ghost af-btn--sm'));
+  bar.append(
+    less,
+    label,
+    more,
+    iconButton('Вписать', fit, 'fit', 'af-btn af-btn--ghost af-btn--sm'),
+  );
   const resized = () => {
     if (!fitting || resizeFrame) return;
     resizeFrame = requestAnimationFrame(() => {

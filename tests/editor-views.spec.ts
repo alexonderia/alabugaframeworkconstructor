@@ -27,7 +27,7 @@ test('invalid inspector geometry survives blocked close, section selection and p
   const width = page.getByLabel('Ширина', { exact: true });
   await width.fill('0');
   await width.blur();
-  await expect(page.locator('#save-state')).toContainText('Изменения не применены');
+  await expect(page.locator('#save-state')).toContainText('Есть несохранённые изменения');
   await page.locator('.outline-select').nth(1).click();
   await expect(page.locator('#pages')).toHaveValue('0');
   await expect(width).toHaveValue('0');
@@ -38,7 +38,7 @@ test('invalid inspector geometry survives blocked close, section selection and p
   expect(await savedDocument(page)).toEqual(before);
   await width.fill(String(before.pages[0].widgets[0].position.width));
   await width.blur();
-  await expect(page.locator('#save-state')).toHaveText('Сохранено в браузере');
+  await expect(page.locator('#save-state')).toHaveText('Сохранено');
   await page.locator('#close-inspector').click();
   await expect(page.locator('#inspector')).toBeHidden();
   await page.locator('.outline-select').nth(1).click();

@@ -10,7 +10,7 @@ test('finishing an autosave preserves a preview navigation that is already reque
    if(held||!location.hash.startsWith('#/view/'))return;
    held=true;event.stopImmediatePropagation();
    const release=()=>{
-    if(document.querySelector('#save-state')?.textContent!=='Сохранено в браузере')return;
+    if(document.querySelector('#save-state')?.textContent!=='Сохранено')return;
     observer.disconnect();requestAnimationFrame(()=>window.dispatchEvent(new HashChangeEvent('hashchange')));
    };
    const observer=new MutationObserver(release);observer.observe(document.body,{subtree:true,childList:true,characterData:true});release();

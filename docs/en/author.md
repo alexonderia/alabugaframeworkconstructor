@@ -6,9 +6,11 @@ Choose Create website or Create presentation in the gallery. Start with a blank 
 
 Preview keeps the project's modification date. Search matches names. The card menu lets you rename, download or move a project to the trash. The trash supports restoration and permanent deletion.
 
+In the editor, File beside the project name contains project creation, JSON import and project settings. Version history has a separate button beside Undo and Redo; create restore points inside the history panel. The Materials tab is on the left, with storage management inside it.
+
 ## Guided learning mode
 
-Choose «Режим знакомства» (Guided learning mode) in the Project menu. Five tasks cover text, layout, images, element styling, and preview with HTML export. The guide opens and highlights the relevant control. Next unlocks after an actual change. Empty projects are guided to add the missing block. Skipping a task does not mark it complete.
+Choose «Режим знакомства» (Guided learning mode) from the help menu at the bottom of the editor. Five tasks cover text, layout, images, element styling, and preview with HTML export. The guide opens and highlights the relevant control. Next unlocks after an actual change. Empty projects are guided to add the missing block. Skipping a task does not mark it complete.
 
 The instruction floats above the editor beside the relevant field. The background is dimmed and interaction is limited to the current task. Guidance stays visible during scrolling and above material libraries, layout dialogs and select menus. Exit at the top of the instruction and Escape remain available at any time, including inside dialogs and with invalid fields. Exit saves progress and closes task dialogs; use the same menu command to resume.
 
@@ -24,7 +26,7 @@ Use an add button to open the catalog. Browse templates and compositions, indivi
 
 «Посмотреть шаблоны» (View templates) replaces the selected structure and carries over matching blocks. If some blocks have no matching place, keep the current composition or store those blocks in the project. The editable backup includes stored blocks. Restore them into a new section or slide through the inspector. «Изменить компоновку» (Change layout) compares arrangements of the existing blocks.
 
-Corporate templates open in Standard mode. Edit text directly on the canvas or under «Содержание» (Content), and use «Оформление» (Design) for corporate colours, alignment and component styling. Set «Режим редактора» (Editor mode) to Advanced for the grid, precise sizes, responsive settings and animation. Switching modes keeps draft fields and open groups.
+Edit text on the canvas or under «Содержание» (Content). Use «Внешний вид» (Appearance) for colours, alignment and component styling. For a website text block, this group also contains typography settings for font, size, colour, style and spacing. The «Анимация» (Animation) group controls motion. Website section settings include the background image under «Внешний вид» (Appearance) and grid and cropping under «Дополнительные параметры» (Additional settings).
 
 ## Images and slides
 
@@ -52,7 +54,7 @@ Drafts are isolated from projects. Edit them, retry a section, cancel or resume 
 
 ## Before delivery
 
-Wait for «Сохранено в браузере» (Saved in this browser). Check websites on mobile and presentations in full screen. Select «Скачать копию (.json)» (Download a copy) next to «Скачать HTML» (Download HTML). On mobile, both actions are in the «Проект» (Project) menu. Import JSON to edit the project in another browser. Use HTML to share the finished output. External HTTP(S) assets require a network. Use browser printing for PDF and check that each slide occupies a separate page.
+Wait for «Сохранено» (Saved). Check websites on mobile and presentations in full screen. Select «Скачать копию (.json)» (Download a copy) next to «Скачать HTML» (Download HTML). On mobile, both actions are in the «Файл» (File) menu. Import JSON to edit the project in another browser. Use HTML to share the finished output. External HTTP(S) assets require a network. Use browser printing for PDF and check that each slide occupies a separate page.
 
 ## Tablet and phone sizes
 
@@ -66,7 +68,7 @@ Flow section heights expand with content. On tablet and phone canvases, the righ
 
 The «Привязка» button stays highlighted while its panel is open. Info buttons reveal explanations; hovering a mode or navigating options with arrows shows its hint. Step controls appear only in Strict mode. Click outside, click the trigger again or use the close button to dismiss the panel. Escape closes the list or hint first, then closes the panel and returns focus to its trigger. Resizing a block preserves text size; responsive typography follows the document viewport.
 
-Choose a screen in «Вид холста», open block properties and expand «Размеры и положение». Set percentage width and minimum pixel height independently for tablet and phone. Content can grow beyond the minimum height. «Автоматический размер» resets only the current screen. These settings apply to flow website sections; desktop grid and slide geometry remain separate.
+Choose a screen in «Вид холста», open block properties and expand «Размер и расположение» (Size and position). Set percentage width and minimum pixel height independently for tablet and phone. Content can grow beyond the minimum height. «Автоматический размер» resets only the current screen. These settings apply to flow website sections. The desktop grid and slide geometry have their own settings.
 
 On tablet and phone canvases, arrows on a focused block change reading order. Alt with left/right adjusts width by 5 percentage points; Alt with up/down adjusts minimum height by 16 px. Shift increases the step tenfold. Escape cancels an active drag; Undo restores an applied size. Simulated device widths stay stable when properties open; use canvas scrolling or «Вписать» when space is limited.
 

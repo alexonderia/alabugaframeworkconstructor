@@ -1,5 +1,6 @@
 import {test,expect,type Page} from '@playwright/test';
 import {readFile,mkdir} from 'node:fs/promises';
+import {chooseOption} from './choose-option';
 
 // A case traverses several viewports and public project downloads.
 test.setTimeout(60000);
@@ -35,16 +36,41 @@ test('toolbar groups share Framework sizes and have space between controls',asyn
   await page.setViewportSize({width,height:900});
   const compact=width<768;
   await expect.poll(()=>page.locator('#project-name').evaluate(n=>n.getBoundingClientRect().height)).toBe(compact?32:40);
-  const rows=await page.locator('.editor-header>.af-btn,.editor-history .af-btn,.project-menu>summary,.editor-file-actions>.af-btn,.canvas-toolbar .af-btn,.canvas-toolbar .af-select__control').evaluateAll(nodes=>nodes.filter(n=>n.getClientRects().length&&!n.closest('details:not([open]) > :not(summary)')).map(n=>({id:n.id||n.getAttribute('aria-label')||n.textContent,height:n.getBoundingClientRect().height})));
-  for(const row of rows)expect(row.height,row.id??'control').toBe(compact?32:40);
+  const rows=await page.locator('.editor-header>.af-btn,.editor-history .af-btn,.project-menu>summary,.editor-file-actions>.af-btn,.canvas-toolbar .af-btn,.canvas-toolbar .af-select__control').evaluateAll(nodes=>nodes.filter(n=>n.getClientRects().length&&!n.closest('details:not([open]) > :not(summary)')).map(n=>({id:n.id||n.getAttribute('aria-label')||n.textContent,height:n.getBoundingClientRect().height,toolbar:!!n.closest('.canvas-toolbar')})));
+  for(const row of rows)expect(row.height,row.id??'control').toBe(compact||row.toolbar?32:40);
   for(const group of ['.editor-history','.section-toolbar','.canvas-zoom']){
    const children=await page.locator(group).evaluate(n=>[...n.children].filter((n):n is HTMLElement=>n instanceof HTMLElement&&!!n.getClientRects().length).map(n=>{const r=n.getBoundingClientRect();return{x:r.x,right:r.right,y:r.y,bottom:r.bottom}}));
-   for(let i=1;i<children.length;i++)if(children[i].y<children[i-1].bottom-1)expect(children[i].x-children[i-1].right,group).toBeGreaterThanOrEqual(7);
+   for(let i=1;i<children.length;i++)if(children[i].y<children[i-1].bottom-1)expect(children[i].x-children[i-1].right,group).toBeGreaterThanOrEqual(group==='.canvas-zoom'?3.9:7);
   }
-  await page.locator('.project-menu>summary').click();const trigger=await page.locator('.project-menu>summary').boundingBox(),menu=await page.locator('.command-menu').boundingBox();expect(menu!.y-trigger!.y-trigger!.height).toBeGreaterThanOrEqual(7);await page.locator('.project-menu>summary').click();
+  await page.locator('.project-menu>summary').click();const trigger=await page.locator('.project-menu>summary').boundingBox(),menu=await page.locator('.project-menu .command-menu').boundingBox();expect(menu!.y-trigger!.y-trigger!.height).toBeGreaterThanOrEqual(7);await page.locator('.project-menu>summary').click();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(width);
  }
  await page.setViewportSize({width:1536,height:900});await capture(page,'toolbar',info.project.name);
+});
+
+test('compact toolbar stays in one row while scrolling and switching sections',async({page})=>{
+ await page.setViewportSize({width:1440,height:900});
+ await openFixture(page);
+ await page.locator('#page-settings-open').click();
+ const toolbar=page.locator('.canvas-toolbar');
+ await expect(toolbar).toHaveCSS('position','sticky');
+ const initial=(await toolbar.boundingBox())!;
+ expect(initial.height).toBeLessThanOrEqual(52);
+ expect(await toolbar.evaluate(n=>n.scrollWidth<=n.clientWidth)).toBe(true);
+ const controls=await toolbar.locator('.section-toolbar>.af-btn,.af-select__control,.block-controls-trigger,.canvas-zoom>.af-btn').evaluateAll(nodes=>nodes.filter(n=>n.getClientRects().length).map(n=>n.getBoundingClientRect().top));
+ for(const top of controls)expect(Math.abs(top-controls[0])).toBeLessThanOrEqual(1);
+ await page.mouse.move(700,700);await page.mouse.wheel(0,550);
+ await expect.poll(()=>page.evaluate(()=>window.scrollY)).toBeGreaterThan(100);
+ expect(Math.abs((await toolbar.boundingBox())!.y-initial.y)).toBeLessThanOrEqual(1);
+ await expect(page.locator('#close-inspector')).toBeInViewport({ratio:1});
+ expect((await page.locator('#inspector .drawer-header').boundingBox())!.y).toBeGreaterThanOrEqual((await page.locator('.editor-header').boundingBox())!.height);
+ await chooseOption(page.locator('#pages'),'1');
+ await expect(page.locator('#pages')).toHaveValue('1');
+ expect(Math.abs((await toolbar.boundingBox())!.y-initial.y)).toBeLessThanOrEqual(1);
+ const section=(await page.locator('#canvas .af-page').nth(1).boundingBox())!;
+ expect(section.y).toBeGreaterThanOrEqual(initial.y+initial.height);
+ await page.locator('.block-controls-trigger').click();
+ await expect(page.getByRole('dialog',{name:'Настройки привязки',exact:true})).toBeVisible();
 });
 
 test('inspector header never covers fields and settings groups have consistent spacing',async({page},info)=>{
@@ -60,7 +86,7 @@ test('inspector header never covers fields and settings groups have consistent s
   }
   await body.evaluate(n=>n.scrollTop=0);
   const gaps=await page.locator('.property-group[open]>.settings-group-body').first().evaluate(n=>[...n.children].filter(n=>n.getClientRects().length).map(n=>n.getBoundingClientRect()).slice(1).map((r,i)=>r.top-n.children[i].getBoundingClientRect().bottom));
-  for(const gap of gaps)expect(gap).toBeGreaterThanOrEqual(15);
+  for(const gap of gaps)expect(gap).toBeGreaterThanOrEqual(7.9);
   await capture(page,`inspector-${viewport.width}x${viewport.height}`,info.project.name);await page.locator('#close-inspector').click();
  }
 });

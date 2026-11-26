@@ -74,11 +74,11 @@ export function alert(text: string, tone: 'info' | 'success' | 'warning' | 'dang
 /** One spacing owner for inspector groups; native disclosure semantics remain. */
 export function settingsGroup(title: string, className: string) {
   const group = el('details', className),
-    summary = el('summary', 'af-btn af-btn--clear', title),
+    summary = el('summary', 'af-btn af-btn--clear'),
     body = el('div', 'settings-group-body');
   const icon = el('span', 'af-icon af-icon--expand');
   icon.setAttribute('aria-hidden', 'true');
-  summary.append(icon);
+  summary.append(el('span', 'settings-group-title', title), icon);
   group.append(summary, body);
   return { group, body };
 }
@@ -88,7 +88,11 @@ export function showDialog(
   dialog: HTMLDialogElement,
   returnFocus?: () => HTMLElement | null | undefined,
 ) {
-  const opener = invocationTarget();
+  const invoked = invocationTarget();
+  const opener =
+    invoked
+      ?.closest('.project-menu,.editor-help')
+      ?.querySelector<HTMLElement>(':scope > summary') ?? invoked;
   // Applying a dialog can recreate its initiating inspector control.
   const regionId = opener?.closest('[id]')?.id,
     tag = opener?.tagName,
@@ -183,11 +187,12 @@ export function showDialog(
       keyboard.abort();
       disposeControls(dialog);
       const target = returnFocus?.() ?? restoreOpener();
+      const remainingDialog = Array.from(document.querySelectorAll('dialog[open]')).at(-1);
       if (
         target?.isConnected &&
         target.getClientRects().length &&
         !target.closest('[inert]') &&
-        !document.querySelector('dialog[open]')
+        (!remainingDialog || remainingDialog.contains(target))
       )
         target.focus({ preventScroll: true });
     },

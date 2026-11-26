@@ -1,3 +1,4 @@
+import {chooseNewProject} from './new-project-helper';
 import {chooseOption} from './choose-option';
 import {test,expect} from '@playwright/test';
 import {openEditor} from './open-editor';
@@ -11,7 +12,7 @@ test('quick exit creates a deduplicated recovery point and save status is live',
 });
 
 test('preview restores the eighth slide and returns to it',async({page})=>{
- await openEditor(page);await page.locator('.project-menu summary').click();await page.locator('#demo-deck').click();await expect(page.locator('#pages option[value="7"]')).toHaveCount(1);await chooseOption(page.locator('#pages'),'7');const id=(await savedDocument(page)).pages[7].id;await page.locator('#preview').click();await expect(page.frameLocator('.project-preview iframe').locator('.af-slide--active')).toHaveAttribute('data-section-id',id);await page.getByRole('button',{name:'Редактировать',exact:true}).click();await expect(page.locator('#pages')).toHaveValue('7');
+ await openEditor(page);await page.locator('.project-menu summary').click();await chooseNewProject(page, 'demo-deck');await expect(page.locator('#pages option[value="7"]')).toHaveCount(1);await chooseOption(page.locator('#pages'),'7');const id=(await savedDocument(page)).pages[7].id;await page.locator('#preview').click();await expect(page.frameLocator('.project-preview iframe').locator('.af-slide--active')).toHaveAttribute('data-section-id',id);await page.getByRole('button',{name:'Редактировать',exact:true}).click();await expect(page.locator('#pages')).toHaveValue('7');
 });
 
 test('material failure leaves upload available and retry, local descriptions and search work',async({page})=>{
@@ -75,7 +76,7 @@ test('asset cleanup protects projects, trash, history and AI drafts and rejects 
 });
 
 test('large example has unique landmarks and mobile drawer contains focus',async({page})=>{
- await openEditor(page);await page.locator('.project-menu summary').click();await page.locator('#demo-page').click();await expect(page.locator('#canvas .af-page')).toHaveCount(10);await expect(page.locator('#builder')).not.toHaveAttribute('inert');await page.evaluate(axe.source);expect(await page.evaluate(async()=>(await (window as any).axe.run()).violations.map((v:any)=>({id:v.id,targets:v.nodes.map((n:any)=>n.target)})))).toEqual([]);
+ await openEditor(page);await page.locator('.project-menu summary').click();await chooseNewProject(page, 'demo-page');await expect(page.locator('#canvas .af-page')).toHaveCount(10);await expect(page.locator('#builder')).not.toHaveAttribute('inert');await page.evaluate(axe.source);expect(await page.evaluate(async()=>(await (window as any).axe.run()).violations.map((v:any)=>({id:v.id,targets:v.nodes.map((n:any)=>n.target)})))).toEqual([]);
  for(const width of [320,390,640,768]){await page.setViewportSize({width,height:844});await page.locator('#page-settings-open').click();await expect(page.locator('#close-inspector')).toBeVisible();if(width<768){await expect(page.locator('#inspector')).toHaveAttribute('aria-modal','true');await page.locator('#close-inspector').focus();await page.keyboard.press('Tab');expect(await page.locator('#inspector').evaluate(n=>n.contains(document.activeElement))).toBe(true)}await page.locator('#close-inspector').click();await expect(page.locator('#page-settings-open')).toBeFocused()}
 });
 

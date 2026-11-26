@@ -4,6 +4,15 @@ const mounted = new WeakMap<HTMLElement, () => void>();
 /** Enhance only editor controls. Never walk the author-controlled canvas. */
 export function mountControls(root: HTMLElement) {
   disposeControls(root);
+  // Options inside a wrapping label must not activate the backing native select.
+  const suppressNativeSelect = (event: MouseEvent) => {
+    if (
+      event.target instanceof Element &&
+      event.target.closest('select.af-select--enhanced, .af-select-list [role="option"]')
+    )
+      event.preventDefault();
+  };
+  root.addEventListener('click', suppressNativeSelect);
   const controls = new Map<HTMLElement, () => void>();
   const sync = () => {
     for (const [control, cleanup] of controls)
@@ -30,6 +39,7 @@ export function mountControls(root: HTMLElement) {
   sync();
   const cleanup = () => {
     observer.disconnect();
+    root.removeEventListener('click', suppressNativeSelect);
     for (const dispose of controls.values()) dispose();
     controls.clear();
   };

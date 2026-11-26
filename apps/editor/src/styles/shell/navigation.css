@@ -1,0 +1,184 @@
+/* File actions, recovery, materials and help have separate, stable homes. */
+#builder .project-menu > .command-menu,
+#builder .editor-help > .command-menu {
+  width: 260px;
+  min-width: 0;
+  max-width: calc(100vw - 24px);
+  max-height: min(420px, calc(100dvh - 100px));
+  padding: var(--af-space-8);
+  gap: var(--af-space-4);
+  border: 1px solid var(--af-border-default);
+  border-radius: var(--af-radius-12);
+  background: var(--af-bg-surface);
+  box-shadow: 0 8px 32px color-mix(in srgb, var(--af-color-brand-deep) 12%, transparent);
+}
+#builder .command-menu > :is(.af-btn, .file-open) {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  min-height: 32px;
+  gap: var(--af-space-8);
+  padding: 6px var(--af-space-8);
+  border-color: transparent;
+  background: transparent;
+  color: var(--af-text-primary);
+  font-size: 13px;
+  line-height: 1.3;
+  text-align: left;
+}
+#builder .command-menu > :is(.af-btn, .file-open):hover {
+  background: var(--af-color-neutral-50);
+}
+#builder .command-menu > .af-btn__icon,
+#builder .command-row > .af-btn__icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+.command-divider {
+  width: 100%;
+  margin: var(--af-space-4) 0;
+  border: 0;
+  border-top: 1px solid var(--af-border-subtle);
+}
+.editor-file-actions .quality-label {
+  display: none;
+}
+#builder > .editor-help {
+  position: fixed;
+  left: var(--af-space-24);
+  bottom: var(--af-space-24);
+  z-index: 35;
+  background: var(--af-bg-surface);
+  border-radius: 50%;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--af-color-brand-deep) 10%, transparent);
+}
+.editor-help > summary {
+  list-style: none;
+}
+.editor-help > summary::-webkit-details-marker {
+  display: none;
+}
+.help-glyph {
+  font-size: 18px;
+  line-height: 20px;
+  text-align: center;
+}
+.editor-help > .command-menu {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + var(--af-space-8));
+}
+.outline-tabs {
+  display: flex;
+  gap: var(--af-space-4);
+  margin-top: var(--af-space-12);
+}
+.outline-tabs > .af-btn {
+  flex: 1;
+}
+.outline-tabs > [aria-selected='true'] {
+  color: var(--af-text-link);
+  background: var(--af-state-selected-bg);
+}
+.materials-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: var(--af-space-12) var(--af-space-12) var(--af-space-64);
+}
+.materials-body[hidden] {
+  display: none;
+}
+.materials-body > .storage-open {
+  width: 100%;
+  margin-bottom: var(--af-space-12);
+}
+.materials-body :is(.asset-picker, .asset-picker-filters, .asset-picker-confirm) {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: var(--af-space-12);
+}
+.materials-body .asset-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+.materials-body :is(.af-field, .af-input, .af-select-box) {
+  min-width: 0;
+  max-width: 100%;
+}
+.materials-body .asset-picker-confirm > .af-btn {
+  width: 100%;
+}
+.materials-body .constructor-file-picker {
+  flex-direction: column;
+  align-items: stretch;
+}
+.materials-body .constructor-file-name {
+  flex: none;
+}
+.new-project-formats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--af-space-12);
+}
+.new-project-formats > .af-btn {
+  min-height: 64px;
+}
+.new-project-dialog h3 {
+  margin: var(--af-space-8) 0 0;
+  font-size: 16px;
+}
+dialog.version-history-panel {
+  position: fixed;
+  inset: var(--af-space-16) var(--af-space-16) var(--af-space-16) auto;
+  width: min(400px, calc(100vw - 32px));
+  height: calc(100dvh - 32px);
+  max-height: calc(100dvh - 32px);
+  margin: 0;
+  border-radius: var(--af-radius-16);
+}
+.version-history-entry {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--af-space-8);
+  padding-block: var(--af-space-16);
+  border-bottom: 1px solid var(--af-border-subtle);
+}
+.version-history-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--af-space-8);
+}
+dialog.version-preview-dialog {
+  width: min(1120px, calc(100vw - 32px));
+  height: calc(100dvh - 32px);
+  max-height: calc(100dvh - 32px);
+}
+.version-preview-surface {
+  width: 100%;
+  min-width: 0;
+}
+.version-preview-dialog .library-dialog-body {
+  padding: var(--af-space-16);
+}
+@media (max-width: 767px), (max-width: 1023px) and (max-height: 500px) {
+  #builder > .editor-help {
+    left: auto;
+    right: var(--af-space-12);
+    bottom: calc(var(--constructor-mobile-actions-height, 64px) + var(--af-space-12));
+  }
+  .editor-help > .command-menu {
+    left: auto;
+    right: 0;
+  }
+  .new-project-formats {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  #builder .command-menu > :is(.af-btn, .file-open) {
+    min-height: 40px;
+  }
+}

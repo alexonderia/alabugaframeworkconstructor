@@ -11,3 +11,37 @@
 .af-section--header .af-widget[style*='text-align: right'] nav .af-prose {
   justify-content: flex-end;
 }
+
+.af-page:not(.af-section--header, .af-section--footer)
+  .af-prose
+  > .af-link--inline
+  + .af-link--inline {
+  margin-block-start: var(--af-space-8);
+}
+.af-page:not(.af-section--header, .af-section--footer)
+  .af-prose:has(> .af-link--inline + .af-link--inline)
+  > .af-link--inline {
+  display: block;
+  width: auto;
+  overflow-wrap: anywhere;
+}
+.af-page .af-widget--gallery[style*='text-align: center'] .af-gallery:has(> figure:only-child) {
+  grid-template-columns: minmax(0, 360px);
+  justify-content: center;
+}
+.af-page .af-widget--gallery[style*='text-align: center'] .af-gallery img {
+  height: auto;
+  max-height: 184px;
+  aspect-ratio: 16 / 10;
+}
+@container (min-width: 480px) {
+  .af-page .af-widget--gallery[style*='text-align: center'] .af-gallery:has(> figure:nth-child(3)) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.af-page .af-widget--button.af-surface--card[style*='text-align: center'] > .af-widget__content {
+  align-items: safe center;
+}
+.af-page .af-widget--button.af-surface--card.af-widget--compact {
+  padding: var(--af-space-8);
+}

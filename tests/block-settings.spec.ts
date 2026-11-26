@@ -59,9 +59,9 @@ for (const width of [1440, 390]) {
       .poll(async () => (await savedDocument(page)).pages[0].widgets[0].content.length)
       .toBe(2);
     const style = form.locator(':scope > details[data-setting=style]');
-    await style.locator('summary').click();
+    await style.locator(':scope > summary').click();
     await expect(
-      style.getByRole('combobox', { name: 'Выравнивание содержимого', exact: true }),
+      style.getByRole('combobox', { name: 'Выравнивание текста', exact: true }),
     ).toBeVisible();
     await content.locator(':scope > summary').click();
     await panel.locator('.inspector-body').evaluate((node) => (node.scrollTop = 0));

@@ -5,11 +5,6 @@
   font-weight: 600;
   color: var(--af-text-secondary);
 }
-#inspector[data-inspector-view='block'] .inspector-mode {
-  grid-template-columns: minmax(0, 1fr) 172px;
-  align-items: center;
-  gap: var(--af-space-12);
-}
 .block-settings-context {
   display: flex;
   flex-direction: column;
@@ -148,12 +143,7 @@
 .inspector-body .setting-item > .settings-info {
   position: absolute;
   inset-block-start: -2px;
-  inset-inline-end: -4px;
-  width: 28px;
-  height: 28px;
-  min-width: 28px;
-  min-height: 28px;
-  padding: 5px;
+  inset-inline-end: 0;
 }
 .inspector-body .setting-item > .af-check {
   padding-inline-end: 32px;
@@ -270,17 +260,151 @@
 .inspector-body .settings-section .settings-section:not([open]) {
   background: transparent;
 }
+
+.inspector-body .section-extra-settings,
+.inspector-body .text-typography {
+  display: flex;
+  flex-direction: column;
+  gap: var(--af-space-8);
+  min-width: 0;
+}
+.inspector-body .section-extra-settings {
+  border-top: 1px solid var(--af-border-subtle);
+  margin-top: var(--af-space-12);
+  padding-top: var(--af-space-12);
+}
+.inspector-body .text-typography {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+.text-typography > legend {
+  color: var(--af-text-primary);
+  font-weight: 600;
+  margin-bottom: var(--af-space-8);
+  padding: 0;
+}
+.typography-color {
+  display: grid;
+  grid-template-columns: var(--af-size-control-m) minmax(0, 1fr);
+  align-items: end;
+  gap: var(--af-space-4);
+  min-width: 0;
+}
+.typography-color .typography-color-swatch {
+  grid-area: 1 / 1;
+  width: 100%;
+  min-width: 0;
+  padding: var(--af-space-4);
+  cursor: pointer;
+}
+[data-compact-settings] .inspector-body,
+#builder [data-compact-settings] #design-settings,
+[data-compact-settings] .inspector-body .property-form {
+  gap: var(--af-space-8);
+}
+[data-compact-settings]
+  .inspector-body
+  :is(.page-settings, .property-group, .section-property-group) {
+  padding: 0;
+  border: 0;
+  border-top: 1px solid var(--af-border-subtle);
+  border-radius: 0;
+  background: transparent;
+}
+[data-compact-settings]
+  .inspector-body
+  :is(.page-settings, .property-group, .section-property-group)[hidden] {
+  display: none;
+}
+[data-compact-settings]
+  .inspector-body
+  :is(.page-settings, .property-group, .section-property-group)
+  > summary {
+  min-height: var(--af-size-control-m);
+  padding: var(--af-space-8) var(--af-space-4);
+  justify-content: flex-start;
+}
+[data-compact-settings] .inspector-body summary > .af-icon--expand {
+  order: -1;
+  flex: none;
+}
+[data-compact-settings] .settings-group-title {
+  color: var(--af-text-primary);
+  font-size: 15px;
+  font-weight: 600;
+}
+[data-compact-settings]
+  .inspector-body
+  :is(.page-settings, .property-group, .section-property-group)
+  > :is(.settings-group-body, form) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--af-space-8);
+  padding: 0 var(--af-space-4) var(--af-space-8);
+}
+[data-compact-settings] .block-settings-context {
+  padding: var(--af-space-4);
+  background: transparent;
+}
+[data-compact-settings] .settings-pair {
+  gap: var(--af-space-8) var(--af-space-12);
+}
+[data-compact-settings] .inspector-body :is(.af-field, .af-stack) {
+  gap: var(--af-space-4);
+  min-width: 0;
+}
+[data-compact-settings] .inspector-body .settings-disclosure > .af-stack {
+  gap: var(--af-space-8);
+  padding-block-start: var(--af-space-8);
+}
+[data-compact-settings] .inspector-body .af-label {
+  overflow-wrap: anywhere;
+}
+[data-compact-settings] .inspector-body :is(.af-btn, .af-input, .af-select, .af-textarea) {
+  box-sizing: border-box;
+  max-width: 100%;
+}
+[data-compact-settings] .inspector-body button.af-btn {
+  overflow-wrap: anywhere;
+}
+[data-compact-settings] .inspector-body .property-actions > .af-btn {
+  flex: 1 0 100%;
+  justify-content: center;
+}
+.inspector-body .setting-label-row {
+  display: flex;
+  order: -1;
+  align-items: center;
+  gap: var(--af-space-8);
+  min-width: 0;
+}
+.inspector-body .setting-caption {
+  color: var(--af-text-primary);
+  font-size: 13px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.inspector-body .setting-item:has(> .setting-label-row) {
+  gap: var(--af-space-8);
+}
+[data-compact-settings] .inspector-body .advanced-grid > #settings {
+  padding-block-start: var(--af-space-8);
+}
+@media (pointer: fine) {
+  [data-compact-settings]
+    .inspector-body
+    :is(.af-input, .af-select, button.af-btn:not(.settings-info, .block-fragment-action)) {
+    min-height: calc(var(--af-size-control-m) - var(--af-space-4));
+    padding-block: var(--af-space-8);
+  }
+}
 @media (pointer: coarse) {
   .inspector-body .block-fragment-action {
     width: 44px;
     min-width: 44px;
     height: 44px;
     min-height: 44px;
-  }
-  .inspector-body .setting-item > .settings-info {
-    width: 44px;
-    height: 44px;
-    inset-block-start: -8px;
   }
   .inspector-body .setting-item > label > .af-label {
     padding-inline-end: 44px;

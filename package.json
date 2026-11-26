@@ -44,7 +44,7 @@
     "test:docker": "playwright test --config=playwright.docker.config.ts"
   },
   "dependencies": {
-    "@alabuga/framework": "file:vendor/alabuga-framework-1.4.0-grid.4.tgz",
+    "@alabuga/framework": "file:vendor/alabuga-framework-1.4.0-grid.4.inspector.1.tgz",
     "zod": "^4.5.4",
     "@alabuga/document-core": "0.7.0"
   },
@@ -67,8 +67,8 @@
   "packageManager": "npm@11.17.0",
   "license": "UNLICENSED",
   "alabugaFramework": {
-    "minimum": "1.4.0-grid.4",
+    "minimum": "1.4.0-grid.4.inspector.1",
     "major": 1,
-    "version": "1.4.0-grid.4"
+    "version": "1.4.0-grid.4.inspector.1"
   }
 }

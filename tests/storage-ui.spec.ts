@@ -3,9 +3,9 @@ import { readFile } from 'node:fs/promises';
 import { savedDocument } from './project-helper';
 
 async function openStorage(page: Page) {
-  const menu = page.locator('.project-menu');
-  if (!(await menu.evaluate((node) => (node as HTMLDetailsElement).open)))
-    await menu.locator('summary').click();
+  if (!(await page.locator('.editor-outline').isVisible()))
+    await page.locator('.outline-toggle').click();
+  await page.getByRole('tab', { name: 'Материалы', exact: true }).click();
   await page.getByRole('button', { name: 'Хранилище и материалы', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Хранилище и материалы', exact: true });
   await expect(dialog.getByRole('status')).toContainText(/Занято|Материалов:/);
@@ -68,7 +68,7 @@ test('failed material upload leaves storage empty and retry saves one complete l
   let storage = await openStorage(page);
   await expect(storage.getByRole('checkbox')).toHaveCount(0);
   await storage.getByRole('button', { name: 'Закрыть', exact: true }).click();
-  await page.locator('.project-menu[open] > summary').click();
+  if (await page.locator('.project-menu').evaluate(n => (n as HTMLDetailsElement).open)) await page.locator('.project-menu > summary').click();
   await page.getByRole('button', { name: 'Создать с ИИ', exact: true }).click();
   await ai.locator('summary').click();
   await ai.locator('input[type=file]').setInputFiles(payload);

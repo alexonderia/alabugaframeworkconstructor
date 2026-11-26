@@ -7,6 +7,7 @@ export function captureFocus(host: HTMLElement) {
     n.id ||
     n.getAttribute('aria-label') ||
     n.closest('label')?.querySelector(dom.label)?.textContent ||
+    (n.matches('button') ? n.textContent?.trim() : '') ||
     '';
   const identity = active && key(active),
     fields = Array.from(host.querySelectorAll(selectors)),
@@ -19,9 +20,11 @@ export function captureFocus(host: HTMLElement) {
     if (index >= 0) {
       const candidates = Array.from(host.querySelectorAll<HTMLElement>(selectors));
       const next =
-        (identity ? candidates.filter((n) => key(n) === identity)[occurrence] : undefined) ??
-        candidates[index];
-      next?.focus({ preventScroll: true });
+        active === document.activeElement
+          ? active
+          : ((identity ? candidates.filter((n) => key(n) === identity)[occurrence] : undefined) ??
+            candidates[index]);
+      if (next !== document.activeElement) next?.focus({ preventScroll: true });
       if (next instanceof HTMLInputElement || next instanceof HTMLTextAreaElement) {
         if (start != null && end != null)
           try {

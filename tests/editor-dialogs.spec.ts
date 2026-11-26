@@ -1,3 +1,4 @@
+import {chooseNewProject} from './new-project-helper';
 import {test,expect,type Page,type Locator} from '@playwright/test';
 import {mkdir} from 'node:fs/promises';
 import {mockAI} from './ai-helper';
@@ -110,7 +111,7 @@ test('AI review explains a failed draft save and allows retry',async({page})=>{
 });
 
 test('slide fitting keeps settings scrollable and full size actions visible in compact windows',async({page},info)=>{
- await page.setViewportSize({width:1536,height:1000});await editor(page);await page.locator('.project-menu summary').click();await page.locator('#demo-deck').click();await page.locator('#page-settings-open').click();await page.getByRole('tab',{name:'Оформление',exact:true}).click();await page.getByRole('button',{name:'Подобрать фон и размещение',exact:true}).click();
+ await page.setViewportSize({width:1536,height:1000});await editor(page);await page.locator('.project-menu summary').click();await chooseNewProject(page, 'demo-deck');await page.locator('#page-settings-open').click();await page.getByRole('tab',{name:'Оформление',exact:true}).click();await page.getByRole('button',{name:'Подобрать фон и размещение',exact:true}).click();
  const dialog=page.locator('.fit-dialog'),accept=dialog.getByRole('button',{name:'Применить оформление',exact:true});await expect(accept).toBeEnabled({timeout:30000});
  for(const [width,height]of [[1536,1000],[390,844],[844,390]]){
   await page.setViewportSize({width,height});await expect(dialog.locator('.fit-body')).toBeVisible();await dialog.locator('.fit-body').evaluate(n=>n.scrollTop=n.scrollHeight);

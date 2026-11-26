@@ -1,4 +1,5 @@
 import { elementDesign } from './element-design';
+import { textTypography } from './text-typography';
 import { layoutChooser } from './layout-chooser';
 import { sectionVariant } from './layout/placement';
 import { motionScenarios } from './scenarios';
@@ -77,10 +78,16 @@ export function widgetDesign(
     fn();
     changed();
   };
-  elementDesign(host, w, doc, changed, refresh);
+  if (w.type === 'text' && doc.kind === 'page') textTypography(host, w, changed, refresh);
   select(host, 'Поверхность', w.surface ?? 'card', { plain: 'Без рамки', card: 'Карточка' }, (v) =>
     update(() => (w.surface = v as 'plain' | 'card')),
   );
+  if (doc.kind === 'page') {
+    const { group, body } = settingsGroup('Настройки темы', 'property-group');
+    group.dataset.setting = 'theme-style';
+    elementDesign(body, w, doc, changed, refresh);
+    host.append(group);
+  } else elementDesign(host, w, doc, changed, refresh);
   for (const [key, title] of [
     ['tabletOrder', 'Порядок на планшете'],
     ['mobileOrder', 'Порядок на телефоне'],
@@ -363,7 +370,7 @@ export function sectionDesign(
   doc: AFDocument,
   index: number,
   commit: (edit: (d: AFDocument) => void) => boolean,
-  tools: SlideTools,
+  tools: SlideTools & { sectionExtras: HTMLElement },
 ) {
   const page = doc.pages[index];
   const opened = new Map<string, boolean>();
@@ -376,18 +383,17 @@ export function sectionDesign(
     return;
   }
   host.replaceChildren();
-  const structure = designGroup(host, 'structure', 'Структура', opened, true),
-    style = designGroup(host, 'style', 'Оформление', opened),
-    behavior = designGroup(host, 'behavior', 'Дополнительно', opened);
-  (behavior.closest('details') as HTMLElement).dataset.advancedSetting = '';
-  motionScenarios(behavior, doc, index, commit);
+  const structure = designGroup(host, 'structure', 'Размер и расположение', opened, true),
+    style = designGroup(host, 'style', 'Внешний вид', opened, true),
+    extras = tools.sectionExtras;
+  extras.replaceChildren();
   const appearance = structuredClone(
     page.appearance ?? makeComposition('blank', doc.kind).appearance!,
   );
   const apply = () => commit((d) => (d.pages[index].appearance = structuredClone(appearance)));
   if (appearance.background) {
     cropControl(
-      style,
+      extras,
       appearance.background,
       appearance.focalPoint,
       (p) => {
@@ -397,7 +403,7 @@ export function sectionDesign(
       'Кадр фона',
     );
     cropControl(
-      style,
+      extras,
       appearance.background,
       appearance.mobileFocalPoint,
       (p) => {
@@ -413,7 +419,7 @@ export function sectionDesign(
       appearance.backgroundPlacement = v === 'image' ? 'full' : 'none';
     apply();
   });
-  const height = select(
+  select(
     structure,
     'Высота секции',
     page.appearance?.layout ?? 'fixed',
@@ -423,7 +429,6 @@ export function sectionDesign(
       apply();
     },
   );
-  (height.closest('label') as HTMLElement).dataset.advancedSetting = '';
   select(
     structure,
     'Расстояния между элементами',
@@ -445,7 +450,7 @@ export function sectionDesign(
     },
   );
   select(
-    style,
+    extras,
     'Декор',
     appearance.decoration,
     { none: 'Нет', orbit: 'Окружность', lines: 'Линии' },
@@ -454,8 +459,9 @@ export function sectionDesign(
       apply();
     },
   );
+  const background = designGroup(style, 'section-background', 'Фоновое изображение', opened);
   const bg = input(
-    style,
+    background,
     'Фоновое изображение',
     appearance.background?.startsWith('data:') ? '' : (appearance.background ?? ''),
     (v) => {
@@ -464,7 +470,7 @@ export function sectionDesign(
   );
   bg.addEventListener('change', apply);
   upload(
-    style,
+    background,
     'Загрузить фон',
     (src) => {
       appearance.background = src;
@@ -475,11 +481,11 @@ export function sectionDesign(
     },
     (s) => {
       const error = el('p', 'af-error', s);
-      style.append(error);
+      background.append(error);
     },
   );
   select(
-    style,
+    extras,
     'Кадрирование фона',
     appearance.focal,
     { center: 'Центр', top: 'Верх', bottom: 'Низ', left: 'Слева', right: 'Справа' },
@@ -488,12 +494,13 @@ export function sectionDesign(
       apply();
     },
   );
-  select(style, 'Затемнение', appearance.shade, { medium: 'Среднее', strong: 'Сильное' }, (v) => {
+  select(extras, 'Затемнение', appearance.shade, { medium: 'Среднее', strong: 'Сильное' }, (v) => {
     appearance.shade = v as typeof appearance.shade;
     apply();
   });
   sectionTemplatesControls(structure, page, doc.kind, commit, tools);
-  modalSettings(behavior, doc, commit);
+  motionScenarios(extras, doc, index, commit);
+  modalSettings(extras, doc, commit);
 }
 
 function sectionTemplatesControls(
@@ -530,7 +537,6 @@ function sectionTemplatesControls(
       );
     },
   );
-  (selector.closest('label') as HTMLElement).dataset.advancedSetting = '';
   compositionChooser(host, page, kind, apply, tools.warning, tools.signal);
   layoutChooser(
     host,
@@ -631,10 +637,7 @@ function slideDesign(
   opened: ReadonlyMap<string, boolean>,
 ) {
   const page = doc.pages[index];
-  const active =
-    host.closest('[data-editor-mode="standard"]') && host.dataset.slideTab === 'behavior'
-      ? 'structure'
-      : (host.dataset.slideTab ?? 'structure');
+  const active = host.dataset.slideTab ?? 'structure';
   host.replaceChildren();
   host.append(el('h2', 'af-title inspector-heading', `Слайд ${index + 1}`));
   const nav = el('div', 'slide-settings-tabs');
@@ -672,9 +675,7 @@ function slideDesign(
     tab.addEventListener('keydown', (e) => {
       if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
       e.preventDefault();
-      const keys = [...tabs.keys()].filter(
-          (key) => key !== 'behavior' || !host.closest('[data-editor-mode="standard"]'),
-        ),
+      const keys = [...tabs.keys()],
         current = keys.indexOf(id),
         next =
           e.key === 'Home'
@@ -697,9 +698,6 @@ function slideDesign(
   );
   const grid = el('details', 'slide-grid settings-disclosure');
   grid.dataset.setting = 'slide-grid';
-  grid.dataset.advancedSetting = '';
-  nav.querySelector<HTMLElement>('#slide-tab-behavior')!.dataset.advancedSetting = '';
-  behavior.dataset.advancedSetting = '';
   grid.open = opened.get('slide-grid') ?? false;
   grid.append(el('summary', 'af-btn af-btn--clear af-btn--sm', 'Сетка и размеры'));
   const form = el('form', 'af-stack settings-grid-body');
@@ -794,7 +792,6 @@ function slideDesign(
       'af-help',
       `${w.position.width}×${w.position.height} · колонка ${w.position.col}, строка ${w.position.row}`,
     );
-    size.dataset.advancedSetting = '';
     row.append(
       button(
         `${i + 1}. ${w.title || widgetRegistry[w.type].title}`,

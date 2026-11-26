@@ -99,10 +99,13 @@ export function editorCatalog(
   function addTemplate(template: SectionTemplate) {
     const section = instantiateSection(template, theme.value);
     if (
-      !actions.change((doc) => {
-        doc.pages.splice(insertAt, 0, inheritSectionGrid(doc, section));
-        setSectionTemplate(doc, section.id, template);
-      }, 'Композиция добавлена.')
+      !actions.change(
+        (doc) => {
+          doc.pages.splice(insertAt, 0, inheritSectionGrid(doc, section));
+          setSectionTemplate(doc, section.id, template);
+        },
+        template.kind === 'page' ? 'Секция добавлена.' : 'Слайд добавлен.',
+      )
     )
       return;
     dialog.close();

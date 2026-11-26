@@ -58,7 +58,7 @@ for (const width of [1536, 390]) {
       await page.getByRole('button', { name: 'Структура', exact: true }).click();
     }
     await expect(header).toBeInViewport({ ratio: 1 });
-    const info = panel.getByRole('button', { name: 'О структуре документа', exact: true });
+    const info = panel.getByRole('img', { name: 'О структуре документа', exact: true });
     await info.click();
     await expect(panel.getByRole('tooltip')).toContainText('Alt');
     await page.keyboard.press('Escape');
@@ -84,9 +84,9 @@ test('inspector fields scroll beneath the header without nested fieldset frames'
     0,
   );
   const style = panel.locator('#properties details[data-setting=style]');
-  await style.locator('summary').click();
-  await expect(style.locator('.block-editor').first()).toHaveCSS('border-left-width', '0px');
-  await expect(style.locator('.block-editor').first()).toHaveCSS('border-top-width', '0px');
+  await style.locator(':scope > summary').click();
+  await expect(style.locator('.text-typography')).toHaveCSS('border-left-width', '0px');
+  await expect(style.locator('.text-typography')).toHaveCSS('border-top-width', '0px');
   const header = panel.locator('.drawer-header');
   const top = (await header.boundingBox())!.y;
   await body.hover();

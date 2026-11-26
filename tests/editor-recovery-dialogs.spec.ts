@@ -46,7 +46,7 @@ async function geometry(page:Page,dialog:Locator,name:string,engine:string){
 }
 async function conflict(page:Page,context:BrowserContext){
  await fixture(page);const other=await context.newPage();await other.goto(page.url());await expect(other.locator('#project-name')).toHaveValue(longTitle);
- await page.locator('#project-name').fill('Версия вкладки A');await page.locator('#project-name').blur();await expect(page.locator('#save-state')).toHaveText('Сохранено в браузере');
+ await page.locator('#project-name').fill('Версия вкладки A');await page.locator('#project-name').blur();await expect(page.locator('#save-state')).toHaveText('Сохранено');
  const editable=other.locator('#canvas [data-widget-id=audit-text-a]').getByRole('textbox',{name:'Текст на странице',exact:true}).first();await editable.fill('Несохранённый текст вкладки B');const dialog=other.getByRole('dialog',{name:'Конфликт сохранения',exact:true});await expect(dialog).toBeVisible();
  return {other,editable,dialog,original:await storedProject(page)};
 }
@@ -91,7 +91,7 @@ test('conflict keeps the local draft downloadable and gives a long-title copy a 
 });
 
 test('opening the saved conflict version reads the latest completed write',async({page,context})=>{
- const {other,dialog}=await conflict(page,context);await page.locator('#canvas [data-widget-id=audit-text-a]').getByRole('textbox',{name:'Текст на странице',exact:true}).first().fill('Более новая правка вкладки A');await expect(page.locator('#save-state')).toHaveText('Сохранено в браузере');const latest=await storedProject(page);
+ const {other,dialog}=await conflict(page,context);await page.locator('#canvas [data-widget-id=audit-text-a]').getByRole('textbox',{name:'Текст на странице',exact:true}).first().fill('Более новая правка вкладки A');await expect(page.locator('#save-state')).toHaveText('Сохранено');const latest=await storedProject(page);
  await dialog.getByRole('button',{name:'Открыть сохранённую версию',exact:true}).click();await expect(dialog).toHaveCount(0);await expect(other.locator('#project-name')).toHaveValue('Версия вкладки A');await expect(other.locator('#canvas')).toContainText('Более новая правка вкладки A');expect((await storedProject(other)).document).toEqual(latest.document);await other.reload();await expect(other.locator('#canvas')).toContainText('Более новая правка вкладки A');await other.close();
 });
 

@@ -66,18 +66,14 @@
 }
 .block-controls-actions {
   flex: none;
-  gap: 2px;
+  gap: var(--af-space-8);
 }
-.block-controls-actions > .af-btn,
-.block-controls-body .settings-info {
+.block-controls-actions > .af-btn {
   width: 28px;
   height: 28px;
   min-width: 28px;
   min-height: 28px;
   padding: 5px;
-}
-.block-controls-body .af-label > .settings-info {
-  margin-block: -5px;
 }
 .block-controls-body .af-field {
   margin: 0;

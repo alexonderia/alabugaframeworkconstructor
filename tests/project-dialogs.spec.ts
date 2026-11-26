@@ -69,10 +69,11 @@ test('rename returns focus after cancellation validation errors and successful r
  menu=page.locator('.card-menu>summary');await expect(menu).toBeFocused();await page.reload();await expect(page.locator('.project-card h3')).toHaveText('Новое название');
 });
 
-test('workspace help scrolls without clipping its heading or losing keyboard focus',async({page},info)=>{
- await page.goto('/builder/');const opener=page.getByRole('button',{name:'Помощь',exact:true});await opener.click();const dialog=page.getByRole('dialog',{name:'Ваше рабочее пространство',exact:true});
- await layout(page,dialog,'help',info.project.name);await dialog.getByRole('link',{name:'Документация',exact:true}).scrollIntoViewIfNeeded();await hit(dialog.getByRole('link',{name:'Документация',exact:true}));
- await dialog.getByRole('button',{name:'Закрыть',exact:true}).click();await expect(opener).toBeFocused();
+test('workspace help opens directly from compact navigation with the keyboard',async({page})=>{
+ await page.setViewportSize({width:320,height:640});await page.goto('/builder/');
+ const opener=page.getByRole('link',{name:'Помощь',exact:true});await opener.focus();await expect(opener).toBeFocused();
+ const guide=page.context().waitForEvent('page');await opener.press('Enter');
+ await expect((await guide).getByRole('heading',{name:'Проекты, материалы и рабочее пространство',exact:true})).toBeVisible();
 });
 
 test('deletion keeps both choices visible and cancel preserves the project',async({page},info)=>{

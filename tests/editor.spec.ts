@@ -1,3 +1,4 @@
+import {chooseNewProject} from './new-project-helper';
 import {settledProperties,openGeometry,widgetTools} from './property-helper';
 import {openEditor} from './open-editor';
 import {savedDocument} from './project-helper';
@@ -26,7 +27,7 @@ test('pointer and keyboard placement snap to grid',async({page})=>{
 });
 test('project roundtrip and invalid import retain document',async({page},info)=>{
   await add(page,'calendar');const event=page.waitForEvent('download');await page.locator('.project-menu summary').click();await page.locator('#save').click();const file=await event;const path=info.outputPath('project.json');await file.saveAs(path);
-  await page.locator('#new-page').click();await expect(page.locator('#canvas .af-widget')).toHaveCount(0);await page.locator('#open').setInputFiles(path);await expect(page.locator('#canvas .af-widget--calendar')).toHaveCount(1);
+  await chooseNewProject(page, 'new-page');await expect(page.locator('#canvas .af-widget')).toHaveCount(0);await page.locator('#open').setInputFiles(path);await expect(page.locator('#canvas .af-widget--calendar')).toHaveCount(1);
   await page.locator('#open').setInputFiles({name:'invalid.json',mimeType:'application/json',buffer:Buffer.from('{"schemaVersion":999}')});await expect(page.locator('#status')).toContainText('Не удалось открыть');await expect(page.locator('#canvas .af-widget--calendar')).toHaveCount(1);
 });
 test('image upload and HTML export open offline, without executable user content',async({page},info)=>{

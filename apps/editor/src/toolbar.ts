@@ -14,10 +14,6 @@ export function compactToolbar(root: HTMLElement, signal: AbortSignal) {
   section.prepend(root.querySelector('.outline-toggle')!);
   const zoom = root.querySelector('.canvas-zoom');
   if (zoom) view.append(zoom);
-  for (const selector of ['.document-settings-open', '.quality-open']) {
-    const node = root.querySelector(selector);
-    if (node) menu.append(node);
-  }
   const ai = root.querySelector('.ai-open');
   if (ai) section.append(ai);
   const controls = [
@@ -27,6 +23,7 @@ export function compactToolbar(root: HTMLElement, signal: AbortSignal) {
     '#preview',
     '#save',
     '#export',
+    '.quality-open',
   ].map((selector) => {
     const node = root.querySelector<HTMLElement>(selector)!,
       anchor = document.createComment(selector);
@@ -78,16 +75,22 @@ export function compactToolbar(root: HTMLElement, signal: AbortSignal) {
     );
     const projectFiles: HTMLElement[] = [];
     for (const { node, anchor } of controls) {
-      const projectFile = node.id === 'save' || node.id === 'export';
+      if (node.id === 'add-widget') node.hidden = !media.matches;
+      const projectFile =
+        node.id === 'save' || node.id === 'export' || node.classList.contains('quality-open');
+      if (node.classList.contains('quality-open')) {
+        node.classList.toggle('af-btn--icon', !media.matches);
+        node.classList.toggle('command-row', media.matches);
+      }
       if (media.matches && projectFile) projectFiles.push(node);
       else if (media.matches) mobile.append(node);
       else anchor.after(node);
       if (!projectFile) {
-        node.classList.remove('af-btn--sm');
+        node.classList.toggle('af-btn--sm', !media.matches && !!node.closest('.canvas-toolbar'));
         node.classList.toggle('af-btn--lg', media.matches);
       }
     }
-    if (projectFiles.length) menu.prepend(...projectFiles);
+    if (projectFiles.length) menu.append(...projectFiles);
     updateInset();
     if (active) {
       const visible = (node: HTMLElement | undefined) =>
@@ -110,6 +113,57 @@ export function compactToolbar(root: HTMLElement, signal: AbortSignal) {
   media.addEventListener('change', sync, { signal });
   const resize = new ResizeObserver(updateInset);
   resize.observe(mobile);
+  const header = root.querySelector<HTMLElement>('.editor-header')!;
+  const dimensions = new ResizeObserver(() => {
+    root.style.setProperty(
+      '--constructor-header-height',
+      Math.ceil(header.getBoundingClientRect().height) + 'px',
+    );
+    root.style.setProperty(
+      '--constructor-toolbar-height',
+      Math.ceil(toolbar.getBoundingClientRect().height) + 'px',
+    );
+  });
+  dimensions.observe(header);
+  dimensions.observe(toolbar);
+  const picker = root.querySelector<HTMLSelectElement>('#pages')!;
+  const measure = document.createElement('canvas').getContext('2d')!;
+  let pickerFrame = 0;
+  const sizePicker = () => {
+    pickerFrame = 0;
+    if (signal.aborted) return;
+    const control = picker.parentElement?.querySelector<HTMLElement>('.af-select__control');
+    if (!control) return;
+    const style = getComputedStyle(control);
+    measure.font = style.font;
+    const text = Math.max(
+      0,
+      ...Array.from(picker.options, (option) => measure.measureText(option.label).width),
+    );
+    const arrow = control.querySelector<HTMLElement>('.af-select__arrow');
+    const width =
+      text +
+      parseFloat(style.paddingLeft) +
+      parseFloat(style.paddingRight) +
+      parseFloat(style.columnGap) +
+      (arrow?.getBoundingClientRect().width || 16) +
+      2;
+    toolbar.style.setProperty('--constructor-section-picker-width', Math.ceil(width) + 'px');
+  };
+  const schedulePicker = () => {
+    if (!pickerFrame && !signal.aborted) pickerFrame = requestAnimationFrame(sizePicker);
+  };
+  const pickerOptions = new MutationObserver(schedulePicker);
+  pickerOptions.observe(picker, {
+    childList: true,
+    subtree: true,
+    characterData: true,
+    attributes: true,
+    attributeFilter: ['class'],
+  });
+  void document.fonts.ready.then(schedulePicker);
+  document.fonts.addEventListener('loadingdone', schedulePicker, { signal });
+  schedulePicker();
   root.querySelectorAll<HTMLDetailsElement>('.project-menu,.editor-more').forEach((details) =>
     details.addEventListener(
       'keydown',
@@ -127,6 +181,11 @@ export function compactToolbar(root: HTMLElement, signal: AbortSignal) {
     'abort',
     () => {
       resize.disconnect();
+      dimensions.disconnect();
+      pickerOptions.disconnect();
+      cancelAnimationFrame(pickerFrame);
+      root.style.removeProperty('--constructor-header-height');
+      root.style.removeProperty('--constructor-toolbar-height');
       root.style.removeProperty('--constructor-mobile-actions-height');
       mobile.remove();
     },

@@ -55,6 +55,9 @@
 #canvas .af-widget.is-selected {
   outline-offset: -2px;
 }
+#canvas .af-widget.af-surface--card.is-selected {
+  outline-offset: 2px;
+}
 #canvas .af-widget.is-selected:not([data-text-editing]) {
   cursor: var(--block-cursor-move, move);
 }

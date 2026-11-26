@@ -78,7 +78,7 @@ test('collapse frees canvas space, preserves the document and survives reload', 
   await page.locator('#page-settings-open').click();
   await expect(page.locator('#close-inspector')).toBeVisible();
   await expect(
-    page.locator('#inspector').getByRole('button', { name: 'О настройках', exact: true }),
+    page.locator('#inspector').getByRole('img', { name: 'О настройках', exact: true }),
   ).toBeVisible();
   await expect(expand).toBeVisible();
   expect(await savedDocument(page)).toEqual(before);

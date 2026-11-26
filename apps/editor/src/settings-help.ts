@@ -48,6 +48,9 @@ const fieldHelp: Record<string, string> = {
     'Размер текста в этом блоке. «Из композиции» возвращает размер, предусмотренный шаблоном.',
   'Цвет текста':
     'Цвет текста блока. «Из темы» подстраивается под оформление раздела; проверьте контраст на выбранном фоне.',
+  'Межстрочный интервал':
+    'Высота строки относительно размера шрифта. Например, 1,5 означает полуторный интервал.',
+  'Межбуквенный интервал, px': 'Дополнительный промежуток между буквами в пикселях.',
   'Внутренние отступы':
     'Расстояние от границ блока до его содержимого. Положение самого блока на холсте не меняется.',
   'Выравнивание содержимого': 'Выравнивает текст и содержимое внутри блока, не перемещая сам блок.',
@@ -149,10 +152,7 @@ const fieldHelp: Record<string, string> = {
 };
 
 const groupHelp: Record<string, string> = {
-  'Размеры и положение':
-    'Координаты и размеры блока. Для адаптивных экранов используются отдельные параметры.',
-  'Настройки секции': 'Название в структуре проекта и правила размещения блоков.',
-  Структура: 'Размер области, плотность и компоновка содержимого раздела.',
+  'Дополнительные параметры': 'Сетка, фон и эффекты секции.',
   Содержание: 'Текст, изображения и данные, которые увидит читатель.',
   Оформление: 'Цвета, типографика и поверхности. Содержание остаётся прежним.',
   Поведение: 'Анимация, переходы и действия при взаимодействии с содержимым.',
@@ -201,7 +201,7 @@ export function inspectorHelp(drawer: HTMLElement, signal: AbortSignal) {
       const control = label.querySelector<HTMLInputElement>(
         'input:not([type=hidden]),textarea,select',
       );
-      if (!control || label.id === 'editor-mode-field') continue;
+      if (!control) continue;
       const name =
         control.getAttribute('aria-label') ||
         caption?.textContent?.trim() ||
@@ -210,10 +210,17 @@ export function inspectorHelp(drawer: HTMLElement, signal: AbortSignal) {
       const text = control.dataset.settingHelp || settingExplanation(name);
       if (!text) continue;
       label.dataset.explained = 'true';
+      if (caption && !control.hasAttribute('aria-label')) control.setAttribute('aria-label', name);
       const wrapper = el('div', 'setting-item');
       wrapper.dataset.settingName = name;
       label.before(wrapper);
-      wrapper.append(label, settingsInfo('О настройке «' + name + '»', text));
+      const info = settingsInfo('О настройке «' + name + '»', text);
+      if (caption && drawer.hasAttribute('data-compact-settings')) {
+        const row = el('div', 'setting-label-row');
+        caption.classList.replace('af-label', 'setting-caption');
+        row.append(caption, info);
+        wrapper.append(label, row);
+      } else wrapper.append(label, info);
     }
     for (const details of drawer.querySelectorAll<HTMLDetailsElement>('.inspector-body details')) {
       if (details.dataset.explained) continue;
@@ -221,7 +228,11 @@ export function inspectorHelp(drawer: HTMLElement, signal: AbortSignal) {
       if (!summary) continue;
       const name = summary.textContent!.trim();
       const text = groupHelp[name];
-      if (!text) continue;
+      if (
+        !text ||
+        (drawer.hasAttribute('data-compact-settings') && !details.matches('.advanced-grid'))
+      )
+        continue;
       details.dataset.explained = 'true';
       details.classList.add('settings-section');
       const note = el('p', 'af-help settings-section-description', text);

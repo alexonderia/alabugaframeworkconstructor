@@ -93,40 +93,16 @@ function shell(title: string, subtitle: string) {
     }),
   );
   const demoLink = el('a', 'af-btn af-btn--ghost', 'Посмотреть образцы');
-  demoLink.href = '../demo/#examples';
+  demoLink.href = '../demo/index.html#examples';
+  const helpLink = el('a', 'af-btn af-btn--ghost', 'Помощь');
+  helpLink.href = '../docs/ru/projects.html';
+  helpLink.target = '_blank';
+  helpLink.rel = 'noopener';
   actions.append(demoLink, button('Хранилище', storageDialog, 'af-btn af-btn--ghost'));
   actions.append(
     button('Импорт проекта', () => upload.click(), 'af-btn af-btn--secondary'),
     button('Корзина', () => go('/trash'), 'af-btn af-btn--ghost'),
-    button(
-      'Помощь',
-      () => {
-        const { body } = dialog('Ваше рабочее пространство');
-        body.append(
-          el(
-            'p',
-            '',
-            'Создавайте сайты и презентации из фирменных композиций. Миниатюра открывает просмотр, кнопка «Редактировать» — конструктор.',
-          ),
-          el(
-            'p',
-            '',
-            'Проекты хранятся в этом браузере. Чтобы сделать резервную копию или перенести проект, выберите «Скачать копию (.json)».',
-          ),
-          el(
-            'p',
-            '',
-            'В корзине проекты сохраняются до окончательного удаления. В редакторе доступны история версий, отмена и экспорт HTML.',
-          ),
-        );
-        const a = el('a', 'af-btn', 'Документация');
-        a.href = '../docs/ru/projects.html';
-        a.target = '_blank';
-        a.rel = 'noopener';
-        body.append(a);
-      },
-      'af-btn af-btn--ghost',
-    ),
+    helpLink,
     upload,
   );
   header.append(brand, actions);

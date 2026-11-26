@@ -43,6 +43,8 @@ export class EditorCanvas {
   private preview = false;
   private viewportFrame = 0;
   private fitHintTimer: ReturnType<typeof setTimeout> | undefined;
+  private sectionNoticeTimer: ReturnType<typeof setTimeout> | undefined;
+  private readonly sectionNotice = el('span', 'section-added-notice', 'Секция добавлена');
   private readonly fitHint: HTMLButtonElement;
   private readonly controls: ReturnType<typeof blockControls>;
   private readonly keyboardHandlers = new WeakMap<HTMLElement, (event: KeyboardEvent) => void>();
@@ -59,6 +61,9 @@ export class EditorCanvas {
     this.fitHint = button('Текст не помещается — подобрать оформление', actions.fit);
     this.fitHint.hidden = true;
     elements.toolbar.append(this.fitHint);
+    this.sectionNotice.hidden = true;
+    this.sectionNotice.setAttribute('aria-hidden', 'true');
+    elements.toolbar.querySelector('.section-toolbar')!.append(this.sectionNotice);
     for (const type of ['wheel', 'touchmove', 'pointerdown', 'keydown'])
       window.addEventListener(type, () => cancelAnimationFrame(this.viewportFrame), {
         capture: true,
@@ -330,10 +335,28 @@ export class EditorCanvas {
   }
   scrollSection(id: string) {
     if (this.lifetime.signal.aborted) return;
+    clearTimeout(this.sectionNoticeTimer);
+    this.sectionNotice.hidden = true;
     cancelAnimationFrame(this.viewportFrame);
     this.elements.canvas
       .querySelector<HTMLElement>(dom.sectionById(id))
       ?.scrollIntoView({ block: 'start', behavior: 'instant' });
+  }
+  revealInsertedSection(id: string) {
+    if (this.lifetime.signal.aborted) return;
+    this.sectionNotice.hidden = false;
+    clearTimeout(this.sectionNoticeTimer);
+    this.sectionNoticeTimer = setTimeout(() => (this.sectionNotice.hidden = true), 3000);
+    cancelAnimationFrame(this.viewportFrame);
+    this.viewportFrame = requestAnimationFrame(() => {
+      const section = this.elements.canvas.querySelector<HTMLElement>(dom.sectionById(id));
+      const insertion = section?.previousElementSibling;
+      if (!(insertion instanceof HTMLElement) || !insertion.matches('.section-insert')) return;
+      const toolbar = this.elements.toolbar;
+      insertion.style.scrollMarginBlockStart =
+        Math.ceil(toolbar.getBoundingClientRect().bottom + 16) + 'px';
+      insertion.scrollIntoView({ block: 'start', inline: 'nearest', behavior: 'instant' });
+    });
   }
   revealSection(id: string, widgetId?: string) {
     if (this.lifetime.signal.aborted) return;
@@ -458,9 +481,11 @@ export class EditorCanvas {
     this.lifetime.abort();
     cancelAnimationFrame(this.viewportFrame);
     clearTimeout(this.fitHintTimer);
+    clearTimeout(this.sectionNoticeTimer);
     this.controller?.destroy();
     this.controller = undefined;
     this.fitHint.remove();
+    this.sectionNotice.remove();
     this.elements.endAdd.replaceChildren();
   }
 }

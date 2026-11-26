@@ -80,7 +80,7 @@ for(const kind of ['page','presentation'] as const){
 
 test('stale tab cannot overwrite another tab and can save its own copy',async({page,context})=>{
  await importFixture(page);const original=page.url(),other=await context.newPage();await other.goto(original);await other.locator('#canvas').waitFor();
- await page.getByLabel('Название проекта',{exact:true}).fill('Название вкладки А');await page.getByLabel('Название проекта',{exact:true}).blur();await expect(page.locator('#save-state')).toHaveText('Сохранено в браузере');
+ await page.getByLabel('Название проекта',{exact:true}).fill('Название вкладки А');await page.getByLabel('Название проекта',{exact:true}).blur();await expect(page.locator('#save-state')).toHaveText('Сохранено');
  await other.locator('#canvas [data-widget-id=audit-text-a]').getByRole('textbox',{name:'Текст на странице',exact:true}).first().fill('Правка вкладки Б');
  await expect(other.getByRole('dialog',{name:'Конфликт сохранения'})).toBeVisible();expect((await savedDocument(page)).title).toBe('Название вкладки А');
  await other.getByRole('button',{name:'Сохранить мою копию',exact:true}).click();await expect(other).not.toHaveURL(original);expect((await savedDocument(other)).pages[0].widgets[0].content[0].text).toBe('Правка вкладки Б');await other.close();

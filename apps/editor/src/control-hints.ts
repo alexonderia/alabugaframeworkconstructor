@@ -1,4 +1,4 @@
-import { el, iconButton } from './ui';
+import { el } from './ui';
 
 // Info help is the innermost layer, before any drawer or editor Escape handler.
 // Register once for the application; each instance clears its owner on hide/dispose.
@@ -19,22 +19,21 @@ if (typeof window !== 'undefined')
     { capture: true },
   );
 
-/** Shared information control for settings panels and popovers. */
+/** Focusable information icon with the same hint for pointer and keyboard users. */
 export function settingsInfo(label: string, text: string) {
-  const control = iconButton(
-    label,
-    () => control.focus({ preventScroll: true }),
-    'info',
-    'af-btn af-btn--clear settings-info',
-  );
-  control.removeAttribute('title');
+  const control = el('span', 'settings-info');
+  control.setAttribute('role', 'img');
+  control.setAttribute('aria-label', label);
+  control.tabIndex = 0;
+  const icon = el('span', 'af-icon af-icon--info af-icon--sm');
+  icon.setAttribute('aria-hidden', 'true');
+  control.append(icon);
   control.dataset.info = '';
   control.dataset.hint = text;
-  control.setAttribute('aria-expanded', 'false');
   return control;
 }
 
-/** One top-layer hint for pointer, keyboard and click-to-pin information controls. */
+/** One top-layer hint for pointer and keyboard information icons. */
 export function controlHints(host: HTMLElement, signal: AbortSignal) {
   const hint = el('div', 'control-hint');
   hint.id = 'control-hint-' + crypto.randomUUID();
@@ -42,52 +41,51 @@ export function controlHints(host: HTMLElement, signal: AbortSignal) {
   hint.setAttribute('popover', 'manual');
   host.append(hint);
   let owner: HTMLElement | undefined,
-    pinned = false,
     pointerMuted = false,
     timer: ReturnType<typeof setTimeout> | undefined;
   const hide = () => {
     clearTimeout(timer);
     if (hint.matches(':popover-open')) hint.hidePopover();
     owner?.removeAttribute('aria-describedby');
-    if (owner?.hasAttribute('data-info')) owner.setAttribute('aria-expanded', 'false');
     if (informationHelp?.owner === owner) informationHelp = undefined;
     owner = undefined;
-    pinned = false;
   };
   const position = () => {
     if (!owner || !hint.matches(':popover-open')) return;
-    const r = owner.getBoundingClientRect(),
-      margin = 12,
-      gap = 8;
-    const width = hint.offsetWidth,
-      height = hint.offsetHeight;
+    const margin = 16;
+    const gap = 8;
+    const { clientWidth, clientHeight } = document.documentElement;
+    const viewport = window.visualViewport;
+    const x = viewport?.offsetLeft ?? 0;
+    const y = viewport?.offsetTop ?? 0;
+    const leftEdge = x + margin;
+    const rightEdge = Math.min(clientWidth, x + (viewport?.width ?? clientWidth)) - margin;
+    const topEdge = y + margin;
+    const bottomEdge = Math.min(clientHeight, y + (viewport?.height ?? clientHeight)) - margin;
+    hint.style.setProperty(
+      '--control-hint-available-width',
+      Math.max(0, rightEdge - leftEdge) + 'px',
+    );
+    const r = owner.getBoundingClientRect();
+    const { width, height } = hint.getBoundingClientRect();
+    const place = (left: number, top: number) => {
+      hint.style.left = Math.max(leftEdge, Math.min(left, rightEdge - width)) + 'px';
+      hint.style.top = Math.max(topEdge, Math.min(top, bottomEdge - height)) + 'px';
+    };
+    let anchor = r;
     if (owner.matches('[role=option]')) {
       const right = r.right + gap,
         left = r.left - gap - width;
-      if (right + width <= innerWidth - margin || left >= margin) {
-        hint.style.left = (right + width <= innerWidth - margin ? right : left) + 'px';
-        hint.style.top = Math.max(margin, Math.min(r.top, innerHeight - height - margin)) + 'px';
+      if (right + width <= rightEdge || left >= leftEdge) {
+        place(right + width <= rightEdge ? right : left, r.top);
         return;
       }
-      const list = owner.closest('[role=listbox]')!.getBoundingClientRect();
-      hint.style.left = Math.max(margin, Math.min(list.left, innerWidth - width - margin)) + 'px';
-      hint.style.top =
-        Math.max(
-          margin,
-          list.bottom + gap + height < innerHeight - margin
-            ? list.bottom + gap
-            : list.top - gap - height,
-        ) + 'px';
-      return;
+      anchor = owner.closest('[role=listbox]')!.getBoundingClientRect();
     }
-    hint.style.left = Math.max(margin, Math.min(r.left, innerWidth - width - margin)) + 'px';
-    hint.style.top =
-      Math.max(
-        margin,
-        r.bottom + gap + height < innerHeight - margin ? r.bottom + gap : r.top - gap - height,
-      ) + 'px';
+    const below = anchor.bottom + gap;
+    place(anchor.left, below + height <= bottomEdge ? below : anchor.top - gap - height);
   };
-  const show = (target: HTMLElement, pin = false) => {
+  const show = (target: HTMLElement) => {
     clearTimeout(timer);
     if (
       signal.aborted ||
@@ -98,10 +96,8 @@ export function controlHints(host: HTMLElement, signal: AbortSignal) {
       return;
     if (owner !== target) hide();
     owner = target;
-    pinned = pin || pinned;
     hint.textContent = target.dataset.hint;
     target.setAttribute('aria-describedby', hint.id);
-    if (target.hasAttribute('data-info')) target.setAttribute('aria-expanded', String(pinned));
     if (target.hasAttribute('data-info'))
       informationHelp = {
         owner: target,
@@ -118,7 +114,7 @@ export function controlHints(host: HTMLElement, signal: AbortSignal) {
     (event) => {
       if (event.pointerType === 'touch') return;
       const target = (event.target as Element).closest<HTMLElement>('[data-hint]');
-      if (!target || pinned || pointerMuted) return;
+      if (!target || pointerMuted) return;
       clearTimeout(timer);
       timer = setTimeout(() => show(target), 180);
     },
@@ -130,7 +126,7 @@ export function controlHints(host: HTMLElement, signal: AbortSignal) {
       if (!pointerMuted) return;
       pointerMuted = false;
       const target = (event.target as Element).closest<HTMLElement>('[data-hint]');
-      if (target && !pinned) {
+      if (target) {
         clearTimeout(timer);
         timer = setTimeout(() => show(target), 180);
       }
@@ -141,44 +137,29 @@ export function controlHints(host: HTMLElement, signal: AbortSignal) {
     'pointerout',
     (event) => {
       const next = event.relatedTarget as Node | null;
-      if (pinned || (next && (hint.contains(next) || owner?.contains(next)))) return;
+      if (next && (hint.contains(next) || owner?.contains(next))) return;
       clearTimeout(timer);
       timer = setTimeout(hide, 120);
     },
     { signal },
   );
   hint.addEventListener('pointerenter', () => clearTimeout(timer), { signal });
-  hint.addEventListener(
-    'pointerleave',
-    () => {
-      if (!pinned) hide();
-    },
-    { signal },
-  );
+  hint.addEventListener('pointerleave', hide, { signal });
   host.addEventListener(
     'focusin',
     (event) => {
       const target = (event.target as Element).closest<HTMLElement>('[data-hint]');
       if (target) show(target);
-      else if (!pinned) hide();
+      else hide();
     },
     { signal },
   );
-  host.addEventListener(
-    'focusout',
-    () => {
-      if (!pinned) hide();
-    },
-    { signal },
-  );
+  host.addEventListener('focusout', hide, { signal });
   host.addEventListener(
     'click',
     (event) => {
       const target = (event.target as Element).closest<HTMLElement>('[data-info]');
-      if (target) {
-        if (owner === target && pinned) hide();
-        else show(target, true);
-      } else {
+      if (!target) {
         hide();
         pointerMuted = true;
       }
@@ -208,6 +189,8 @@ export function controlHints(host: HTMLElement, signal: AbortSignal) {
   );
   window.addEventListener('resize', position, { signal });
   window.addEventListener('scroll', position, { signal, capture: true, passive: true });
+  window.visualViewport?.addEventListener('resize', position, { signal });
+  window.visualViewport?.addEventListener('scroll', position, { signal, passive: true });
   const visibility = new MutationObserver(() => {
     if (owner && (!owner.isConnected || !owner.getClientRects().length)) hide();
   });

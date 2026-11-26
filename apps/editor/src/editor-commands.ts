@@ -1,3 +1,5 @@
+import { actionIcon } from './action-icons';
+
 type Scope = 'project' | 'section' | 'widget' | 'view';
 export const compactEditorQuery = '(max-width:767px), (max-width:1023px) and (max-height:500px)';
 const scopes: Record<string, Scope> = {
@@ -27,7 +29,7 @@ export function labelEditorCommands(root: HTMLElement, kind: 'page' | 'presentat
     node.classList.remove('af-btn--sm');
   for (const node of root.querySelectorAll('.editor-header .af-input,.canvas-toolbar .af-select')) {
     const variant = node.classList.contains('af-select') ? 'af-select--sm' : 'af-input--sm';
-    node.classList.toggle(variant, compact);
+    node.classList.toggle(variant, compact || !!node.closest('.canvas-toolbar'));
   }
   if (compact)
     for (const node of root.querySelectorAll(
@@ -39,11 +41,23 @@ export function labelEditorCommands(root: HTMLElement, kind: 'page' | 'presentat
     : kind === 'presentation'
       ? 'Показать'
       : 'Предпросмотр';
-  root.querySelector('#page-settings-open')!.textContent = compact
-    ? 'Свойства'
-    : kind === 'presentation'
-      ? 'Настройки слайда'
-      : 'Настройки секции';
+  const settings = root.querySelector<HTMLElement>('#page-settings-open')!;
+  const settingsLabel = kind === 'presentation' ? 'Настройки слайда' : 'Настройки секции';
+  if (compact) settings.textContent = 'Свойства';
+  else settings.replaceChildren(actionIcon('settings'));
+  settings.classList.toggle('af-btn--icon', !compact);
+  settings.setAttribute('aria-label', compact ? 'Свойства' : settingsLabel);
+  settings.title = settingsLabel;
+  const ai = root.querySelector<HTMLElement>('.ai-open');
+  if (ai) {
+    ai.textContent = compact ? 'Создать с ИИ' : 'ИИ';
+    ai.setAttribute('aria-label', 'Создать с ИИ');
+    ai.title = 'Создать с ИИ';
+  }
+  for (const node of root.querySelectorAll(
+    '.section-toolbar > .af-btn,.canvas-zoom > .af-btn,.block-controls-trigger,.editor-more > summary,#slide-actions > .af-btn,.command-menu .af-btn',
+  ))
+    node.classList.add('af-btn--sm');
 }
 /** Canonical controls and keyboard/mobile invocations share one handler. */
 export function editorCommands(

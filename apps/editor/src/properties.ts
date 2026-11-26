@@ -63,7 +63,9 @@ export function properties(host: HTMLElement, original: Widget, actions: Callbac
           'input:invalid,textarea:invalid,select:invalid',
         ),
         text =
-          (invalid?.closest('label')?.querySelector(dom.label)?.textContent ?? 'Поле') +
+          (invalid?.getAttribute('aria-label') ??
+            invalid?.closest('label')?.querySelector(dom.label)?.textContent ??
+            'Поле') +
           ': ' +
           (invalid?.validationMessage ?? 'Проверьте значение.');
       result(text, true);
@@ -282,22 +284,24 @@ export function properties(host: HTMLElement, original: Widget, actions: Callbac
       );
     placement.append(presets);
     form.append(placement);
-    const alignment = select(
-      form,
-      'Выравнивание содержимого',
-      draft.align ?? '',
-      {
-        '': 'Из композиции',
-        left: 'По левому краю',
-        center: 'По центру',
-        right: 'По правому краю',
-      },
-      (v) => {
-        if (v) draft.align = v as 'left' | 'center' | 'right';
-        else delete draft.align;
-      },
-    );
-    alignment.closest<HTMLElement>('label')!.dataset.propertyGroup = 'style';
+    if (draft.type !== 'text' || actions.document.kind !== 'page') {
+      const alignment = select(
+        form,
+        'Выравнивание содержимого',
+        draft.align ?? '',
+        {
+          '': 'Из композиции',
+          left: 'По левому краю',
+          center: 'По центру',
+          right: 'По правому краю',
+        },
+        (v) => {
+          if (v) draft.align = v as 'left' | 'center' | 'right';
+          else delete draft.align;
+        },
+      );
+      alignment.closest<HTMLElement>('label')!.dataset.propertyGroup = 'style';
+    }
     if (draft.type === 'text') {
       draft.content.forEach((block, index) => {
         const box = el('div', 'block-fragment'),
@@ -585,15 +589,15 @@ export function properties(host: HTMLElement, original: Widget, actions: Callbac
     const groups = new Map<string, ReturnType<typeof settingsGroup>>();
     const labels = {
       content: 'Содержание',
-      style: 'Оформление',
-      behavior: 'Поведение',
-      geometry: 'Размеры и положение',
+      style: 'Внешний вид',
+      behavior: 'Анимация',
+      geometry: 'Размер и расположение',
     };
     for (const key of ['content', 'style', 'behavior', 'geometry'] as const) {
       const entry = settingsGroup(labels[key], 'property-group');
       entry.group.dataset.setting = key;
       entry.group.open =
-        opened.get(key) ?? (key === 'content' || (draft.type !== 'text' && key !== 'geometry'));
+        opened.get(key) ?? (key === 'content' || (draft.type !== 'text' && key === 'style'));
       groups.set(key, entry);
     }
     for (const node of Array.from(form.children).filter((node) => node !== context)) {
@@ -604,9 +608,8 @@ export function properties(host: HTMLElement, original: Widget, actions: Callbac
     }
     // Text comes first; its optional block name follows the fragments.
     if (draft.type === 'text') groups.get('content')!.body.append(nameField);
-    for (const key of ['content', 'style', 'geometry', 'behavior'] as const) {
+    for (const key of ['content', 'style', 'behavior', 'geometry'] as const) {
       const { group, body } = groups.get(key)!;
-      if (key === 'geometry' || key === 'behavior') group.dataset.advancedSetting = '';
       if (body.children.length) form.append(group);
     }
     const operations = el('section', 'block-operations');

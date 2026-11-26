@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "zod": "4.5.4",
-    "@alabuga/framework": "file:../../vendor/alabuga-framework-1.4.0-grid.4.tgz",
+    "@alabuga/framework": "file:../../vendor/alabuga-framework-1.4.0-grid.4.inspector.1.tgz",
     "@alabuga/document-core": "0.7.0"
   }
 }

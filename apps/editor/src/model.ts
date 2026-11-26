@@ -138,10 +138,10 @@ export function createWidget(type: Widget['type'], doc: AFDocument, pageIndex: n
     image: [4, 4],
     calendar: [4, 4],
     table: [6, 4],
-    button: [4, 1],
+    button: [doc.kind === 'page' ? 3 : 4, 1],
     quote: [6, 3],
     cards: [12, 4],
-    gallery: [12, 4],
+    gallery: [doc.kind === 'page' ? 8 : 12, 4],
   };
   const grid = doc.pages[pageIndex].grid,
     [baseWidth, baseHeight] = sizes[type],
@@ -150,7 +150,7 @@ export function createWidget(type: Widget['type'], doc: AFDocument, pageIndex: n
       widgetRegistry[type].minHeight,
       Math.round(baseHeight * (grid.frame && doc.kind === 'presentation' ? gridRows(grid) / 8 : 1)),
     ),
-    width = Math.min(wanted, grid.columns);
+    width = Math.min(Math.max(wanted, widgetRegistry[type].minWidth), grid.columns);
   if (width < widgetRegistry[type].minWidth)
     throw new Error('В сетке недостаточно колонок для этого виджета.');
   const base = {
@@ -158,11 +158,15 @@ export function createWidget(type: Widget['type'], doc: AFDocument, pageIndex: n
     title: widgetRegistry[type].title,
     position: findSpace(doc, pageIndex, width, height),
   };
+  const centered = doc.kind === 'page' ? { align: 'center' as const } : {};
   switch (type) {
     case 'button':
       return {
         ...base,
+        ...centered,
         type,
+        title: doc.kind === 'page' ? '' : base.title,
+        ...(doc.kind === 'page' ? { surface: 'card' } : {}),
         label: 'Подробнее',
         variant: 'primary',
         action: { type: 'link', href: 'https://example.com' },
@@ -181,6 +185,7 @@ export function createWidget(type: Widget['type'], doc: AFDocument, pageIndex: n
     case 'gallery':
       return {
         ...base,
+        ...centered,
         type,
         items: [
           {
@@ -203,7 +208,7 @@ export function createWidget(type: Widget['type'], doc: AFDocument, pageIndex: n
         ],
       };
     case 'metric':
-      return { ...base, type, value: '24', note: 'Ключевой показатель' };
+      return { ...base, ...centered, type, value: '24', note: 'Ключевой показатель' };
     case 'calendar':
       return { ...base, type, date: new Date().toLocaleDateString('sv-SE') };
     case 'image':

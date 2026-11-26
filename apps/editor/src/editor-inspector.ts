@@ -4,7 +4,6 @@ import { properties } from './properties';
 import { sectionDesign } from './design';
 import { widgetLayout } from './widget-layout';
 import { headingFieldValue, selectField } from './ui-fields';
-import { downloadCopyLabel } from './editor-shell';
 import { inspectorLayout } from './inspector-layout';
 import { responsiveDrawer } from './responsive-drawer';
 import { disposeControls } from './component-lifecycle';
@@ -53,9 +52,6 @@ interface InspectorActions {
   errorMessage: () => string;
   isSaved: () => boolean;
   stateChanged: () => void;
-  projects: () => void;
-  history: () => void;
-  download: () => void;
 }
 /** Owns inspector drafts, panel focus and controls without owning the document. */
 export class EditorInspector {
@@ -65,8 +61,8 @@ export class EditorInspector {
   private draftState: InspectorDraftState = 'valid';
   private trigger: HTMLElement | undefined;
   private refreshFrame = 0;
-  private mode: 'standard' | 'advanced' | undefined;
-  private readonly modeControl: HTMLSelectElement;
+  private readonly sectionExtras = el('div', 'settings-group-body section-extra-settings');
+  private readonly sectionAdvanced = el('details', 'advanced-grid section-property-group');
   private gridDraft: AFDocument['pages'][number]['grid'] | undefined;
   private readonly gridExtras = el('div', 'af-stack');
   private readonly gridFeedback = el('p', 'af-help');
@@ -78,35 +74,6 @@ export class EditorInspector {
     private readonly actions: InspectorActions,
     signal: AbortSignal,
   ) {
-    this.modeControl = selectField(
-      this.drawer.querySelector<HTMLElement>('.inspector-body')!,
-      'Режим редактора',
-      'advanced',
-      { standard: 'Стандартный', advanced: 'Расширенный' },
-      (mode) => {
-        this.mode = mode === 'standard' ? 'standard' : 'advanced';
-        this.setMode(this.actions.document());
-        if (
-          this.mode === 'standard' &&
-          this.drawer.querySelector('#slide-tab-behavior[aria-selected=true]')
-        )
-          this.drawer.querySelector<HTMLButtonElement>('#slide-tab-structure')?.click();
-      },
-    );
-    this.modeControl.closest('label')!.id = 'editor-mode-field';
-    this.drawer.querySelector('.inspector-body')!.prepend(this.modeControl.closest('label')!);
-    const modeLabel = this.modeControl.closest('label')!;
-    const modeGroup = el('div', 'inspector-mode');
-    const modeHeading = el('div', 'settings-field-heading');
-    modeLabel.before(modeGroup);
-    modeHeading.append(
-      modeLabel.querySelector('.af-label')!,
-      settingsInfo(
-        'О режиме редактора',
-        'Стандартный режим оставляет основные настройки. Расширенный добавляет точную геометрию, сетку и поведение. Переключение не изменяет документ.',
-      ),
-    );
-    modeGroup.append(modeHeading, modeLabel);
     const headerActions = el('div', 'settings-header-actions');
     const close = this.get('close-inspector');
     close.before(headerActions);
@@ -127,18 +94,19 @@ export class EditorInspector {
     inspectorLayout(drawer, this.lifetime.signal);
     inspectorHelp(drawer, this.lifetime.signal);
     const settings = this.get<HTMLFormElement>('settings');
-    settings.querySelector(':scope > .af-help')?.remove();
     settings.dataset.gridDraft = 'true';
     this.gridFeedback.setAttribute('role', 'status');
     this.gridFeedback.setAttribute('aria-live', 'polite');
     const applyGrid = el('button', 'af-btn', 'Применить сетку');
     applyGrid.type = 'submit';
-    const grid = el('details', 'advanced-grid settings-disclosure');
-    grid.dataset.advancedSetting = '';
-    const gridBody = el('div', 'settings-group-body settings-grid-body');
+    const advancedTitle = el('summary', 'af-btn af-btn--clear');
+    const chevron = el('span', 'af-icon af-icon--expand');
+    chevron.setAttribute('aria-hidden', 'true');
+    advancedTitle.append(el('span', 'settings-group-title', 'Дополнительные параметры'), chevron);
+    this.sectionAdvanced.append(advancedTitle, settings, this.sectionExtras);
+    this.get('design-settings').after(this.sectionAdvanced);
     const gridActions = el('div', 'settings-actions');
-    grid.append(el('summary', 'af-btn af-btn--clear', 'Дополнительно: сетка'), gridBody);
-    gridBody.append(settings.querySelector('.settings-grid')!, this.gridExtras);
+    settings.append(this.gridExtras);
     gridActions.append(
       applyGrid,
       button('Отменить изменения сетки', () => {
@@ -155,8 +123,7 @@ export class EditorInspector {
         );
       }),
     );
-    gridBody.append(gridActions, this.gridFeedback);
-    settings.append(grid);
+    settings.append(gridActions, this.gridFeedback);
     settings.addEventListener(
       'submit',
       (event) => {
@@ -165,21 +132,15 @@ export class EditorInspector {
       },
       { signal: this.lifetime.signal },
     );
-    settings.addEventListener(
-      'change',
-      (event) => {
-        if (event.target === this.get('page-title')) this.updateSettings(false);
-      },
-      { signal: this.lifetime.signal },
-    );
+    this.get('page-title').addEventListener('change', () => this.updateSettings(false), {
+      signal: this.lifetime.signal,
+    });
     settings.addEventListener(
       'input',
-      (event) => {
-        if (event.target !== this.get('page-title')) {
-          settings.dataset.dirty = 'true';
-          this.gridFeedback.classList.remove('af-error');
-          this.gridFeedback.textContent = 'Изменения сетки ещё не применены.';
-        }
+      () => {
+        settings.dataset.dirty = 'true';
+        this.gridFeedback.classList.remove('af-error');
+        this.gridFeedback.textContent = 'Изменения сетки ещё не применены.';
       },
       { signal: this.lifetime.signal },
     );
@@ -236,9 +197,9 @@ export class EditorInspector {
         ))
     )?.focus({ preventScroll: true });
   }
-  openDocument() {
+  openDocument(trigger: HTMLElement) {
     if (!this.flushPendingForms() || !this.flushSectionSettings()) return;
-    this.rememberTrigger();
+    this.trigger = trigger;
     this.root.classList.remove('outline-open');
     this.actions.selectDocument();
     this.drawer.hidden = false;
@@ -247,7 +208,6 @@ export class EditorInspector {
   }
   openGrid(index: number) {
     if (!this.flushPendingForms() || !this.flushSectionSettings()) return;
-    this.mode = 'advanced';
     this.open('', index);
     this.drawer.querySelector<HTMLButtonElement>('#slide-tab-structure')?.click();
     const grid = this.drawer.querySelector<HTMLDetailsElement>(
@@ -293,15 +253,6 @@ export class EditorInspector {
   private syncSectionTitle(active: AFDocument['pages'][number]) {
     this.get<HTMLInputElement>('page-title').value = headingFieldValue(active.title);
   }
-  private setMode(doc: AFDocument) {
-    const mode =
-      this.mode ??
-      (templateInfo(doc)?.document?.id === `document/${doc.kind}/corporate`
-        ? 'standard'
-        : 'advanced');
-    this.root.dataset.editorMode = mode;
-    if (this.modeControl.value !== mode) this.modeControl.value = mode;
-  }
   render(
     doc: AFDocument,
     active: AFDocument['pages'][number],
@@ -309,9 +260,14 @@ export class EditorInspector {
     syncGrid = false,
   ) {
     if (this.lifetime.signal.aborted) return;
-    this.setMode(doc);
     const { selected, section: pageIndex, documentMode, preview } = this.actions.context();
     this.drawer.dataset.inspectorView = documentMode ? 'document' : selected ? 'block' : 'section';
+    this.drawer.toggleAttribute(
+      'data-compact-settings',
+      !documentMode && (Boolean(selected) || doc.kind === 'page'),
+    );
+    this.sectionAdvanced.hidden =
+      Boolean(selected) || documentMode || preview || doc.kind !== 'page';
     this.get('inspector-title').textContent = selected
       ? 'Настройки блока'
       : doc.kind === 'presentation'
@@ -352,6 +308,7 @@ export class EditorInspector {
             if (source) saveCompositionDialog(source, current.kind, this.lifetime.signal);
           },
           unplaced: (host) => this.drawUnplaced(host, doc, active.id),
+          sectionExtras: this.sectionExtras,
         },
       );
     if (keepProperties) return;
@@ -360,7 +317,7 @@ export class EditorInspector {
     this.flushDraft = () => true;
     const w = active.widgets.find((w) => w.id === selected);
     (this.drawer.querySelector('.page-settings') as HTMLElement).hidden =
-      !!w || doc.kind === 'presentation';
+      !!w || preview || doc.kind === 'presentation';
     if (w && !preview)
       this.flushDraft = properties(this.host, w, {
         document: doc,
@@ -435,9 +392,6 @@ export class EditorInspector {
         'af-help',
         'Проект и материалы сохраняются в этом браузере. Для резервной копии скачайте переносимый файл.',
       ),
-      button('Мои проекты', this.actions.projects),
-      button('История версий', this.actions.history),
-      button(downloadCopyLabel, this.actions.download),
     );
     this.drawUnplaced(this.host, doc, doc.pages[this.actions.context().section].id);
   }
@@ -554,9 +508,7 @@ export class EditorInspector {
       'form[data-grid-draft][data-dirty=true]',
     )) {
       if (form.id === 'settings' && this.actions.document().kind !== 'page') continue;
-      const grid =
-        form.closest<HTMLDetailsElement>('.slide-grid') ??
-        form.querySelector<HTMLDetailsElement>('.advanced-grid');
+      const grid = form.closest<HTMLDetailsElement>('.slide-grid,.advanced-grid');
       if (form.closest('.slide-grid'))
         this.drawer.querySelector<HTMLButtonElement>('#slide-tab-structure')?.click();
       if (grid) grid.open = true;

@@ -17,28 +17,64 @@ for (const width of [1440, 390]) {
     await trigger.click();
     const panel = page.locator('#inspector');
     await expect(panel.locator('.setting-description')).toHaveCount(0);
-    const titleInfo = panel.getByRole('button', {
+    const titleInfo = panel.getByRole('img', {
       name: 'О настройке «Заголовок секции»',
       exact: true,
     });
-    await titleInfo.click();
+    await titleInfo.hover();
     await expect(panel.getByRole('tooltip')).toContainText('Название раздела в структуре проекта');
+    await expect(
+      panel.getByRole('button', { name: 'О настройке «Заголовок секции»', exact: true }),
+    ).toHaveCount(0);
+    await titleInfo.click();
+    await panel.locator('#inspector-title').hover();
+    await expect(panel.getByRole('tooltip')).toBeHidden();
+    await titleInfo.hover();
+    await expect(panel.getByRole('tooltip')).toBeVisible();
     await expect(
       panel
         .locator('.inspector-body p')
         .filter({ hasText: 'Название раздела в структуре проекта' }),
     ).toHaveCount(0);
     await page.keyboard.press('Escape');
-    const info = panel.getByRole('button', { name: 'О настройках', exact: true });
-    await info.click();
-    await expect(info).toHaveAttribute('aria-expanded', 'true');
-    await expect(panel.getByRole('tooltip')).toContainText('Применить сетку');
+    const info = panel.getByRole('img', { name: 'О настройках', exact: true });
+    await info.focus();
+    await expect(info).toHaveJSProperty('tagName', 'SPAN');
+    const hint = panel.getByRole('tooltip');
+    await expect(hint).toContainText('Применить сетку');
+    const margins = await hint.evaluate((node) => {
+      const rect = node.getBoundingClientRect();
+      return { left: rect.left, right: document.documentElement.clientWidth - rect.right };
+    });
+    expect(Math.min(margins.left, margins.right)).toBeGreaterThanOrEqual(15.5);
     await page.keyboard.press('Escape');
     await expect(panel.getByRole('tooltip')).toBeHidden();
     await expect(panel).toBeVisible();
     await expect(info).toBeFocused();
-    await panel.getByRole('button', { name: 'О режиме редактора', exact: true }).click();
-    await expect(panel.getByRole('tooltip')).toContainText('Переключение не изменяет документ');
+    const widthInfo = panel.getByRole('img', {
+      name: 'О настройке «Ширина содержимого»',
+      exact: true,
+    });
+    await widthInfo.hover();
+    await expect(panel.getByRole('tooltip')).toContainText('Широкая область');
+    const caption = panel.locator('[data-setting-name="Ширина содержимого"] .setting-caption');
+    const captionBox = (await caption.boundingBox())!;
+    const infoBox = (await widthInfo.boundingBox())!;
+    expect(infoBox.x - (captionBox.x + captionBox.width)).toBeLessThanOrEqual(8);
+    expect(
+      Math.abs(infoBox.y + infoBox.height / 2 - captionBox.y - captionBox.height / 2),
+    ).toBeLessThanOrEqual(1);
+    const iconBox = (await widthInfo.locator('.af-icon--info').boundingBox())!;
+    expect(iconBox.width).toBeCloseTo(16, 1);
+    expect(iconBox.height).toBeCloseTo(iconBox.width, 1);
+    expect(iconBox.x - infoBox.x).toBeGreaterThanOrEqual(4);
+    const fieldBox = (await panel
+      .getByRole('combobox', {
+        name: 'Ширина содержимого',
+        exact: true,
+      })
+      .boundingBox())!;
+    expect(fieldBox.y - (infoBox.y + infoBox.height)).toBeGreaterThanOrEqual(8);
     const bounds = await panel.boundingBox();
     expect(bounds!.x).toBeGreaterThanOrEqual(0);
     expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width);
@@ -73,15 +109,15 @@ for (const kind of ['page', 'presentation'] as const) {
     }, kind);
     await page.evaluate((id) => (location.hash = '/edit/' + id), id);
     await page.locator('#page-settings-open').click();
-    await chooseOption(
-      page.getByRole('combobox', { name: 'Режим редактора', exact: true }),
-      'advanced',
+    await expect(page.getByRole('combobox', { name: 'Режим редактора', exact: true })).toHaveCount(
+      0,
     );
     const grid = page.locator(kind === 'page' ? '.advanced-grid' : '.slide-grid');
-    await grid.locator('summary').click();
+    const gridFields = kind === 'page' ? grid.locator('#settings') : grid;
     // Nested disclosure headings need the same gutters as other buttons,
     // including when their focus border is visible.
     const gridHeading = grid.locator(':scope > summary');
+    await gridHeading.click();
     for (const width of [1440, 390]) {
       await page.setViewportSize({ width, height: 1000 });
       for (const open of [false, true]) {
@@ -90,9 +126,11 @@ for (const kind of ['page', 'presentation'] as const) {
         const gutters = await gridHeading.evaluate((node) => {
           const style = getComputedStyle(node),
             box = node.getBoundingClientRect();
-          const text = [...node.childNodes].find(
-            (child) => child.nodeType === Node.TEXT_NODE && child.textContent?.trim(),
-          );
+          const text =
+            node.querySelector('.settings-group-title') ??
+            [...node.childNodes].find(
+              (child) => child.nodeType === Node.TEXT_NODE && child.textContent?.trim(),
+            );
           if (!text) throw new Error('Disclosure heading text is missing');
           const range = document.createRange();
           range.selectNode(text);
@@ -104,24 +142,24 @@ for (const kind of ['page', 'presentation'] as const) {
             textInset: range.getBoundingClientRect().left - box.left,
           };
         });
-        expect(gutters.left).toBeGreaterThanOrEqual(16);
-        expect(gutters.right).toBeGreaterThanOrEqual(16);
-        expect(gutters.top).toBeGreaterThanOrEqual(12);
-        expect(gutters.bottom).toBeGreaterThanOrEqual(12);
+        expect(gutters.left).toBeGreaterThanOrEqual(kind === 'page' ? 4 : 16);
+        expect(gutters.right).toBeGreaterThanOrEqual(kind === 'page' ? 4 : 16);
+        expect(gutters.top).toBeGreaterThanOrEqual(kind === 'page' ? 8 : 12);
+        expect(gutters.bottom).toBeGreaterThanOrEqual(kind === 'page' ? 8 : 12);
         expect(gutters.textInset).toBeGreaterThanOrEqual(16);
       }
     }
     await expect(grid.locator('.settings-section-description').first()).toBeVisible();
-    await expect(grid.locator('.settings-subsection')).toHaveCount(kind === 'page' ? 2 : 1);
+    await expect(gridFields.locator('.settings-subsection')).toHaveCount(kind === 'page' ? 2 : 1);
     await expect
       .poll(async () =>
-        grid
+        gridFields
           .locator('label.af-field:not([data-explained]),label.af-check:not([data-explained])')
           .count(),
       )
       .toBe(0);
     const columns = grid.locator('.setting-item[data-setting-name="Колонки"]');
-    await columns.getByRole('button', { name: 'О настройке «Колонки»', exact: true }).click();
+    await columns.getByRole('img', { name: 'О настройке «Колонки»', exact: true }).hover();
     await expect(page.getByRole('tooltip')).toContainText(
       'положение и ширина блоков пересчитываются',
     );

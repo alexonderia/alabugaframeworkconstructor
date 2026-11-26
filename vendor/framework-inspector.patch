@@ -1,0 +1,96 @@
+--- a/package.json
++++ b/package.json
+@@ -1,6 +1,6 @@
+ {
+   "name": "@alabuga/framework",
+-  "version": "1.4.0-grid.4",
++  "version": "1.4.0-grid.4.inspector.1",
+   "private": false,
+   "type": "module",
+   "description": "Independent Alabuga design system, components and document renderer",
+--- a/src/schema.ts
++++ b/src/schema.ts
+@@ -27,6 +27,15 @@
+ export type SlideTypography=z.infer<typeof typography>;
+ const elementStyle=z.object({size:z.enum(['compact','normal','large']).optional(),color:z.enum(['inherit','ink','blue','white','muted']).optional(),padding:z.enum(['none','compact','normal','spacious']).optional(),locked:z.boolean().optional()}).strict();
+ export type ElementStyle=z.infer<typeof elementStyle>;
++const textStyle = z.object({
++  family: z.enum(['body', 'heading', 'arial', 'georgia', 'monospace']).optional(),
++  size: z.number().int().min(8).max(160).optional(),
++  color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
++  face: z.enum(['regular', 'bold', 'italic']).optional(),
++  lineHeight: z.number().min(0.8).max(3).optional(),
++  letterSpacing: z.number().min(-4).max(20).optional(),
++  align: z.enum(['left', 'center', 'right', 'justify']).optional(),
++}).strict();
+ const responsiveSize=z.object({width:z.number().int().min(1).max(100).optional(),minHeight:z.number().int().min(0).max(3200).optional()}).strict();
+ export type ResponsiveSize=z.infer<typeof responsiveSize>;
+ const responsive=z.object({tablet:responsiveSize.optional(),mobile:responsiveSize.optional()}).strict();
+@@ -48,7 +57,7 @@
+   z.object({...base,type:z.literal('quote'),text,author:z.string().max(200)}).strict(),
+   z.object({...base,type:z.literal('cards'),items:z.array(z.object({title:z.string().max(200),text}).strict()).min(1).max(6)}).strict(),
+   z.object({...base,type:z.literal('gallery'),items:z.array(z.object({src:imageUrl,alt:z.string().min(1).max(500),caption:z.string().max(1000)}).strict()).min(1).max(6)}).strict(),
+-  z.object({ ...base, type: z.literal('text'), content: z.array(contentBlock).max(200) }).strict(),
++  z.object({ ...base, type: z.literal('text'), content: z.array(contentBlock).max(200), textStyle: textStyle.optional() }).strict(),
+   z.object({ ...base, type: z.literal('image'), src: imageUrl, alt: z.string().min(1).max(500), fit: z.enum(['cover', 'contain']).default('cover'), focalPoint:focalPoint.optional(),mobileFocalPoint:focalPoint.optional(),focal:z.enum(['center','top','bottom','left','right']).optional(),caption: z.string().max(1000).default('') }).strict(),
+   z.object({ ...base, type: z.literal('metric'), value: z.string().max(30), note: z.string().max(100).default('') }).strict(),
+   z.object({ ...base, type: z.literal('calendar'), date: isoDate }).strict(),
+--- a/src/element-style.ts
++++ b/src/element-style.ts
+@@ -1,5 +1,29 @@
+-import type {AFDocument,Section,SlideTypography} from './schema.js';
++import type {AFDocument,Section,SlideTypography,Widget} from './schema.js';
+ export const slideTypeDefaults:SlideTypography={heading:80,body:36,cardTitle:40,caption:28,table:32,metric:120};
++const fonts = {
++  body: 'var(--af-font-body)',
++  heading: 'var(--af-font-heading)',
++  arial: 'Arial, sans-serif',
++  georgia: 'Georgia, serif',
++  monospace: 'monospace',
++};
++
++function styleText(box: HTMLElement, style: NonNullable<Extract<Widget, {type: 'text'}>['textStyle']>) {
++  if (style.align) box.style.textAlign = style.align;
++  if (style.family) box.style.setProperty('--af-text-family', fonts[style.family]);
++  if (style.size !== undefined) box.style.setProperty('--af-text-size', style.size + 'px');
++  if (style.color) box.style.setProperty('--af-text-color', style.color);
++  if (style.face) {
++    box.style.setProperty('--af-text-weight', style.face === 'bold' ? '700' : '400');
++    box.style.setProperty('--af-text-font-style', style.face === 'italic' ? 'italic' : 'normal');
++  }
++  if (style.lineHeight !== undefined) box.style.setProperty('--af-text-leading', String(style.lineHeight));
++  if (style.letterSpacing !== undefined) box.style.setProperty('--af-text-tracking', style.letterSpacing + 'px');
++  for (const key of ['family', 'size', 'color', 'face', 'lineHeight', 'letterSpacing'] as const) {
++    if (style[key] !== undefined) box.setAttribute('data-author-text-' + key.toLowerCase(), '');
++  }
++}
++
+ export function styleElements(shell:HTMLElement,page:Section,kind:AFDocument['kind']){
+  if(page.layoutVariant)shell.dataset.layoutVariant=page.layoutVariant;
+  for(const w of page.widgets){
+@@ -11,5 +35,6 @@
+    if(w.style.padding)box.style.setProperty('--af-element-padding',{none:'0px',compact:'12px',normal:'24px',spacious:'40px'}[w.style.padding]);
+   }
+   if(kind==='presentation'&&w.typography){box.classList.add('af-slide-type');for(const [key,value]of Object.entries(w.typography))box.style.setProperty('--af-fit-'+key,value+'px')}
++  if (kind === 'page' && w.type === 'text' && w.textStyle) styleText(box, w.textStyle);
+  }
+ }
+--- a/src/compositions.css
++++ b/src/compositions.css
+@@ -78,6 +78,16 @@
+ .af-page [data-text-size] :is(.af-title,.af-feature__title){font-size:var(--af-author-heading)!important;line-height:1.1}
+ .af-page [data-text-size] :is(.af-prose,.af-prose p,.af-feature__text){font-size:var(--af-author-body)!important}
+ .af-page [data-text-size] :is(.af-caption,.af-quote__author){font-size:var(--af-author-caption)!important}
++
++.af .af-page [data-author-text-family] :is(.af-prose, .af-prose > *) {font-family: var(--af-text-family)}
++.af .af-page [data-author-text-size] :is(.af-prose, .af-prose > *) {font-size: var(--af-text-size) !important}
++.af .af-page [data-author-text-color] :is(.af-prose, .af-prose > *) {color: var(--af-text-color)}
++.af .af-page [data-author-text-face] :is(.af-prose, .af-prose > *) {
++  font-weight: var(--af-text-weight);
++  font-style: var(--af-text-font-style);
++}
++.af .af-page [data-author-text-lineheight] :is(.af-prose, .af-prose > *) {line-height: var(--af-text-leading)}
++.af .af-page [data-author-text-letterspacing] :is(.af-prose, .af-prose > *) {letter-spacing: var(--af-text-tracking)}
+ .af [data-layout-variant=stacked] .af-cards{grid-template-columns:1fr;gap:16px}.af [data-layout-variant=stacked] .af-feature:nth-child(n){padding-top:8px}
+ .af [data-layout-variant=asymmetric] .af-cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+ @container af-page-viewport (max-width:640px){.af-page [data-text-size]{--af-author-heading:32px;--af-author-body:18px}.af [data-layout-variant] .af-cards{grid-template-columns:1fr}}

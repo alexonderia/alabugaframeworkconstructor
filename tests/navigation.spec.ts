@@ -30,10 +30,17 @@ test('legacy component demos open independently deployed examples with their par
 });
 
 test('project help opens the full workspace documentation in a new tab',async({page})=>{
- await page.goto('/builder/');await page.getByRole('button',{name:'Помощь',exact:true}).click();
- const [guide]=await Promise.all([page.context().waitForEvent('page'),page.getByRole('dialog').getByRole('link',{name:'Документация',exact:true}).click()]);
+ await page.goto('/builder/');
+ const [guide]=await Promise.all([page.context().waitForEvent('page'),page.getByRole('link',{name:'Помощь',exact:true}).click()]);
  await expect(guide).toHaveURL(/\/docs\/ru\/projects\.html$/);
  await expect(guide.locator('main > h1')).toHaveText('Проекты, материалы и рабочее пространство');
  await expect(guide.getByRole('heading',{name:'Локальная библиотека и корзина',exact:true})).toBeVisible();
  await guide.close();
+});
+
+test('project samples link reveals the demo gallery',async({page})=>{
+ await page.goto('/builder/');
+ await page.getByRole('link',{name:'Посмотреть образцы',exact:true}).click();
+ await expect(page).toHaveURL(/\/demo\/(index\.html)?#examples$/);
+ await expect(page.getByRole('heading',{name:'Готовые образцы',exact:true})).toBeInViewport();
 });

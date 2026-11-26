@@ -32,7 +32,7 @@ test('snap popover exposes state, info and option hints, and closes in layers wi
   await expect(panel.locator('p')).toHaveCount(0);
   await expect(panel.locator('.block-controls-steps')).toBeVisible();
   const strictHeight = (await panel.boundingBox())!.height;
-  await panel.getByRole('button', { name: 'О режиме привязки', exact: true }).click();
+  await panel.getByRole('img', { name: 'О режиме привязки', exact: true }).hover();
   await expect(page.getByRole('tooltip')).toContainText('ближайшей линии');
   await page.keyboard.press('Escape');
   await expect(page.getByRole('tooltip')).toBeHidden();

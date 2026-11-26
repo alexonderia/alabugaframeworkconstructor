@@ -19,7 +19,7 @@ async function corporateProject(page: Page, kind: 'page' | 'presentation') {
   await expect(page.locator('dialog[open] .composition-thumbnail .af-document')).toBeVisible();
   await page.getByRole('button', { name: 'Продолжить', exact: true }).click();
   await expect(page.locator('#project-name')).toBeVisible();
-  await expect(page.locator('#builder')).toHaveAttribute('data-editor-mode', 'standard');
+  await expect(page.locator('#builder')).toHaveAttribute('data-document-kind', kind);
 }
 
 test('corporate website safely replaces a composition and recovers data from a portable copy', async ({
@@ -40,16 +40,14 @@ test('corporate website safely replaces a composition and recovers data from a p
     picture = source.widgets[1];
   await page.locator(`.outline-select[data-outline-index="${index}"]`).click();
   await page.locator('#page-settings-open').click();
-  const grid = page.getByText('Дополнительно: сетка', { exact: true });
-  await expect(grid).toBeHidden();
-  await chooseOption(page.getByLabel('Режим редактора', { exact: true }), 'advanced');
+  const grid = page.getByText('Дополнительные параметры', { exact: true });
+  await expect(grid).toBeVisible();
+  await expect(page.locator('#columns')).toBeHidden();
   await grid.click();
   await expect(page.locator('#columns')).toBeVisible();
-  await chooseOption(page.getByLabel('Режим редактора', { exact: true }), 'standard');
-  await expect(grid).toBeHidden();
-  await chooseOption(page.getByLabel('Режим редактора', { exact: true }), 'advanced');
-  await expect(page.locator('#columns')).toBeVisible();
-  await chooseOption(page.getByLabel('Режим редактора', { exact: true }), 'standard');
+  await grid.click();
+  await expect(page.locator('#columns')).toBeHidden();
+  await expect(page.getByLabel('Режим редактора', { exact: true })).toHaveCount(0);
   expect(await savedDocument(page)).toEqual(original);
   await page.getByRole('button', { name: 'Посмотреть шаблоны', exact: true }).click();
   const gallery = page.getByRole('dialog', { name: 'Шаблоны и совместимость' });
@@ -113,7 +111,8 @@ test('presentation keeps slide geometry and can insert a locally saved compositi
   await corporateProject(page, 'presentation');
   const before = await savedDocument(page);
   await page.locator('#page-settings-open').click();
-  await expect(page.locator('details.slide-grid')).toBeHidden();
+  await expect(page.locator('details.slide-grid')).toBeVisible();
+  await expect(page.locator('details.slide-grid')).not.toHaveAttribute('open');
   await page.getByRole('button', { name: 'Сохранить как композицию', exact: true }).click();
   await page
     .getByRole('textbox', { name: 'Название композиции', exact: true })

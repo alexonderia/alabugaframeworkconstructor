@@ -1,3 +1,4 @@
+import {chooseNewProject} from './new-project-helper';
 import {openGeometry} from './property-helper';
 import {openEditor} from './open-editor';
 import {savedDocument} from './project-helper';
@@ -5,7 +6,7 @@ import {test,expect} from '@playwright/test';
 import axe from 'axe-core';
 import {pathToFileURL} from 'node:url';
 const data=savedDocument;
-async function newPage(page:any){await page.locator('.project-menu summary').click();await page.locator('#new-page').click()}
+async function newPage(page:any){await page.locator('.project-menu summary').click();await chooseNewProject(page, 'new-page')}
 async function add(page:any,type:string){await page.locator('#add-widget').click();await page.locator('[data-add="'+type+'"]').click()}
 test.beforeEach(async({page})=>{await openEditor(page);await newPage(page)});
 test('edit directly without focus loss and undo a whole typing session',async({page})=>{

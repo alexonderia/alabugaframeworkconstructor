@@ -5,6 +5,9 @@ export type ActionIcon =
   | 'copy'
   | 'delete'
   | 'settings'
+  | 'fit'
+  | 'pending'
+  | 'checklist'
   | 'upload'
   | 'rename'
   | 'up'
@@ -22,6 +25,16 @@ export function actionIcon(name: ActionIcon) {
     add: ['M12 5v14', 'M5 12h14'],
     info: ['M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18', 'M12 11v6', 'M12 7v.5'],
     chevron: ['M6 9l6 6 6-6'],
+    fit: ['M8 3H3v5', 'M16 3h5v5', 'M3 16v5h5', 'M21 16v5h-5', 'M8 8h8v8H8z'],
+    pending: ['M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18', 'M12 7v5l3 2'],
+    checklist: [
+      'M9 5H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3',
+      'M9 3h6v4H9z',
+      'M7 12l1 1 2-2',
+      'M13 12h4',
+      'M7 17l1 1 2-2',
+      'M13 17h4',
+    ],
     copy: ['M9 9h11v12H9z', 'M5 16H3V3h12v2'],
     delete: ['M3 6h18', 'M8 6V3h8v3', 'M5 6l1 15h12l1-15', 'M10 10v7', 'M14 10v7'],
     settings: [

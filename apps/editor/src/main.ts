@@ -1,10 +1,12 @@
 import { showDialog, el, button, invocationTarget } from './ui';
+import { actionIcon } from './action-icons';
 import { editorCatalog } from './catalog';
 import { editorMarkup } from './editor-shell';
 import { editorCommands, labelEditorCommands } from './editor-commands';
 import { EditorCanvas } from './editor-canvas';
 import { EditorInspector } from './editor-inspector';
 import { compactToolbar } from './toolbar';
+import { editorNavigation } from './editor-navigation';
 import { loadSectionNames, renameSection } from './section-labels';
 import { storageDialog } from './storage-dialog';
 import { mountControls, disposeControls } from './component-lifecycle';
@@ -29,7 +31,7 @@ import { insertDraft } from '@alabuga/ai/commands';
 import { draftDocument } from '@alabuga/ai/contracts';
 import { qualityDialog } from './quality';
 import { type AFDocument, type Widget } from '@alabuga/framework';
-import { findSpace, uid } from './model';
+import { createWidget, findSpace, uid } from './model';
 import { sectionDisplayName } from './section-name';
 import { download, projectFilename } from './export';
 import type { InlineCommit } from './inline';
@@ -97,9 +99,9 @@ export async function mountEditor(
       state: (state, error) => {
         lastSaveStatus =
           state === 'saving'
-            ? 'Сохраняем…'
+            ? 'Есть несохранённые изменения'
             : state === 'saved'
-              ? 'Сохранено в браузере'
+              ? 'Сохранено'
               : 'Не сохранено — скачайте проект';
         root.classList.toggle('save-failed', state === 'failed');
         paintSaveState();
@@ -179,14 +181,8 @@ export async function mountEditor(
       duplicateWidget: () => duplicateWidget(),
       status: (text, error) => message(text, error),
       errorMessage: () => get('status').textContent ?? '',
-      isSaved: () => lastSaveStatus === 'Сохранено в браузере',
+      isSaved: () => lastSaveStatus === 'Сохранено',
       stateChanged: () => paintSaveState(),
-      projects: () => void session.queue.then(() => navigate('/projects')),
-      history: () =>
-        void session.queue.then(() =>
-          projectDialog(session.projectId, session.document, switchProject, true),
-        ),
-      download: () => get('save').click(),
     },
     session.signal,
   );
@@ -202,10 +198,25 @@ export async function mountEditor(
     get('status').textContent = text;
     get('status').classList.toggle('status-error', error);
   };
-  let lastSaveStatus = 'Сохранено в браузере';
-  get('save-state').textContent = lastSaveStatus;
+  let lastSaveStatus = 'Сохранено';
+  const saveLabel = el('span', 'save-state-label', lastSaveStatus);
+  const savedIcon = el('span', 'save-state-icon af-icon af-icon--success af-icon--sm');
+  savedIcon.setAttribute('aria-hidden', 'true');
+  const pendingIcon = actionIcon('pending');
+  pendingIcon.classList.add('save-state-icon');
+  get('save-state').replaceChildren(savedIcon, saveLabel);
+  get('save-state').dataset.saveState = 'saved';
   const paintSaveState = () => {
-    get('save-state').textContent =
+    const state = get('save-state');
+    const saved =
+      inspectorView.state === 'valid' &&
+      lastSaveStatus === 'Сохранено' &&
+      get<HTMLInputElement>('project-name').value === session.document.title;
+    const icon = saved ? savedIcon : pendingIcon;
+    if (state.firstElementChild !== icon) state.replaceChildren(icon, saveLabel);
+    saveLabel.textContent = saved ? 'Сохранено' : 'Есть несохранённые изменения';
+    state.dataset.saveState = saved ? 'saved' : 'unsaved';
+    state.title =
       inspectorView.state === 'invalid'
         ? 'Изменения не применены — проверьте настройки'
         : inspectorView.state === 'pending'
@@ -344,7 +355,10 @@ export async function mountEditor(
         selected = widgetId;
         documentMode = false;
         draw();
-        scrollSection();
+        const document = session.document;
+        if (!widgetId && document.kind === 'page')
+          canvasView.revealInsertedSection(document.pages[index].id);
+        else scrollSection();
         learningMode?.resume();
       },
       error: (text) => message(text, true),
@@ -498,6 +512,7 @@ export async function mountEditor(
       draw();
       message('Новый документ. Добавьте блок или секцию.');
     });
+  get<HTMLInputElement>('project-name').addEventListener('input', paintSaveState);
   get<HTMLInputElement>('project-name').addEventListener('change', (e) => {
     const value = (e.target as HTMLInputElement).value;
     if (!flush() || !commit((d) => (d.title = value.trim())))
@@ -621,17 +636,19 @@ export async function mountEditor(
     },
     { capture: true },
   );
-  root.querySelector('.project-menu > div')!.append(
+  const projectMenu = root.querySelector<HTMLDetailsElement>('.project-menu')!;
+  projectMenu.querySelector('div')!.append(
     button(
-      'Документ',
+      'Настройки проекта…',
       () => {
-        inspectorView.openDocument();
+        projectMenu.open = false;
+        inspectorView.openDocument(projectMenu.querySelector('summary')!);
       },
       'af-btn af-btn--ghost af-btn--sm document-settings-open',
     ),
   );
   async function startProject(document: AFDocument) {
-    lastSaveStatus = 'Сохраняем…';
+    lastSaveStatus = 'Есть несохранённые изменения';
     paintSaveState();
     root.inert = true;
     message('Сохраняем текущую версию…');
@@ -639,7 +656,7 @@ export async function mountEditor(
       await session.startProject(document, 'Не сохранено — скачайте проект');
       sectionNames = {};
     } catch (e) {
-      lastSaveStatus = session.saveError ? 'Не сохранено' : 'Сохранено в браузере';
+      lastSaveStatus = session.saveError ? 'Не сохранено' : 'Сохранено';
       paintSaveState();
       throw e;
     } finally {
@@ -748,8 +765,22 @@ export async function mountEditor(
     error: (error) => message((error as Error).message, true),
   });
   const menu = root.querySelector('.project-menu > div')!;
-  menu.append(button('Горячие клавиши', shortcutHelp));
-  menu.append(button('Хранилище и материалы', storageDialog));
+  menu.append(button('Горячие клавиши', shortcutHelp, 'af-btn help-shortcuts'));
+  menu.append(
+    button(
+      'Хранилище и материалы',
+      () => {
+        storageDialog().addEventListener(
+          'close',
+          () => {
+            if (!session.signal.aborted) root.dispatchEvent(new Event('materials-changed'));
+          },
+          { once: true },
+        );
+      },
+      'af-btn storage-open',
+    ),
+  );
   const switchProject = (id: string, doc: AFDocument) => {
     inspectorView.discard();
     session.openProject(id, doc, projectVersion(id));
@@ -768,32 +799,29 @@ export async function mountEditor(
     saveLocal();
     draw();
   };
-  menu.append(
-    button('Создать версию', async () => {
-      if (!flush()) return;
-      await session.queue;
-      if (session.saveError) {
-        message('Сначала сохраните проект или разрешите конфликт.', true);
-        return;
-      }
-      try {
-        await session.checkpoint();
-        message('Точка восстановления создана.');
-      } catch (e) {
-        message(String(e), true);
-      }
-    }),
-  );
+  async function createVersion() {
+    if (!flush()) throw new Error('Сначала исправьте настройки проекта.');
+    await session.checkpoint();
+    message('Точка восстановления создана.');
+  }
   menu.prepend(
-    button('Мои проекты', () => {
-      if (flush()) void session.queue.then(() => navigate('/projects'));
-    }),
-    button('История версий', () => {
-      if (flush())
-        void session.queue.then(() =>
-          projectDialog(session.projectId, session.document, switchProject, true),
-        );
-    }),
+    button(
+      'История версий',
+      () => {
+        if (flush())
+          void session.queue.then(() =>
+            projectDialog(
+              session.projectId,
+              session.document,
+              switchProject,
+              true,
+              createVersion,
+              session.signal,
+            ),
+          );
+      },
+      'af-btn history-open',
+    ),
   );
   canvas.dataset.device = readViewState(session.projectId)?.device ?? 'desktop';
   get<HTMLSelectElement>('device').value = canvas.dataset.device;
@@ -833,7 +861,7 @@ export async function mountEditor(
                 );
                 pageIndex = next.pages.findIndex((p) => p.id === draft.anchorId) + 1;
                 selected = '';
-                lastSaveStatus = 'Сохранено в браузере';
+                lastSaveStatus = 'Сохранено';
                 paintSaveState();
                 draw();
                 scrollSection();
@@ -989,6 +1017,10 @@ export async function mountEditor(
             : `#properties details[data-setting="${step === 3 ? 'style' : 'content'}"]`,
         );
         if (group) group.open = true;
+        if (step === 3) {
+          const theme = group?.querySelector<HTMLDetailsElement>('[data-setting="theme-style"]');
+          if (theme) theme.open = true;
+        }
         scrollSection(index);
         const control = learningControl(step, target);
         control?.scrollIntoView({ block: 'nearest' });
@@ -1003,7 +1035,24 @@ export async function mountEditor(
     },
     session.signal,
   );
-  menu.append(button('Режим знакомства', () => learningMode?.start()));
+  menu.append(button('Режим знакомства', () => learningMode?.start(), 'af-btn help-tutorial'));
+  editorNavigation(root, {
+    signal: session.signal,
+    flush,
+    addMaterial: (src) => {
+      if (!flush()) throw new Error('Сначала исправьте настройки текущего проекта.');
+      const widget = createWidget('image', session.document, pageIndex);
+      if (widget.type !== 'image') return;
+      widget.src = src;
+      if (!commit((doc) => doc.pages[pageIndex].widgets.push(widget)))
+        throw new Error('Не удалось добавить материал. Проверьте настройки проекта.');
+      selected = widget.id;
+      draw();
+      scrollSection();
+      message('Материал добавлен на холст.');
+      if (root.classList.contains('outline-open')) closeOutline();
+    },
+  });
   mountControls(root);
   compactToolbar(root, session.signal);
   const returnScroll = returnView?.scroll;
@@ -1016,7 +1065,12 @@ export async function mountEditor(
   window.addEventListener(
     'beforeunload',
     (e) => {
-      if (session.saveError || lastSaveStatus === 'Сохраняем…' || inspectorView.state !== 'valid') {
+      if (
+        session.saveError ||
+        lastSaveStatus !== 'Сохранено' ||
+        inspectorView.state !== 'valid' ||
+        get<HTMLInputElement>('project-name').value !== session.document.title
+      ) {
         e.preventDefault();
         e.returnValue = '';
       }

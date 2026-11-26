@@ -150,6 +150,7 @@ actions.append(
 exercises.append(actions, exerciseStatus);
 main.append(hero, gallery, exercises);
 root.append(header, main);
+if (location.hash === '#examples') requestAnimationFrame(() => gallery.scrollIntoView());
 const disposeControls = mountControls(actions);
 window.addEventListener(
   'pagehide',

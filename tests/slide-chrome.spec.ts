@@ -1,3 +1,4 @@
+import {chooseNewProject} from './new-project-helper';
 import {test,expect} from '@playwright/test';
 import {openEditor} from './open-editor';
 import {savedDocument} from './project-helper';
@@ -20,7 +21,7 @@ test('slide header geometry stays consistent across plain, themed and fitted sli
 });
 
 test('annotation controls persist, undo and export without losing custom text',async({page})=>{
- await openEditor(page);await page.locator('.project-menu summary').click();await page.locator('#new-deck').click();await page.locator('#page-settings-open').click();await page.getByRole('tab',{name:'Оформление',exact:true}).click();
+ await openEditor(page);await page.locator('.project-menu summary').click();await chooseNewProject(page, 'new-deck');await page.locator('#page-settings-open').click();await page.getByRole('tab',{name:'Оформление',exact:true}).click();
  await page.locator('details[data-setting=slide-chrome] > summary').click();await page.getByLabel('Текст подписи',{exact:true}).fill('АЛАБУГА / Проект <2026>');await page.getByLabel('Текст подписи',{exact:true}).press('Tab');
  await page.getByLabel('Номер страницы',{exact:true}).fill('A-07');await page.getByLabel('Номер страницы',{exact:true}).press('Tab');
  await chooseOption(page.getByLabel('Положение номера',{exact:true}),'center');

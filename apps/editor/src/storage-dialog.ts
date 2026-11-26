@@ -74,4 +74,5 @@ export function storageDialog() {
   dialog.addEventListener('close', () => dialog.remove(), { once: true });
   showDialog(dialog);
   void draw().catch((e) => (status.textContent = (e as Error).message));
+  return dialog;
 }

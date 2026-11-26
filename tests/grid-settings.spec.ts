@@ -98,7 +98,7 @@ for (const kind of ['page', 'presentation'] as const) {
     await columns.fill('12');
     await columns.press('Tab');
     await expect(
-      grid.getByRole('button', { name: 'О настройке «Колонки»', exact: true }),
+      grid.getByRole('img', { name: 'О настройке «Колонки»', exact: true }),
     ).toBeFocused();
     await page.keyboard.press('Tab');
     await expect(height).toBeFocused();

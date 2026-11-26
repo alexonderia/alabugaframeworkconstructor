@@ -1,3 +1,4 @@
+import {chooseNewProject} from './new-project-helper';
 import {openEditor} from './open-editor';
 import {test,expect} from '@playwright/test';
 test.use({hasTouch:true});
@@ -9,7 +10,7 @@ test('quality checks explain broken images targets and overflow and open the rel
 });
 
 test('touch crop and keyboard focal adjustments retain their focus',async({page,browserName})=>{
- await openEditor(page);await page.locator('.project-menu summary').click();await page.locator('#demo-deck').click();await page.locator('#page-settings-open').click();await page.getByRole('tab',{name:'Оформление',exact:true}).click();await page.getByRole('button',{name:'Выбрать из библиотеки',exact:true}).click();await page.locator('.asset-card').first().click();const crop=page.getByRole('slider',{name:'Кадр фона',exact:true});await crop.focus();await page.keyboard.press('ArrowRight');await expect(crop).toBeFocused();await page.keyboard.press('ArrowRight');await expect(crop).toHaveAttribute('aria-valuenow','60');await crop.scrollIntoViewIfNeeded();
+ await openEditor(page);await page.locator('.project-menu summary').click();await chooseNewProject(page, 'demo-deck');await page.locator('#page-settings-open').click();await page.getByRole('tab',{name:'Оформление',exact:true}).click();await page.getByRole('button',{name:'Выбрать из библиотеки',exact:true}).click();await page.locator('.asset-card').first().click();const crop=page.getByRole('slider',{name:'Кадр фона',exact:true});await crop.focus();await page.keyboard.press('ArrowRight');await expect(crop).toBeFocused();await page.keyboard.press('ArrowRight');await expect(crop).toHaveAttribute('aria-valuenow','60');await crop.scrollIntoViewIfNeeded();
  const start = {x:30,y:40}, bounds = (await crop.boundingBox())!, y = bounds.y + start.y;
  if(browserName==='chromium'){
   const cdp=await page.context().newCDPSession(page);

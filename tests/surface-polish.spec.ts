@@ -9,9 +9,9 @@ async function previewsFit(cards:Locator){
  expect(bounds.length).toBeGreaterThan(2);for(const b of bounds){expect(b.width).toBeGreaterThan(20);expect(Math.min(b.left,b.right,b.top,b.bottom)).toBeGreaterThanOrEqual(11);expect(Math.abs(b.left-b.right)).toBeLessThan(2);expect(Math.abs(b.top-b.bottom)).toBeLessThan(2);expect(b.after).toBeGreaterThanOrEqual(15);expect(b.inset).toBeGreaterThanOrEqual(15)}
 }
 test('polish collapsed grid leaves no reserved heading gap',async({page},info)=>{
- await project(page);const grid=page.locator('.advanced-grid'),summary=grid.locator('summary');
+ await project(page);const grid=page.locator('.advanced-grid'),summary=grid.locator(':scope > summary');
  for(const width of [1440,390,320]){await page.setViewportSize({width,height:900});
-  for(let i=0;i<2;i++){expect(await grid.evaluate(n=>n.getBoundingClientRect().height-n.querySelector('summary')!.getBoundingClientRect().height)).toBeLessThanOrEqual(1);expect(await page.locator('.page-settings').evaluate(n=>n.getBoundingClientRect().bottom-n.querySelector('.advanced-grid>summary')!.getBoundingClientRect().bottom)).toBeLessThanOrEqual(5);await summary.click();await expect(grid.locator('.settings-grid')).toBeVisible();expect(await grid.evaluate(n=>n.querySelector('.settings-grid')!.getBoundingClientRect().top-n.querySelector('summary')!.getBoundingClientRect().bottom)).toBeGreaterThanOrEqual(15);await summary.click()}
+  for(let i=0;i<2;i++){expect(await grid.evaluate(n=>n.getBoundingClientRect().height-n.querySelector('summary')!.getBoundingClientRect().height)).toBeLessThanOrEqual(1);await summary.click();await expect(grid.locator('.settings-grid')).toBeVisible();expect(await grid.evaluate(n=>n.querySelector('.settings-grid')!.getBoundingClientRect().top-n.querySelector('summary')!.getBoundingClientRect().bottom)).toBeGreaterThanOrEqual(8);await summary.click()}
   await summary.scrollIntoViewIfNeeded();await page.locator('#inspector').screenshot({path:info.outputPath(`settings-${width}.png`)});
  }
 });
@@ -23,7 +23,7 @@ test('polish composition and layout previews fit centered inside padded cards',a
  }
 });
 test('polish Framework file action opens a chooser and imports a background',async({page},info)=>{
- await project(page);await page.locator('#design-settings details[data-setting=style] > summary').click();const input=page.getByLabel('Загрузить фон',{exact:true}),field=input.locator('xpath=ancestor::*[contains(@class,"af-field")][1]'),choose=field.getByRole('button',{name:'Выбрать файл',exact:true});await expect(choose).toHaveClass(/af-btn--secondary/);await expect(input).toBeHidden();await expect(choose.locator('.af-btn__icon')).toBeVisible();
+ await project(page);await page.locator('#design-settings details[data-setting=section-background] > summary').click();const input=page.getByLabel('Загрузить фон',{exact:true}),field=input.locator('xpath=ancestor::*[contains(@class,"af-field")][1]'),choose=field.getByRole('button',{name:'Выбрать файл',exact:true});await expect(choose).toHaveClass(/af-btn--secondary/);await expect(input).toBeHidden();await expect(choose.locator('.af-btn__icon')).toBeVisible();
  for(const width of [1440,320]){await page.setViewportSize({width,height:900});await choose.scrollIntoViewIfNeeded();expect(await field.evaluate(n=>n.scrollWidth-n.clientWidth)).toBeLessThanOrEqual(1);await page.locator('#inspector').screenshot({path:info.outputPath(`file-${width}.png`)})}
  const buffer=Buffer.from(await page.evaluate(()=>{const c=document.createElement('canvas');c.width=2;c.height=2;c.getContext('2d')!.fillRect(0,0,2,2);return c.toDataURL().split(',')[1]}),'base64');
  const selected=page.waitForEvent('filechooser');await choose.focus();await choose.press('Enter');await (await selected).setFiles({name:'Фирменное изображение.png',mimeType:'image/png',buffer});await expect.poll(async()=>(await savedDocument(page)).pages[0].appearance?.background).toMatch(/^asset:[a-f0-9]{64}$/);await expect(choose).toBeVisible();

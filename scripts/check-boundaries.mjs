@@ -75,8 +75,8 @@ for (const file of ['package.json', 'apps/editor/package.json', 'packages/ai/pac
     v = p.dependencies?.['@alabuga/framework'];
   const localPin =
     file === 'package.json'
-      ? 'file:vendor/alabuga-framework-1.4.0-grid.4.tgz'
-      : 'file:../../vendor/alabuga-framework-1.4.0-grid.4.tgz';
+      ? 'file:vendor/alabuga-framework-1.4.0-grid.4.inspector.1.tgz'
+      : 'file:../../vendor/alabuga-framework-1.4.0-grid.4.inspector.1.tgz';
   if (!/^\d+\.\d+\.\d+(?:-[\w.]+)?$/.test(v) && v !== localPin)
     errors.push(file + ': Framework must use an exact npm version');
 }

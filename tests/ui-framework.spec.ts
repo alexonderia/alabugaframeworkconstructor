@@ -32,7 +32,7 @@ test('document controller retains section names while rendering only element con
 });
 
 test('menu buttons keep Framework hover, disabled, busy and keyboard focus states',async({page})=>{
- await openEditor(page);await page.locator('.project-menu>summary').click();const control=page.locator('#new-page'),reference=await frameworkReference(page,control);
+ await openEditor(page);await page.locator('.project-menu>summary').click();await page.getByRole('button',{name:'Создать проект…',exact:true}).click();const control=page.locator('#new-page'),reference=await frameworkReference(page,control);
  await page.mouse.move(1,1);await expectSameVisuals(control,reference);
  await control.hover();await control.evaluate(async n=>{await Promise.all(n.getAnimations().map(a=>a.finished))});const hovered=await control.evaluate(n=>({background:getComputedStyle(n).backgroundColor,border:getComputedStyle(n).borderColor}));
  await reference.hover();await expect.poll(()=>reference.evaluate(n=>({background:getComputedStyle(n).backgroundColor,border:getComputedStyle(n).borderColor}))).toEqual(hovered);

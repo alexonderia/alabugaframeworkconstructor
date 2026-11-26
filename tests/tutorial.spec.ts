@@ -1,3 +1,4 @@
+import {chooseNewProject} from './new-project-helper';
 import { test, expect, type Page } from '@playwright/test';
 import { chooseOption } from './choose-option';
 import { openEditor } from './open-editor';
@@ -20,7 +21,7 @@ async function floatingInstruction(page: Page, target?: ReturnType<Page['locator
 }
 async function start(page: Page) {
   await page.locator('.project-menu > summary').click();
-  await page.locator('.project-menu').getByRole('button', { name: 'Режим знакомства', exact: true }).click();
+  await page.locator('.editor-help > summary').click(); await page.locator('.editor-help').getByRole('button', { name: 'Режим знакомства', exact: true }).click();
   await expect(panel(page).locator('.tutorial-progress')).toHaveText('Шаг 1 из 5');
 }
 async function sample(page: Page, kind: 'page' | 'presentation') {
@@ -145,7 +146,7 @@ test('only the targeted heading counts; undo, reload, pause and resume preserve 
   await expect(panel(page)).toBeHidden();
   await page.locator('#close-inspector').isVisible().then(async (visible) => { if (visible) await page.locator('#close-inspector').click(); });
   await page.locator('.project-menu > summary').click();
-  await page.locator('.project-menu').getByRole('button', { name: 'Режим знакомства', exact: true }).click();
+  await page.locator('.editor-help > summary').click(); await page.locator('.editor-help').getByRole('button', { name: 'Режим знакомства', exact: true }).click();
   await expect(panel(page).locator('.tutorial-progress')).toHaveText('Шаг 2 из 5');
   await expect(next(page)).toBeDisabled();
 });
@@ -208,7 +209,7 @@ test('new projects get independent progress and old checklist marks are not impo
   if (await page.locator('#catalog').isVisible()) await page.locator('#close-catalog').click();
   await panel(page).getByRole('button', { name: 'Выйти из режима', exact: true }).click();
   await page.locator('.project-menu > summary').click();
-  await page.locator('#new-page').click();
+  await chooseNewProject(page, 'new-page');
   await expect(page.locator('#project-name')).toHaveValue('Новый сайт');
   await expect(page.locator('#builder')).not.toHaveClass(/is-learning/);
   await page.locator('.tutorial-launch').click();
